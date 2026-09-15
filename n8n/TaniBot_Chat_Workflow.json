@@ -1,0 +1,160 @@
+{
+  "name": "TaniBot Chat Processing Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "tanibot-chat",
+        "method": "POST",
+        "options": {
+          "outputFormat": "json"
+        },
+        "responseMode": "responseNode"
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "webhookId": "{{WEBHOOK_ID}}"
+    },
+    {
+      "parameters": {
+        "content": "={\n  \"model\": \"llama-3.1-8b-instant\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Kamu adalah TaniBot, asisten AI resmi aplikasi SIMHPSK (Sistem Informasi Manajemen Hasil Panen dan Stok Kentang).\\n\\nAplikasi SIMHPSK memiliki fitur-fitur berikut:\\n- 🌱 Musim Tanam: mencatat dan mengelola musim tanam kentang\\n- 🚜 Pencatatan Panen: mencatat hasil panen kentang per musim\\n- 📦 Stok Gudang: memantau stok masuk dan keluar gudang\\n- 💰 Penjualan: mencatat transaksi penjualan kentang\\n- 📊 Biaya Produksi: mencatat pengeluaran biaya pertanian\\n- 📈 Laporan: melihat untung/rugi dan target vs realisasi panen\\n- ⚙️ Pengaturan: mengatur profil dan notifikasi\\n\\nTugasmu:\\n1. Utamakan menjawab pertanyaan seputar fitur aplikasi SIMHPSK\\n2. Jika user bertanya cara mencatat panen, arahkan ke menu Pencatatan Panen\\n3. Jika user bertanya soal stok, arahkan ke menu Stok Gudang\\n4. Jika user bertanya soal laporan, arahkan ke menu Laporan\\n5. Tetap bantu pertanyaan seputar pertanian kentang secara umum\\n6. Selalu promosikan fitur aplikasi yang relevan di akhir jawaban\\n7. Gunakan emoji yang relevan agar lebih menarik\\n8. Jawab dalam bahasa Indonesia yang ramah dan mudah dipahami petani\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"{{ $json.message }}\"\n    }\n  ],\n  \"max_tokens\": 1000\n}"
+      },
+      "name": "Build Groq Request",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "groqApi",
+        "requestMethod": "POST",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "bodyParametersJson": "={{ $json }}"
+      },
+      "name": "Call Groq API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        650,
+        300
+      ],
+      "credentials": {
+        "groqApi": {
+          "id": "{{GROQ_API_CREDENTIAL_ID}}",
+          "name": "Groq API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "={\n  \"reply\": $json.choices[0].message.content\n}"
+      },
+      "name": "Extract Response",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        850,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "responseCode": 200,
+        "responseData": "={{ $json }}"
+      },
+      "name": "Return Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1050,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "content": "={\n  \"reply\": \"Maaf, terjadi kesalahan saat memproses pertanyaan Anda. Error: \" + error.message,\n  \"error\": error.message\n}"
+      },
+      "name": "Error Handler",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        850,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "responseCode": 500,
+        "responseData": "={{ $json }}"
+      },
+      "name": "Return Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1050,
+        450
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": [
+      {
+        "node": "Build Groq Request",
+        "type": "main",
+        "index": [
+          0,
+          0
+        ]
+      }
+    ],
+    "Build Groq Request": [
+      {
+        "node": "Call Groq API",
+        "type": "main",
+        "index": [
+          0,
+          0
+        ]
+      }
+    ],
+    "Call Groq API": [
+      {
+        "node": "Extract Response",
+        "type": "main",
+        "index": [
+          0,
+          0
+        ]
+      }
+    ],
+    "Extract Response": [
+      {
+        "node": "Return Response",
+        "type": "main",
+        "index": [
+          0,
+          0
+        ]
+      }
+    ]
+  },
+  "settings": {},
+  "staticData": null,
+  "pinData": null
+}

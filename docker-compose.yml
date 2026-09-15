@@ -1,0 +1,98 @@
+# ============================================================
+# docker-compose.yml – Production Stack (VPS)
+# Services: App (Laravel+Nginx+PHP-FPM), MySQL, Redis
+# ============================================================
+
+version: '3.8'
+
+services:
+
+  # ── 1. Laravel App (PHP-FPM + Nginx dalam 1 container) ──────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kentang_app
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - APP_ENV=production
+      - APP_DEBUG=false
+    env_file:
+      - .env.production
+    volumes:
+      # Persistent storage uploads & logs
+      - app_storage:/var/www/html/storage/app
+      - app_logs:/var/www/html/storage/logs
+      # SSL certificates (isi dengan sertifikat Let's Encrypt)
+      # - ./docker/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      cache:
+        condition: service_started
+    networks:
+      - pertanian_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ── 2. MySQL Database ────────────────────────────────────────
+  db:
+    image: mysql:8.0
+    container_name: kentang_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-pertanian_kentang}
+      MYSQL_USER: ${DB_USERNAME:-kentang_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-ganti_password_kuat_ini}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-ganti_root_password_ini}
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - pertanian_net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    # Jangan expose port MySQL ke luar (keamanan)
+    # ports:
+    #   - "3306:3306"
+
+  # ── 3. Redis Cache ───────────────────────────────────────────
+  cache:
+    image: redis:7-alpine
+    container_name: kentang_cache
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD:-ganti_redis_password} --maxmemory 128mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - pertanian_net
+    # Jangan expose Redis ke luar (keamanan)
+    # ports:
+    #   - "6379:6379"
+
+# ── Volumes ──────────────────────────────────────────────────────
+volumes:
+  db_data:
+    driver: local
+  redis_data:
+    driver: local
+  app_storage:
+    driver: local
+  app_logs:
+    driver: local
+
+# ── Networks ─────────────────────────────────────────────────────
+networks:
+  pertanian_net:
+    driver: bridge

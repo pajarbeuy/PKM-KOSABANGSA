@@ -1,0 +1,48 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Season;
+
+class SeasonService
+{
+    /**
+     * Create a new season for a user.
+     */
+    public function createSeason(array $data, int $userId): Season
+    {
+        return Season::create(array_merge($data, ['user_id' => $userId]));
+    }
+
+    /**
+     * Update an existing season.
+     */
+    public function updateSeason(Season $season, array $data): Season
+    {
+        $season->update($data);
+        return $season;
+    }
+
+    /**
+     * Delete a season (soft delete).
+     */
+    public function deleteSeason(Season $season): void
+    {
+        $season->delete();
+    }
+
+    /**
+     * Format a season for API response.
+     */
+    public function formatSeason(Season $season): array
+    {
+        return [
+            'id'         => $season->id,
+            'name'       => $season->name,
+            'start_date' => $season->start_date,
+            'end_date'   => $season->end_date,
+            'status'     => $season->status,
+            'target_kg'  => $season->target_kg,
+        ];
+    }
+}

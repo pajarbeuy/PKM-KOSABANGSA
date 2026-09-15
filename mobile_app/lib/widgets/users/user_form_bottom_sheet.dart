@@ -1,0 +1,238 @@
+import 'package:flutter/material.dart';
+import '../../services/api_service.dart';
+import '../app_theme.dart';
+
+/// Modal form for adding or updating user account.
+/// Extracted from user_management_screen.dart to modularize code.
+class UserFormBottomSheet extends StatefulWidget {
+  final ApiService apiService;
+  final Map<String, dynamic>? user;
+  final VoidCallback onSaved;
+
+  const UserFormBottomSheet({
+    super.key,
+    required this.apiService,
+    this.user,
+    required this.onSaved,
+  });
+
+  @override
+  State<UserFormBottomSheet> createState() => _UserFormBottomSheetState();
+}
+
+class _UserFormBottomSheetState extends State<UserFormBottomSheet> {
+  final _formKey = GlobalKey<FormState>();
+  late TextEditingController _nameController;
+  late TextEditingController _emailController;
+  late TextEditingController _phoneController;
+  late TextEditingController _farmNameController;
+  late TextEditingController _passwordController;
+
+  late String _role;
+  late String _status;
+  bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final u = widget.user;
+    _nameController = TextEditingController(text: u?['name'] ?? '');
+    _emailController = TextEditingController(text: u?['email'] ?? '');
+    _phoneController = TextEditingController(text: u?['phone'] ?? '');
+    _farmNameController = TextEditingController(text: u?['farm_name'] ?? '');
+    _passwordController = TextEditingController();
+    _role = u?['role'] ?? 'user';
+    _status = u?['status'] ?? 'active';
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _farmNameController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleSubmit() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isSubmitting = true);
+
+    final isEdit = widget.user != null;
+    final dataMap = <String, dynamic>{
+      'name': _nameController.text.trim(),
+      'email': _emailController.text.trim(),
+      'phone': _phoneController.text.trim(),
+      'farm_name': _farmNameController.text.trim(),
+      'role': _role,
+      'status': _status,
+    };
+    if (!isEdit) {
+      dataMap['password'] = _passwordController.text;
+    }
+
+    try {
+      final Map<String, dynamic> res;
+      if (isEdit) {
+        res = await widget.apiService.updateSuperAdminUser(
+          widget.user!['id'] as int,
+          dataMap,
+        );
+      } else {
+        res = await widget.apiService.createSuperAdminUser(dataMap);
+      }
+
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+        if (res['success'] == true) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                isEdit ? 'Data akun berhasil diperbarui' : 'Akun baru berhasil diregistrasikan',
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
+          widget.onSaved();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(res['message'] ?? 'Gagal memproses akun'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Terjadi kesalahan: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isEdit = widget.user != null;
+
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+        top: 24,
+        left: 24,
+        right: 24,
+      ),
+      child: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                isEdit ? 'Ubah Akun Petani' : 'Registrasi Akun Baru',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(labelText: 'Nama Lengkap'),
+                validator: (val) => val == null || val.isEmpty ? 'Nama wajib diisi' : null,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _emailController,
+                decoration: const InputDecoration(labelText: 'Email'),
+                keyboardType: TextInputType.emailAddress,
+                validator: (val) => val == null || val.isEmpty ? 'Email wajib diisi' : null,
+              ),
+              const SizedBox(height: 12),
+              if (!isEdit)
+                TextFormField(
+                  controller: _passwordController,
+                  decoration: const InputDecoration(labelText: 'Password'),
+                  obscureText: true,
+                  validator: (val) => val == null || val.isEmpty ? 'Password wajib diisi' : null,
+                ),
+              if (!isEdit) const SizedBox(height: 12),
+              TextFormField(
+                controller: _phoneController,
+                decoration: const InputDecoration(labelText: 'Nomor Telepon'),
+                keyboardType: TextInputType.phone,
+                validator: (val) => val == null || val.isEmpty ? 'Nomor telepon wajib diisi' : null,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _farmNameController,
+                decoration: const InputDecoration(
+                  labelText: 'Nama Kelompok Tani / Lahan',
+                ),
+                validator: (val) => val == null || val.isEmpty ? 'Nama lahan wajib diisi' : null,
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      initialValue: _role,
+                      decoration: const InputDecoration(
+                        labelText: 'Hak Akses',
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'user', child: Text('Petani')),
+                        DropdownMenuItem(value: 'super_admin', child: Text('Admin')),
+                      ],
+                      onChanged: (val) => setState(() => _role = val!),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      initialValue: _status,
+                      decoration: const InputDecoration(labelText: 'Status'),
+                      items: const [
+                        DropdownMenuItem(value: 'active', child: Text('Aktif')),
+                        DropdownMenuItem(value: 'inactive', child: Text('Non-aktif')),
+                      ],
+                      onChanged: (val) => setState(() => _status = val!),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.green700,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: _isSubmitting ? null : _handleSubmit,
+                  child: _isSubmitting
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        )
+                      : Text(isEdit ? 'Perbarui Akun' : 'Daftarkan Akun'),
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
