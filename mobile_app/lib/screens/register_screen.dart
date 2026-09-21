@@ -141,7 +141,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                           const SizedBox(height: 8),
                           const Text(
-                            'Kelola lahan dan hasil panen kentang Anda',
+                            'Kelola lahan dan hasil panen Anda',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               color: Colors.grey,

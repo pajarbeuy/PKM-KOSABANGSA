@@ -45,6 +45,20 @@ class SeasonController extends Controller
         }
     }
 
+    public function show(Request $request, Season $season)
+    {
+        if ($season->user_id !== $request->user()->id) {
+            return $this->forbiddenResponse('Anda tidak berhak melihat data ini.');
+        }
+
+        $formatted = array_merge($this->seasonService->formatSeason($season), [
+            'created_at' => $season->created_at,
+            'updated_at' => $season->updated_at,
+        ]);
+
+        return $this->successResponse($formatted, 'Detail musim tanam.');
+    }
+
     public function update(Request $request, Season $season)
     {
         try {

@@ -24,7 +24,12 @@ class HarvestController extends Controller
         if ($seasonId) $query->where('season_id', $seasonId);
 
         $harvests     = $query->paginate($perPage);
-        $activeSeason = Season::where('user_id', $userId)->where('status', 'active')->first();
+        $activeSeason = Season::where('user_id', $userId)
+            ->where('status', '!=', 'cancelled')
+            ->whereDate('start_date', '<=', today())
+            ->whereDate('end_date', '>=', today())
+            ->latest('start_date')
+            ->first();
         $totalHarvest = Harvest::where('user_id', $userId)->sum('weight_kg');
 
         return $this->successResponse([
@@ -73,6 +78,19 @@ class HarvestController extends Controller
         $formatted['created_at'] = $harvest->created_at->toIso8601String();
 
         return $this->successResponse($formatted, 'Pencatatan panen berhasil ditambahkan.', 201);
+    }
+
+    public function show(Request $request, Harvest $harvest)
+    {
+        if ($harvest->user_id !== $request->user()->id) {
+            return $this->forbiddenResponse('Anda tidak berhak melihat data ini.');
+        }
+
+        $formatted = $this->harvestService->formatHarvest($harvest);
+        $formatted['created_at'] = $harvest->created_at?->toIso8601String();
+        $formatted['updated_at'] = $harvest->updated_at?->toIso8601String();
+
+        return $this->successResponse($formatted, 'Detail pencatatan panen.');
     }
 
     public function update(Request $request, Harvest $harvest)

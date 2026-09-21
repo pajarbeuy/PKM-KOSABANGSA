@@ -12,7 +12,8 @@ import 'custom_menus_screen.dart';
 import 'feedback_management_screen.dart';
 
 class LandingEditorScreen extends StatefulWidget {
-  const LandingEditorScreen({super.key});
+  final bool isEmbedded;
+  const LandingEditorScreen({super.key, this.isEmbedded = false});
 
   @override
   State<LandingEditorScreen> createState() => _LandingEditorScreenState();
@@ -92,7 +93,9 @@ class _LandingEditorScreenState extends State<LandingEditorScreen> with SingleTi
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Konten Landing Page berhasil diperbarui!'), backgroundColor: Colors.green),
       );
-      Navigator.pop(context);
+      if (!widget.isEmbedded) {
+        Navigator.pop(context);
+      }
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(result['message'] ?? 'Gagal menyimpan konten'), backgroundColor: Colors.red),
@@ -106,6 +109,71 @@ class _LandingEditorScreenState extends State<LandingEditorScreen> with SingleTi
     final name = auth.user?.name ?? 'Super Admin';
     final email = auth.user?.email ?? '';
     final initials = name.isNotEmpty ? name[0].toUpperCase() : 'S';
+
+    Widget buildMainContent() {
+      return Column(
+        children: [
+          Material(
+            color: AppTheme.cardBg,
+            child: TabBar(
+              controller: _tabController,
+              indicatorColor: AppTheme.green700,
+              labelColor: AppTheme.textPrimary,
+              unselectedLabelColor: AppTheme.textSecondary,
+              tabs: const [
+                Tab(text: 'Hero & CTA'),
+                Tab(text: 'Fitur Unggulan'),
+              ],
+            ),
+          ),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator(color: AppTheme.green700))
+                : Form(
+                    key: _formKey,
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _buildHeroTab(),
+                        _buildFeaturesTab(),
+                      ],
+                    ),
+                  ),
+          ),
+        ],
+      );
+    }
+
+    Widget buildSaveButton() {
+      return _isLoading
+          ? const SizedBox.shrink()
+          : Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: SizedBox(
+                height: 50,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.green700,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  onPressed: _isSaving ? null : _save,
+                  icon: _isSaving
+                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : const Icon(Icons.save_rounded),
+                  label: Text(_isSaving ? 'Menyimpan...' : 'Simpan Semua Perubahan', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                ),
+              ),
+            );
+    }
+
+    if (widget.isEmbedded) {
+      return Scaffold(
+        backgroundColor: Colors.transparent,
+        body: buildMainContent(),
+        bottomNavigationBar: buildSaveButton(),
+      );
+    }
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -149,58 +217,13 @@ class _LandingEditorScreenState extends State<LandingEditorScreen> with SingleTi
                         userInitials: initials,
                         onRefresh: _loadLandingContent,
                       ),
-                    Material(
-                      color: AppTheme.cardBg,
-                      child: TabBar(
-                        controller: _tabController,
-                        indicatorColor: AppTheme.green700,
-                        labelColor: AppTheme.textPrimary,
-                        unselectedLabelColor: AppTheme.textSecondary,
-                        tabs: const [
-                          Tab(text: 'Hero & CTA'),
-                          Tab(text: 'Fitur Unggulan'),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child: _isLoading
-                          ? const Center(child: CircularProgressIndicator(color: AppTheme.green700))
-                          : Form(
-                              key: _formKey,
-                              child: TabBarView(
-                                controller: _tabController,
-                                children: [
-                                  _buildHeroTab(),
-                                  _buildFeaturesTab(),
-                                ],
-                              ),
-                            ),
-                    ),
+                    Expanded(child: buildMainContent()),
                   ],
                 ),
               ),
             ],
           ),
-          bottomNavigationBar: _isLoading
-              ? null
-              : Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: SizedBox(
-                    height: 50,
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.green700,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                      onPressed: _isSaving ? null : _save,
-                      icon: _isSaving
-                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                          : const Icon(Icons.save_rounded),
-                      label: Text(_isSaving ? 'Menyimpan...' : 'Simpan Semua Perubahan', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                    ),
-                  ),
-                ),
+          bottomNavigationBar: buildSaveButton(),
         );
       },
     );

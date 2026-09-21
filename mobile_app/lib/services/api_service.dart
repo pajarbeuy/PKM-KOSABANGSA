@@ -17,6 +17,10 @@ import 'api/cost_api_service.dart';
 import 'api/report_api_service.dart';
 import 'api/super_admin_api_service.dart';
 import 'api/misc_api_service.dart';
+import 'api/processed_product_api_service.dart';
+import 'api/order_api_service.dart';
+import '../models/processed_product.dart';
+import '../models/order_model.dart';
 
 /// Facade Singleton providing a unified API interface across all domain services.
 class ApiService {
@@ -38,6 +42,8 @@ class ApiService {
   final ReportApiService _reportService = ReportApiService();
   final SuperAdminApiService _superAdminService = SuperAdminApiService();
   final MiscApiService _miscService = MiscApiService();
+  final ProcessedProductApiService _processedProductService = ProcessedProductApiService();
+  final OrderApiService _orderService = OrderApiService();
 
   // ─── Client / Token Management ─────────────────────────────────────────────
   void setAuthToken(String token) => _client.setAuthToken(token);
@@ -424,4 +430,111 @@ class ApiService {
 
   Future<Map<String, dynamic>> sendChatMessage(String message) =>
       _miscService.sendChatMessage(message);
+
+  // ─── Processed Products ─────────────────────────────────────────────────────
+  Future<List<ProcessedProduct>> getFarmerProcessedProducts({
+    int page = 1,
+    String? search,
+    String? status,
+  }) =>
+      _processedProductService.getFarmerProcessedProducts(
+        page: page,
+        search: search,
+        status: status,
+      );
+
+  Future<List<ProcessedProduct>> getSuperAdminProcessedProducts({
+    int page = 1,
+    String? search,
+    String? status,
+    int? ownerId,
+  }) =>
+      _processedProductService.getSuperAdminProcessedProducts(
+        page: page,
+        search: search,
+        status: status,
+        ownerId: ownerId,
+      );
+
+  Future<List<ProcessedProduct>> getPublicCatalog({int page = 1, String? search}) =>
+      _processedProductService.getPublicCatalog(page: page, search: search);
+
+  Future<ProcessedProduct?> getProcessedProduct(int id) =>
+      _processedProductService.getProcessedProduct(id);
+
+  Future<Map<String, dynamic>> createProcessedProduct({
+    required String name,
+    required double price,
+    int stock = 0,
+    String? description,
+    String? status,
+    XFile? photoFile,
+  }) =>
+      _processedProductService.createProcessedProduct(
+        name: name,
+        price: price,
+        stock: stock,
+        description: description,
+        status: status,
+        photoFile: photoFile,
+      );
+
+  Future<Map<String, dynamic>> updateProcessedProduct(
+    int id, {
+    String? name,
+    double? price,
+    int? stock,
+    String? description,
+    String? status,
+    XFile? photoFile,
+  }) =>
+      _processedProductService.updateProcessedProduct(
+        id,
+        name: name,
+        price: price,
+        stock: stock,
+        description: description,
+        status: status,
+        photoFile: photoFile,
+      );
+
+  Future<bool> deleteProcessedProduct(int id) =>
+      _processedProductService.deleteProcessedProduct(id);
+
+  Future<bool> updateProductStatusBySuperAdmin(int id, String status) =>
+      _processedProductService.updateStatusBySuperAdmin(id, status);
+
+  // ─── Super Admin Aggregate Reports ──────────────────────────────────────────
+  Future<Map<String, dynamic>?> getFarmerProfitLossAggregate({
+    String? startDate,
+    String? endDate,
+  }) =>
+      _superAdminService.getFarmerProfitLossAggregate(
+        startDate: startDate,
+        endDate: endDate,
+      );
+
+  // ─── Super Admin Order Tracking ─────────────────────────────────────────────
+  Future<List<OrderModel>> getSuperAdminOrders({
+    String? status,
+    String? search,
+    int page = 1,
+  }) =>
+      _orderService.getSuperAdminOrders(
+        status: status,
+        search: search,
+        page: page,
+      );
+
+  Future<OrderModel?> getSuperAdminOrderDetail(int id) =>
+      _orderService.getSuperAdminOrderDetail(id);
+
+  Future<Map<String, dynamic>> updateOrderStatus(int id, String status) =>
+      _orderService.updateOrderStatus(id, status);
+
+  Future<Map<String, dynamic>> completeOrder(int id) =>
+      _orderService.completeOrder(id);
+
+  Future<Map<String, dynamic>> cancelOrder(int id) =>
+      _orderService.cancelOrder(id);
 }

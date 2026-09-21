@@ -9,7 +9,8 @@ import '../utils/navigation_helper.dart';
 import '../login_screen.dart';
 
 class ChatbotScreen extends StatefulWidget {
-  const ChatbotScreen({super.key});
+  final bool isEmbedded;
+  const ChatbotScreen({super.key, this.isEmbedded = false});
 
   @override
   State<ChatbotScreen> createState() => _ChatbotScreenState();
@@ -24,10 +25,10 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   bool _isTyping = false;
 
   final List<String> _quickQuestions = [
-    'Bagaimana cara mencatat panen?',
-    'Bagaimana cara memantau stok gudang?',
-    'Beri saya saran budidaya kentang',
-    'Bagaimana cara melihat laporan untung/rugi?',
+    'Bagaimana cara manajemen pemasaran produk olahan?',
+    'Bagaimana alur pemesanan via WhatsApp?',
+    'Cara mencatat penjualan terpusat',
+    'Cara melihat laporan agregat laba/rugi',
   ];
 
   @override
@@ -117,11 +118,22 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final auth = context.watch<AuthProvider>();
-    final user = auth.user;
-    final name = user?.name ?? 'Petani';
+    if (widget.isEmbedded) {
+      return Column(
+        children: [
+          Expanded(
+            child: _messages.isEmpty ? _buildWelcomeView() : _buildChatList(),
+          ),
+          if (_isTyping) _buildTypingIndicator(),
+          _buildInputArea(),
+        ],
+      );
+    }
+
+    final user = context.read<AuthProvider>().user;
+    final name = user?.name ?? 'Super Admin';
     final email = user?.email ?? '';
-    final initials = name.isNotEmpty ? name[0].toUpperCase() : 'P';
+    final initials = name.isNotEmpty ? name[0].toUpperCase() : 'S';
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -134,6 +146,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
               : AppMobileAppBar(
                   title: 'TaniBot AI',
                   userInitials: initials,
+                  onNotificationTap: () {},
                 ),
           drawer: isDesktop
               ? null
@@ -162,7 +175,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                     if (isDesktop)
                       AppHeader(
                         title: 'TaniBot AI',
-                        subtitle: 'Asisten cerdas kecerdasan buatan untuk seputar pertanian kentang',
+                        subtitle: 'Asisten cerdas kecerdasan buatan operasional Super Admin SumberTani berbasis AI',
                         userInitials: initials,
                         actions: [
                           if (_messages.isNotEmpty)

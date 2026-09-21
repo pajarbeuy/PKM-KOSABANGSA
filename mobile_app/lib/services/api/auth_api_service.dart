@@ -155,12 +155,27 @@ class AuthApiService {
 
       final data = jsonDecode(response.body);
 
+      String message = data['message'] ?? 'Permintaan reset password telah dikirim.';
+      if (data['errors'] != null && data['errors'] is Map) {
+        final errMap = data['errors'] as Map;
+        final list = <String>[];
+        errMap.forEach((_, v) {
+          if (v is List) {
+            list.addAll(v.map((e) => e.toString()));
+          } else {
+            list.add(v.toString());
+          }
+        });
+        if (list.isNotEmpty) message = list.join('\n');
+      }
+
       return {
         'success': response.statusCode == 200 && data['success'] == true,
-        'message': data['message'] ?? 'Gagal mengirim link reset password',
+        'message': message,
+        'token': data['data']?['token'],
       };
     } catch (e) {
-      return {'success': false, 'message': 'Error: ${e.toString()}'};
+      return {'success': false, 'message': 'Terjadi kesalahan jaringan: ${e.toString()}'};
     }
   }
 
@@ -186,12 +201,26 @@ class AuthApiService {
 
       final data = jsonDecode(response.body);
 
+      String message = data['message'] ?? 'Gagal mereset password.';
+      if (data['errors'] != null && data['errors'] is Map) {
+        final errMap = data['errors'] as Map;
+        final list = <String>[];
+        errMap.forEach((_, v) {
+          if (v is List) {
+            list.addAll(v.map((e) => e.toString()));
+          } else {
+            list.add(v.toString());
+          }
+        });
+        if (list.isNotEmpty) message = list.join('\n');
+      }
+
       return {
         'success': response.statusCode == 200 && data['success'] == true,
-        'message': data['message'] ?? 'Gagal reset password',
+        'message': message,
       };
     } catch (e) {
-      return {'success': false, 'message': 'Error: ${e.toString()}'};
+      return {'success': false, 'message': 'Terjadi kesalahan jaringan: ${e.toString()}'};
     }
   }
 

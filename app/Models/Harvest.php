@@ -17,6 +17,27 @@ class Harvest extends Model
         'weight_kg' => 'decimal:2',
     ];
 
+    protected $appends = ['photo_url'];
+
+    public function getPhotoUrlAttribute(): ?string
+    {
+        if (!$this->photo) {
+            return null;
+        }
+
+        if (str_starts_with($this->photo, 'http://') || str_starts_with($this->photo, 'https://')) {
+            return $this->photo;
+        }
+
+        try {
+            if (app()->bound('request') && request() && request()->hasHeader('host')) {
+                return request()->schemeAndHttpHost() . '/' . ltrim($this->photo, '/');
+            }
+        } catch (\Throwable $e) {}
+
+        return asset(ltrim($this->photo, '/'));
+    }
+
     protected $with = ['season'];
 
     public function user()

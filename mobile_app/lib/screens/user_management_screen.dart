@@ -7,14 +7,13 @@ import '../widgets/app_sidebar.dart';
 import '../widgets/app_theme.dart';
 import '../login_screen.dart';
 import '../screens/super_admin_dashboard_screen.dart';
-import 'landing_editor_screen.dart';
-import 'custom_menus_screen.dart';
 import 'feedback_management_screen.dart';
 import 'home_screen.dart';
 import '../widgets/users/user_form_bottom_sheet.dart';
 
 class UserManagementScreen extends StatefulWidget {
-  const UserManagementScreen({super.key});
+  final bool isEmbedded;
+  const UserManagementScreen({super.key, this.isEmbedded = false});
 
   @override
   State<UserManagementScreen> createState() => _UserManagementScreenState();
@@ -178,6 +177,85 @@ class _UserManagementScreenState extends State<UserManagementScreen>
     final email = user?.email ?? '';
     final initials = name.isNotEmpty ? name[0].toUpperCase() : 'S';
 
+    Widget buildMainContent() {
+      return Column(
+        children: [
+          Material(
+            color: AppTheme.cardBg,
+            child: TabBar(
+              controller: _tabController,
+              labelColor: AppTheme.textPrimary,
+              unselectedLabelColor: AppTheme.textSecondary,
+              indicatorColor: AppTheme.green700,
+              tabs: const [
+                Tab(text: 'Semua'),
+                Tab(text: 'Aktif'),
+                Tab(text: 'Non-aktif'),
+              ],
+            ),
+          ),
+          Expanded(
+            child: _isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(
+                      color: AppTheme.green700,
+                    ),
+                  )
+                : TabBarView(
+                    controller: _tabController,
+                    children: List.generate(3, (index) {
+                      final filteredList = _getFilteredUsers(index);
+                      if (filteredList.isEmpty) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment:
+                                MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.people_outline,
+                                size: 64,
+                                color: Colors.grey.shade300,
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                'Tidak ada data akun dalam kategori ini',
+                                style: TextStyle(
+                                  color: Colors.grey.shade500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      return LayoutBuilder(
+                        builder: (context, constraints) {
+                          if (constraints.maxWidth > 800) {
+                            return _buildDesktopLayout(filteredList);
+                          }
+                          return _buildMobileLayout(filteredList);
+                        },
+                      );
+                    }),
+                  ),
+          ),
+        ],
+      );
+    }
+
+    if (widget.isEmbedded) {
+      return Scaffold(
+        backgroundColor: Colors.transparent,
+        body: buildMainContent(),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () => _showAddEditUserBottomSheet(),
+          backgroundColor: AppTheme.green700,
+          icon: const Icon(Icons.person_add_alt_1_rounded),
+          label: const Text('Tambah Akun'),
+        ),
+      );
+    }
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final isDesktop = constraints.maxWidth >= 900;
@@ -187,7 +265,7 @@ class _UserManagementScreenState extends State<UserManagementScreen>
           appBar: isDesktop
               ? null
               : AppMobileAppBar(
-                  title: 'Kelola Pencatatan Panen Kentang Lebih Cerdas',
+                  title: 'Kelola Pengguna',
                   userInitials: initials,
                   onNotificationTap: _loadUsers,
                 ),
@@ -215,70 +293,12 @@ class _UserManagementScreenState extends State<UserManagementScreen>
                   children: [
                     if (isDesktop)
                       AppHeader(
-                        title: 'Kelola Pencatatan Panen Kentang Lebih Cerdas',
+                        title: 'Kelola Pengguna',
                         subtitle: 'Kelola akun petani dan impersonasi',
                         userInitials: initials,
                         onRefresh: _loadUsers,
                       ),
-                    Material(
-                      color: AppTheme.cardBg,
-                      child: TabBar(
-                        controller: _tabController,
-                        labelColor: AppTheme.textPrimary,
-                        unselectedLabelColor: AppTheme.textSecondary,
-                        indicatorColor: AppTheme.green700,
-                        tabs: const [
-                          Tab(text: 'Semua'),
-                          Tab(text: 'Aktif'),
-                          Tab(text: 'Non-aktif'),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child: _isLoading
-                          ? const Center(
-                              child: CircularProgressIndicator(
-                                color: AppTheme.green700,
-                              ),
-                            )
-                          : TabBarView(
-                              controller: _tabController,
-                              children: List.generate(3, (index) {
-                                final filteredList = _getFilteredUsers(index);
-                                if (filteredList.isEmpty) {
-                                  return Center(
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          Icons.people_outline,
-                                          size: 64,
-                                          color: Colors.grey.shade300,
-                                        ),
-                                        const SizedBox(height: 12),
-                                        Text(
-                                          'Tidak ada data akun dalam kategori ini',
-                                          style: TextStyle(
-                                            color: Colors.grey.shade500,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                }
-
-                                return LayoutBuilder(
-                                  builder: (context, constraints) {
-                                    if (constraints.maxWidth > 800) {
-                                      return _buildDesktopLayout(filteredList);
-                                    }
-                                    return _buildMobileLayout(filteredList);
-                                  },
-                                );
-                              }),
-                            ),
-                    ),
+                    Expanded(child: buildMainContent()),
                   ],
                 ),
               ),
@@ -316,22 +336,7 @@ class _UserManagementScreenState extends State<UserManagementScreen>
         isActive: true,
         onTap: () {},
       ),
-      SidebarNavItem(
-        icon: Icons.edit_note,
-        label: 'Edit Landing Page',
-        onTap: () => Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const LandingEditorScreen()),
-        ),
-      ),
-      SidebarNavItem(
-        icon: Icons.grid_view,
-        label: 'Kelola Menu Shortcut',
-        onTap: () => Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const CustomMenusScreen()),
-        ),
-      ),
+
       SidebarNavItem(
         icon: Icons.rate_review,
         label: 'Saran & Masukan',

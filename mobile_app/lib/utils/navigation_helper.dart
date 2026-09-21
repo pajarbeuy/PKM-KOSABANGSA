@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../widgets/app_sidebar.dart';
+import '../providers/auth_provider.dart';
 import '../screens/home_screen.dart';
 import '../screens/season_screen.dart';
 import '../screens/harvest_screen.dart';
 import '../screens/stock_screen.dart';
-import '../screens/sales_screen.dart';
-import '../screens/buyers_screen.dart';
+import '../screens/processed_products_screen.dart';
 import '../screens/costs_screen.dart';
 import '../screens/reports_screen.dart';
 import '../screens/target_screen.dart';
-import '../screens/chatbot_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/profile_screen.dart';
 import '../screens/feedback_screen.dart';
+import '../screens/super_admin_dashboard_screen.dart';
 
 class NavigationHelper {
   static void navigateTo(BuildContext context, Widget screen) {
@@ -33,6 +34,57 @@ class NavigationHelper {
   }
 
   static List<SidebarNavItem> buildNavItems(BuildContext context, String currentScreen) {
+    final auth = context.read<AuthProvider>();
+    final isSuperAdmin = auth.user?.role == 'super_admin';
+
+    if (isSuperAdmin) {
+      return [
+        SidebarNavItem(
+          icon: Icons.dashboard_rounded,
+          label: 'Dashboard',
+          isActive: currentScreen == 'super_admin_dashboard',
+          onTap: () => navigateTo(context, const SuperAdminDashboardScreen(initialTabIndex: 0)),
+        ),
+        SidebarNavItem(
+          icon: Icons.manage_accounts_rounded,
+          label: 'Kelola Pengguna',
+          isActive: false,
+          onTap: () => navigateTo(context, const SuperAdminDashboardScreen(initialTabIndex: 1)),
+        ),
+        SidebarNavItem(
+          icon: Icons.rate_review_rounded,
+          label: 'Saran & Masukan',
+          isActive: false,
+          onTap: () => navigateTo(context, const SuperAdminDashboardScreen(initialTabIndex: 2)),
+        ),
+        SidebarNavItem(
+          icon: Icons.storefront_rounded,
+          label: 'Pemasaran & Katalog',
+          isActive: currentScreen == 'super_admin_marketing',
+          onTap: () => navigateTo(context, const SuperAdminDashboardScreen(initialTabIndex: 3)),
+        ),
+        SidebarNavItem(
+          icon: Icons.point_of_sale_rounded,
+          label: 'Penjualan Terpusat',
+          isActive: currentScreen == 'sales',
+          onTap: () => navigateTo(context, const SuperAdminDashboardScreen(initialTabIndex: 4)),
+        ),
+        SidebarNavItem(
+          icon: Icons.analytics_rounded,
+          label: 'Laba/Rugi Agregat',
+          isActive: currentScreen == 'super_admin_profit_loss',
+          onTap: () => navigateTo(context, const SuperAdminDashboardScreen(initialTabIndex: 5)),
+        ),
+        SidebarNavItem(
+          icon: Icons.smart_toy_rounded,
+          label: 'TaniBot AI',
+          isActive: currentScreen == 'chatbot',
+          onTap: () => navigateTo(context, const SuperAdminDashboardScreen(initialTabIndex: 6)),
+        ),
+      ];
+    }
+
+    // Farmer Navigation (Produk Olahan included; Penjualan and TaniBot managed centrally by Super Admin)
     return [
       SidebarNavItem(
         icon: Icons.grid_view_rounded,
@@ -75,22 +127,12 @@ class NavigationHelper {
         },
       ),
       SidebarNavItem(
-        icon: Icons.shopping_cart_outlined,
-        label: 'Penjualan',
-        isActive: currentScreen == 'sales',
+        icon: Icons.storefront_outlined,
+        label: 'Produk Olahan',
+        isActive: currentScreen == 'processed_products',
         onTap: () {
-          if (currentScreen != 'sales') {
-            navigateTo(context, const SalesScreen());
-          }
-        },
-      ),
-      SidebarNavItem(
-        icon: Icons.people_alt_outlined,
-        label: 'Data Pembeli',
-        isActive: currentScreen == 'buyers',
-        onTap: () {
-          if (currentScreen != 'buyers') {
-            navigateTo(context, const BuyersScreen());
+          if (currentScreen != 'processed_products') {
+            navigateTo(context, const ProcessedProductsScreen());
           }
         },
       ),
@@ -121,16 +163,6 @@ class NavigationHelper {
         onTap: () {
           if (currentScreen != 'target') {
             navigateTo(context, const TargetScreen());
-          }
-        },
-      ),
-      SidebarNavItem(
-        icon: Icons.smart_toy_outlined,
-        label: 'TaniBot AI',
-        isActive: currentScreen == 'chatbot',
-        onTap: () {
-          if (currentScreen != 'chatbot') {
-            navigateTo(context, const ChatbotScreen());
           }
         },
       ),

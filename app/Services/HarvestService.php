@@ -6,6 +6,7 @@ use App\Models\Harvest;
 use App\Models\Season;
 use App\Models\StockTransaction;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class HarvestService
@@ -42,17 +43,19 @@ class HarvestService
             $dbData['photo'] = 'storage/' . $photoPath;
         }
 
-        $harvest = Harvest::create($dbData);
+        return DB::transaction(function () use ($dbData, $userId) {
+            $harvest = Harvest::create($dbData);
 
-        StockTransaction::addTransaction(
-            'in',
-            $dbData['weight_kg'],
-            'Panen masuk',
-            'harvest_' . $harvest->id,
-            $userId
-        );
+            StockTransaction::addTransaction(
+                'in',
+                $dbData['weight_kg'],
+                'Panen masuk',
+                'harvest_' . $harvest->id,
+                $userId
+            );
 
-        return $harvest;
+            return $harvest;
+        });
     }
 
     /**
@@ -86,21 +89,24 @@ class HarvestService
         }
 
         $oldWeight = $harvest->weight_kg;
-        $harvest->update($dbData);
 
-        // Adjust stock if weight changed
-        if (isset($dbData['weight_kg']) && $oldWeight != $dbData['weight_kg']) {
-            $difference = $dbData['weight_kg'] - $oldWeight;
-            StockTransaction::addTransaction(
-                $difference > 0 ? 'in' : 'out',
-                abs($difference),
-                'Panen diupdate',
-                'harvest_' . $harvest->id,
-                $userId
-            );
-        }
+        return DB::transaction(function () use ($harvest, $dbData, $userId, $oldWeight) {
+            $harvest->update($dbData);
 
-        return $harvest;
+            // Adjust stock if weight changed
+            if (isset($dbData['weight_kg']) && $oldWeight != $dbData['weight_kg']) {
+                $difference = $dbData['weight_kg'] - $oldWeight;
+                StockTransaction::addTransaction(
+                    $difference > 0 ? 'in' : 'out',
+                    abs($difference),
+                    'Panen diupdate',
+                    'harvest_' . $harvest->id,
+                    $userId
+                );
+            }
+
+            return $harvest;
+        });
     }
 
     /**
@@ -108,20 +114,22 @@ class HarvestService
      */
     public function deleteHarvest(Harvest $harvest, int $userId): void
     {
-        $currentBalance = StockTransaction::getCurrentBalance($userId);
+        DB::transaction(function () use ($harvest, $userId) {
+            $currentBalance = StockTransaction::getCurrentBalance($userId);
 
-        if ($harvest->weight_kg > 0 && $currentBalance > 0) {
-            $rollback = min($harvest->weight_kg, $currentBalance);
-            StockTransaction::addTransaction(
-                'out',
-                $rollback,
-                'Panen dihapus (rollback)',
-                'harvest_delete_' . $harvest->id,
-                $userId
-            );
-        }
+            if ($harvest->weight_kg > 0 && $currentBalance > 0) {
+                $rollback = min($harvest->weight_kg, $currentBalance);
+                StockTransaction::addTransaction(
+                    'out',
+                    $rollback,
+                    'Panen dihapus (rollback)',
+                    'harvest_delete_' . $harvest->id,
+                    $userId
+                );
+            }
 
-        $harvest->delete();
+            $harvest->delete();
+        });
     }
 
     /**
@@ -134,8 +142,9 @@ class HarvestService
             'season_id'    => $harvest->season_id,
             'season_name'  => $seasonName ?? $harvest->season?->name ?? 'N/A',
             'harvest_date' => $harvest->date->toDateString(),
-            'weight_kg'    => (int) $harvest->weight_kg,
-            'quantity'     => (int) ($harvest->quantity ?? 0),
+            'date'         => $harvest->date->toDateString(),
+            'weight_kg'    => (float) $harvest->weight_kg,
+            'quantity'     => (float) ($harvest->quantity ?? 0),
             'status'       => $harvest->status,
             'notes'        => $harvest->notes ?? '',
             'photo'        => $harvest->photo ?? '',

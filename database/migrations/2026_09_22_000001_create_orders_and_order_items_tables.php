@@ -1,0 +1,46 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('orders', function (Blueprint $table) {
+            $table->id();
+            $table->string('order_code', 50)->unique()->index();
+            $table->string('customer_name', 255);
+            $table->string('customer_phone', 50);
+            $table->text('customer_address')->nullable();
+            $table->enum('status', ['pending', 'confirmed', 'processing', 'completed', 'cancelled'])->default('pending')->index();
+            $table->decimal('total_amount', 12, 2)->default(0);
+            $table->text('notes')->nullable();
+            $table->timestamps();
+            $table->softDeletes();
+        });
+
+        Schema::create('order_items', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('order_id')->constrained('orders')->cascadeOnDelete();
+            $table->foreignId('processed_product_id')->constrained('processed_products');
+            $table->unsignedInteger('quantity')->default(1);
+            $table->decimal('price_snapshot', 12, 2);
+            $table->decimal('subtotal', 12, 2);
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('order_items');
+        Schema::dropIfExists('orders');
+    }
+};

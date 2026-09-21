@@ -458,7 +458,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 style: TextStyle(fontSize: 14),
               ),
               subtitle: const Text(
-                'Notifikasi tiap kali ada penjualan kentang yang tercatat',
+                'Notifikasi tiap kali ada penjualan hasil panen yang tercatat',
                 style: TextStyle(fontSize: 11),
               ),
               value: _notifyNewSale,

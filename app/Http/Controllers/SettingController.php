@@ -40,7 +40,10 @@ class SettingController extends Controller
     {
         $validated = $request->validate([
             'current_password' => 'required|string',
-            'password'         => 'required|string|min:6|confirmed',
+            'password'         => 'required|string|min:8|confirmed',
+        ], [
+            'password.min'       => 'Password baru minimal 8 karakter.',
+            'password.confirmed' => 'Konfirmasi password baru tidak cocok.',
         ]);
 
         $success = $this->settingService->updatePassword(

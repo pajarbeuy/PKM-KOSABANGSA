@@ -64,7 +64,10 @@ class SuperAdminController extends Controller
             'farm_name' => 'sometimes|required|string|max:255',
             'role'      => 'sometimes|required|in:user,super_admin',
             'status'    => 'sometimes|required|in:active,inactive',
-            'password'  => 'sometimes|string|min:6',
+            'password'  => 'sometimes|nullable|string|min:8|confirmed',
+        ], [
+            'password.min'       => 'Password baru minimal 8 karakter.',
+            'password.confirmed' => 'Konfirmasi password baru tidak cocok.',
         ]);
 
         $updated = $this->superAdminService->updateUser($user, $validated);
@@ -152,5 +155,17 @@ class SuperAdminController extends Controller
     {
         $this->superAdminService->deleteMenu($menu);
         return $this->successResponse(null, 'Menu dashboard berhasil dihapus.');
+    }
+
+    // ─── Aggregate Profit / Loss ──────────────────────────────────────────────────
+
+    public function farmerProfitLossAggregate(Request $request)
+    {
+        $data = $this->superAdminService->getFarmerProfitLossAggregate(
+            $request->input('start_date'),
+            $request->input('end_date')
+        );
+
+        return $this->successResponse($data, 'Agregat laba rugi seluruh petani berhasil diambil.');
     }
 }

@@ -652,7 +652,7 @@ class _StockScreenState extends State<StockScreen> {
                       controller: notesController,
                       decoration: InputDecoration(
                         labelText: 'Keterangan (opsional)',
-                        hintText: 'Misal: Kentang busuk / susut',
+                        hintText: 'Misal: Hasil panen busuk / susut',
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                     ),

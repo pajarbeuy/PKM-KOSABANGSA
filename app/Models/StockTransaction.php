@@ -10,7 +10,16 @@ class StockTransaction extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $fillable = ['user_id', 'type', 'amount', 'notes', 'reference', 'balance_after', 'date'];
+    protected $fillable = [
+        'user_id',
+        'processed_product_id',
+        'type',
+        'amount',
+        'notes',
+        'reference',
+        'balance_after',
+        'date',
+    ];
 
     protected $casts = [
         'date' => 'datetime',
@@ -23,14 +32,43 @@ class StockTransaction extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function processedProduct()
+    {
+        return $this->belongsTo(ProcessedProduct::class, 'processed_product_id');
+    }
+
     public static function getCurrentBalance($userId = null)
     {
-        $query = self::query();
+        // Only calculate raw harvest balance, ignoring processed product records
+        $query = self::whereNull('processed_product_id');
         if ($userId) {
             $query->where('user_id', $userId);
         }
-        $latest = $query->latest('date')->first();
-        return $latest?->balance_after ?? 0;
+        $latest = $query->orderByDesc('date')->orderByDesc('id')->first();
+        return (float) ($latest?->balance_after ?? 0);
+    }
+
+    /**
+     * Record stock transaction audit log for processed product.
+     */
+    public static function recordProcessedProductTransaction(
+        ProcessedProduct $product,
+        string $type,
+        float $amount,
+        ?string $notes = null,
+        ?string $reference = null,
+        ?int $userId = null
+    ): self {
+        return self::create([
+            'user_id'              => $userId ?? $product->owner_id,
+            'processed_product_id' => $product->id,
+            'type'                 => $type,
+            'amount'               => $amount,
+            'notes'                => $notes,
+            'reference'            => $reference,
+            'balance_after'        => (float) $product->stock,
+            'date'                 => now(),
+        ]);
     }
 
     public static function addTransaction($type, $amount, $notes = null, $reference = null, $userId = null)

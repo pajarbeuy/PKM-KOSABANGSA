@@ -9,11 +9,11 @@ import '../widgets/app_theme.dart';
 import '../login_screen.dart';
 import 'super_admin_dashboard_screen.dart';
 import 'user_management_screen.dart';
-import 'landing_editor_screen.dart';
-import 'custom_menus_screen.dart';
+
 
 class FeedbackManagementScreen extends StatefulWidget {
-  const FeedbackManagementScreen({super.key});
+  final bool isEmbedded;
+  const FeedbackManagementScreen({super.key, this.isEmbedded = false});
 
   @override
   State<FeedbackManagementScreen> createState() => _FeedbackManagementScreenState();
@@ -153,7 +153,7 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> wit
     final user = feedback['user'] ?? {};
     final userName = user['name'] ?? 'Petani Anonim';
     final userEmail = user['email'] ?? '-';
-    final farmName = user['farm_name'] ?? 'Pertanian Kentang';
+    final farmName = user['farm_name'] ?? 'Usaha Pertanian';
     final phone = user['phone'] ?? '-';
     final dateStr = feedback['created_at'] ?? '';
     final message = feedback['message'] ?? '';
@@ -361,6 +361,76 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> wit
     final email = auth.user?.email ?? '';
     final initials = name.isNotEmpty ? name[0].toUpperCase() : 'S';
 
+    Widget buildMainContent() {
+      return Column(
+        children: [
+          Material(
+            color: AppTheme.cardBg,
+            child: TabBar(
+              controller: _tabController,
+              labelColor: AppTheme.textPrimary,
+              unselectedLabelColor: AppTheme.textSecondary,
+              indicatorColor: AppTheme.green700,
+              indicatorWeight: 3.0,
+              tabs: const [
+                Tab(text: 'Semua'),
+                Tab(text: 'Belum Dibaca'),
+                Tab(text: 'Sudah Dibaca'),
+              ],
+            ),
+          ),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator(color: AppTheme.green700))
+                : RefreshIndicator(
+                    onRefresh: _fetchFeedbacks,
+                    color: AppTheme.green700,
+                    child: _filteredFeedbacks.isEmpty
+                        ? _buildEmptyState()
+                        : LayoutBuilder(
+                            builder: (context, constraints) {
+                              final isDesktopContent = constraints.maxWidth > 800;
+                              if (isDesktopContent) {
+                                return GridView.builder(
+                                  physics: const AlwaysScrollableScrollPhysics(),
+                                  padding: const EdgeInsets.all(24),
+                                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: constraints.maxWidth > 1200 ? 3 : 2,
+                                    crossAxisSpacing: 16,
+                                    mainAxisSpacing: 16,
+                                    childAspectRatio: 1.5,
+                                  ),
+                                  itemCount: _filteredFeedbacks.length,
+                                  itemBuilder: (context, index) {
+                                    final feedback = _filteredFeedbacks[index];
+                                    return _buildFeedbackCard(feedback);
+                                  },
+                                );
+                              }
+                              return ListView.builder(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                padding: const EdgeInsets.all(16),
+                                itemCount: _filteredFeedbacks.length,
+                                itemBuilder: (context, index) {
+                                  final feedback = _filteredFeedbacks[index];
+                                  return _buildFeedbackCard(feedback);
+                                },
+                              );
+                            },
+                          ),
+                  ),
+          ),
+        ],
+      );
+    }
+
+    if (widget.isEmbedded) {
+      return Scaffold(
+        backgroundColor: Colors.transparent,
+        body: buildMainContent(),
+      );
+    }
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final isDesktop = constraints.maxWidth >= 900;
@@ -403,62 +473,7 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> wit
                         userInitials: initials,
                         onRefresh: _fetchFeedbacks,
                       ),
-                    Material(
-                      color: AppTheme.cardBg,
-                      child: TabBar(
-                        controller: _tabController,
-                        labelColor: AppTheme.textPrimary,
-                        unselectedLabelColor: AppTheme.textSecondary,
-                        indicatorColor: AppTheme.green700,
-                        indicatorWeight: 3.0,
-                        tabs: const [
-                          Tab(text: 'Semua'),
-                          Tab(text: 'Belum Dibaca'),
-                          Tab(text: 'Sudah Dibaca'),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child: _isLoading
-                          ? const Center(child: CircularProgressIndicator(color: AppTheme.green700))
-                          : RefreshIndicator(
-                              onRefresh: _fetchFeedbacks,
-                              color: AppTheme.green700,
-                              child: _filteredFeedbacks.isEmpty
-                                  ? _buildEmptyState()
-                                  : LayoutBuilder(
-                                      builder: (context, constraints) {
-                                        final isDesktopContent = constraints.maxWidth > 800;
-                                        if (isDesktopContent) {
-                                          return GridView.builder(
-                                            physics: const AlwaysScrollableScrollPhysics(),
-                                            padding: const EdgeInsets.all(24),
-                                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                              crossAxisCount: constraints.maxWidth > 1200 ? 3 : 2,
-                                              crossAxisSpacing: 16,
-                                              mainAxisSpacing: 16,
-                                              childAspectRatio: 1.5,
-                                            ),
-                                            itemCount: _filteredFeedbacks.length,
-                                            itemBuilder: (context, index) {
-                                              final feedback = _filteredFeedbacks[index];
-                                              return _buildFeedbackCard(feedback);
-                                            },
-                                          );
-                                        }
-                                        return ListView.builder(
-                                          physics: const AlwaysScrollableScrollPhysics(),
-                                          padding: const EdgeInsets.all(16),
-                                          itemCount: _filteredFeedbacks.length,
-                                          itemBuilder: (context, index) {
-                                            final feedback = _filteredFeedbacks[index];
-                                            return _buildFeedbackCard(feedback);
-                                          },
-                                        );
-                                      },
-                                    ),
-                            ),
-                    ),
+                    Expanded(child: buildMainContent()),
                   ],
                 ),
               ),
@@ -472,7 +487,7 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> wit
   Widget _buildFeedbackCard(dynamic feedback) {
     final user = feedback['user'] ?? {};
     final userName = user['name'] ?? 'Petani Anonim';
-    final farmName = user['farm_name'] ?? 'Pertanian Kentang';
+    final farmName = user['farm_name'] ?? 'Usaha Pertanian';
     final message = feedback['message'] ?? '';
     final isUnread = feedback['status'] == 'unread';
     final dateStr = feedback['created_at'] ?? '';
@@ -708,16 +723,7 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> wit
         label: 'Kelola Pengguna',
         onTap: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const UserManagementScreen())),
       ),
-      SidebarNavItem(
-        icon: Icons.edit_note,
-        label: 'Edit Landing Page',
-        onTap: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LandingEditorScreen())),
-      ),
-      SidebarNavItem(
-        icon: Icons.grid_view,
-        label: 'Kelola Menu Shortcut',
-        onTap: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const CustomMenusScreen())),
-      ),
+
       SidebarNavItem(
         icon: Icons.rate_review,
         label: 'Saran & Masukan',

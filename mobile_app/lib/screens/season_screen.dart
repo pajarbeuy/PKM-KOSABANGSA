@@ -198,7 +198,7 @@ class _SeasonScreenState extends State<SeasonScreen> {
                         ),
                       ),
                     ),
-                    _buildStatusBadge(season.status),
+                    _buildStatusBadge(season.computedStatus),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -254,8 +254,8 @@ class _SeasonScreenState extends State<SeasonScreen> {
   }
 
   Widget _buildDesktopLayout() {
-    final musimAktif = _seasons.where((s) => s.status == 'active').length;
-    final musimSelesai = _seasons.where((s) => s.status == 'completed').length;
+    final musimAktif = _seasons.where((s) => s.computedStatus == 'active').length;
+    final musimSelesai = _seasons.where((s) => s.computedStatus == 'completed').length;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(28),
@@ -376,7 +376,7 @@ class _SeasonScreenState extends State<SeasonScreen> {
                               ),
                               Expanded(
                                 flex: 2,
-                                child: _buildStatusBadge(season.status),
+                                child: _buildStatusBadge(season.computedStatus),
                               ),
                               Expanded(
                                 flex: 2,
@@ -443,9 +443,19 @@ class _SeasonScreenState extends State<SeasonScreen> {
         textColor = const Color(0xFF1E40AF);
         label = 'Selesai';
         break;
-      default:
+      case 'belum_dimulai':
+        bgColor = const Color(0xFFFEF3C7);
+        textColor = const Color(0xFF92400E);
+        label = 'Belum Dimulai';
+        break;
+      case 'cancelled':
         bgColor = const Color(0xFFFEE2E2);
         textColor = const Color(0xFF991B1B);
+        label = 'Dibatalkan';
+        break;
+      default:
+        bgColor = const Color(0xFFF3F4F6);
+        textColor = const Color(0xFF374151);
         label = status;
     }
 
