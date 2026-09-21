@@ -328,7 +328,6 @@ class _HarvestScreenState extends State<HarvestScreen> {
                       children: [
                         _ColHeader(text: 'TANGGAL', flex: 3),
                         _ColHeader(text: 'Musim Tanam', flex: 2),
-                        _ColHeader(text: 'KOMODITAS', flex: 2),
                         _ColHeader(text: 'BERAT (KG)', flex: 2),
                         _ColHeader(text: 'CATATAN', flex: 3),
                         _ColHeader(text: 'AKSI', flex: 2),
@@ -363,17 +362,6 @@ class _HarvestScreenState extends State<HarvestScreen> {
                                 flex: 2,
                                 child:
                                     _HarvestBlokBadge(label: harvest.seasonName),
-                              ),
-                              // KOMODITAS
-                              const Expanded(
-                                flex: 2,
-                                child: Text(
-                                  'Kentang',
-                                  style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppTheme.textPrimary),
-                                ),
                               ),
                               // BERAT (KG)
                               Expanded(

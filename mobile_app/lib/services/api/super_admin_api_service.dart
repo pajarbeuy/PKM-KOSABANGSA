@@ -316,4 +316,33 @@ class SuperAdminApiService {
       return {'success': false, 'message': e.toString()};
     }
   }
+
+  /// Get Aggregate Profit/Loss across all farmers
+  Future<Map<String, dynamic>?> getFarmerProfitLossAggregate({
+    String? startDate,
+    String? endDate,
+  }) async {
+    try {
+      final queryParams = <String, String>{};
+      if (startDate != null && startDate.isNotEmpty) queryParams['start_date'] = startDate;
+      if (endDate != null && endDate.isNotEmpty) queryParams['end_date'] = endDate;
+
+      final uri = Uri.parse('${ApiConfig.baseUrl}/super-admin/reports/farmer-profit-loss-aggregate')
+          .replace(queryParameters: queryParams);
+
+      final response = await http
+          .get(uri, headers: _client.getHeaders())
+          .timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['data'] != null) {
+          return data['data'] as Map<String, dynamic>;
+        }
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
 }

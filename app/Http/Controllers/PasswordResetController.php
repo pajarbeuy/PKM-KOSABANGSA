@@ -92,19 +92,46 @@ class PasswordResetController extends Controller
     public function sendResetLinkEmailApi(Request $request)
     {
         try {
-            $request->validate(['email' => 'required|email']);
+            $request->validate(['email' => 'required|email'], [
+                'email.required' => 'Email wajib diisi.',
+                'email.email'    => 'Format email tidak valid.',
+            ]);
 
-            $status = Password::broker()->sendResetLink(
-                $request->only('email')
-            );
+            $token = null;
+            $user = User::where('email', $request->email)->first();
 
-            if ($status == Password::RESET_LINK_SENT) {
-                return $this->successResponse(null, __($status), 200);
+            if ($user) {
+                // Generate secure reset token via broker
+                $token = Password::broker()->createToken($user);
+
+                // Attempt to dispatch email notification; log any delivery errors gracefully
+                try {
+                    $user->sendPasswordResetNotification($token);
+                } catch (\Throwable $e) {
+                    \Log::error('Gagal mengirim email reset password: ' . $e->getMessage());
+                }
             }
 
-            return $this->errorResponse(__($status), 400);
+            // In local/testing environments with debug enabled, provide token strictly for automated testing/debugging
+            $data = null;
+            if (!app()->isProduction() && config('app.debug') && $token !== null) {
+                $data = [
+                    'email' => $request->email,
+                    'token' => $token,
+                ];
+            }
+
+            // Always return a generic response to prevent email enumeration
+            return $this->successResponse(
+                $data,
+                'Jika email Anda terdaftar di sistem, instruksi reset password telah dikirimkan ke email Anda.',
+                200
+            );
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e->errors());
+        } catch (\Throwable $e) {
+            \Log::error('Error pada sendResetLinkEmailApi: ' . $e->getMessage());
+            return $this->errorResponse('Terjadi kesalahan saat memproses permintaan.', 500);
         }
     }
 
@@ -112,13 +139,16 @@ class PasswordResetController extends Controller
     {
         try {
             $request->validate([
-                'token' => 'required',
-                'email' => 'required|email',
+                'token'    => 'required',
+                'email'    => 'required|email',
                 'password' => 'required|min:8|confirmed',
             ], [
-                'password.required' => 'Password baru harus diisi.',
-                'password.min' => 'Password harus minimal 8 karakter.',
-                'password.confirmed' => 'Password dan konfirmasi password tidak cocok.',
+                'token.required'     => 'Token reset password wajib diisi.',
+                'email.required'     => 'Email wajib diisi.',
+                'email.email'        => 'Format email tidak valid.',
+                'password.required'  => 'Password baru wajib diisi.',
+                'password.min'       => 'Password baru minimal 8 karakter.',
+                'password.confirmed' => 'Konfirmasi password tidak cocok.',
             ]);
 
             $status = Password::broker()->reset(
@@ -135,12 +165,27 @@ class PasswordResetController extends Controller
             );
 
             if ($status == Password::PASSWORD_RESET) {
-                return $this->successResponse(null, __($status), 200);
+                // Explicitly return success without issuing auto-login token
+                return $this->successResponse(
+                    null,
+                    'Password Anda berhasil diperbarui. Silakan login menggunakan password baru.',
+                    200
+                );
             }
 
-            return $this->errorResponse(__($status), 400);
+            $errorMessages = [
+                Password::INVALID_TOKEN   => 'Token reset password tidak valid atau sudah kedaluwarsa.',
+                Password::INVALID_USER    => 'Token reset password tidak valid atau sudah kedaluwarsa.',
+                Password::RESET_THROTTLED => 'Terlalu banyak percobaan reset password. Harap tunggu beberapa saat lagi.',
+            ];
+
+            $message = $errorMessages[$status] ?? 'Gagal mereset password. Silakan minta token reset baru.';
+            return $this->errorResponse($message, 400);
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e->errors());
+        } catch (\Throwable $e) {
+            \Log::error('Error pada resetPasswordApi: ' . $e->getMessage());
+            return $this->errorResponse('Terjadi kesalahan saat mereset password.', 500);
         }
     }
 }

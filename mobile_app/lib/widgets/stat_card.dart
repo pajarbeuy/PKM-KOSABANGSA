@@ -71,7 +71,7 @@ class _StatCardState extends State<StatCard> with SingleTickerProviderStateMixin
         builder: (_, child) {
           return AnimatedContainer(
             duration: const Duration(milliseconds: 180),
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: AppTheme.cardBg,
               borderRadius: AppTheme.card,
@@ -109,19 +109,23 @@ class _StatCardState extends State<StatCard> with SingleTickerProviderStateMixin
                   ),
               ],
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
 
             // Label
             Text(widget.label, style: AppTheme.bodySmall.copyWith(color: AppTheme.textSecondary, fontWeight: FontWeight.w500)),
             const SizedBox(height: 4),
 
             // Value
-            Text(
-              widget.value,
-              style: TextStyle(
-                fontSize: 26, fontWeight: FontWeight.w800,
-                color: widget.valueColor ?? AppTheme.textPrimary,
-                letterSpacing: -0.5,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                widget.value,
+                style: TextStyle(
+                  fontSize: 24, fontWeight: FontWeight.w800,
+                  color: widget.valueColor ?? AppTheme.textPrimary,
+                  letterSpacing: -0.5,
+                ),
               ),
             ),
 

@@ -85,7 +85,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                                     ),
                                     const SizedBox(height: 12),
                                     const Text(
-                                      'Masukan dan saran Anda sangat membantu kami dalam menyempurnakan platform manajemen pertanian kentang ini.',
+                                      'Masukan dan saran Anda sangat membantu kami dalam menyempurnakan platform manajemen pertanian ini.',
                                       style: AppTheme.bodySmall,
                                     ),
                                     const SizedBox(height: 24),

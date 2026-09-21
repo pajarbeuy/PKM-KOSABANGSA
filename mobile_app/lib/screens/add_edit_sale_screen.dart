@@ -504,7 +504,7 @@ class _AddEditSaleScreenState extends State<AddEditSaleScreen> {
                       controller: _quantityController,
                       onChanged: (_) => _updateTotal(),
                       decoration: const InputDecoration(
-                        hintText: 'Masukkan berat kentang...',
+                        hintText: 'Masukkan berat hasil panen...',
                         suffixText: 'kg',
                         border: InputBorder.none,
                         enabledBorder: InputBorder.none,

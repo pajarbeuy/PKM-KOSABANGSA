@@ -57,8 +57,6 @@ class _CostsScreenState extends State<CostsScreen> {
         'seed': 0.0, 
         'fertilizer': 0.0, 
         'pesticide': 0.0, 
-        'equipment': 0.0, 
-        'transport': 0.0,
         'other': 0.0
       };
       
@@ -251,15 +249,13 @@ class _CostsScreenState extends State<CostsScreen> {
         children: [
           const Text('Breakdown per Kategori', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
           const SizedBox(height: 20),
+          _buildProgressBar('Bibit', 'seed'),
+          const SizedBox(height: 16),
           _buildProgressBar('Pupuk', 'fertilizer'),
           const SizedBox(height: 16),
           _buildProgressBar('Pestisida', 'pesticide'),
           const SizedBox(height: 16),
-          _buildProgressBar('Bibit', 'seed'),
-          const SizedBox(height: 16),
-          _buildProgressBar('Peralatan', 'equipment'),
-          const SizedBox(height: 16),
-          _buildProgressBar('Transportasi', 'transport'),
+          _buildProgressBar('Lainnya', 'other'),
         ],
       ),
     );
@@ -530,8 +526,7 @@ class _CostsScreenState extends State<CostsScreen> {
       case 'seed': return const Color(0xFF166534); // Dark Green
       case 'fertilizer': return const Color(0xFF22C55E); // Green
       case 'pesticide': return const Color(0xFFDC2626); // Red
-      case 'equipment': return const Color(0xFF2563EB); // Blue
-      case 'transport': return const Color(0xFFD97706); // Brown/Orange
+      case 'other': return const Color(0xFF6B7280); // Slate Grey
       default: return Colors.grey;
     }
   }
@@ -572,8 +567,6 @@ class _CategoryPill extends StatelessWidget {
       case 'seed': return 'Bibit';
       case 'fertilizer': return 'Pupuk';
       case 'pesticide': return 'Pestisida';
-      case 'equipment': return 'Peralatan';
-      case 'transport': return 'Transportasi';
       default: return 'Lainnya';
     }
   }
@@ -583,9 +576,7 @@ class _CategoryPill extends StatelessWidget {
       case 'seed': return const Color(0xFF166534); // Dark Green
       case 'fertilizer': return const Color(0xFF22C55E); // Green
       case 'pesticide': return const Color(0xFFDC2626); // Red
-      case 'equipment': return const Color(0xFF2563EB); // Blue
-      case 'transport': return const Color(0xFFD97706); // Brown/Orange
-      default: return Colors.grey.shade600;
+      default: return const Color(0xFF6B7280); // Slate Grey
     }
   }
 

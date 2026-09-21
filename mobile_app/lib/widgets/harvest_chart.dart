@@ -521,7 +521,7 @@ class _Tooltip extends StatelessWidget {
                 Container(width: 8, height: 8, decoration: const BoxDecoration(color: Color(0xFF2D6A4F), shape: BoxShape.circle)),
                 const SizedBox(width: 6),
                 Expanded(
-                  child: Text('Panen: ${fmt(point.harvest)} kg${percent0(point.harvest, point.sales)}',
+                  child: Text('Panen: ${fmt(point.harvest)} kg',
                     style: const TextStyle(fontSize: 12, color: Color(0xFF2D6A4F), fontWeight: FontWeight.w600)),
                 ),
               ]),
@@ -530,7 +530,7 @@ class _Tooltip extends StatelessWidget {
                 Container(width: 8, height: 8, decoration: const BoxDecoration(color: Color(0xFFE07C00), shape: BoxShape.circle)),
                 const SizedBox(width: 6),
                 Expanded(
-                  child: Text('Penjualan: ${fmt(point.sales)} kg${percent0(point.sales, point.harvest)}',
+                  child: Text('Penjualan: ${fmt(point.sales)} kg',
                     style: const TextStyle(fontSize: 12, color: Color(0xFFE07C00), fontWeight: FontWeight.w600)),
                 ),
               ]),
@@ -544,14 +544,6 @@ class _Tooltip extends StatelessWidget {
   String fmt(double v) {
     final i = v.round();
     return i.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => '.');
-  }
-
-  String percent0(double value, double other) {
-    if (value == 0 && other == 0) return '';
-    final total = value + other;
-    if (total == 0) return '';
-    final percent = (value / total) * 100;
-    return ' (${percent.toStringAsFixed(1)}%)';
   }
 }
 

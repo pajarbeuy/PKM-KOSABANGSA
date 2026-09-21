@@ -3,8 +3,14 @@ import 'app_theme.dart';
 import '../screens/home_screen.dart';
 import '../screens/harvest_screen.dart';
 import '../screens/stock_screen.dart';
-import '../screens/sales_screen.dart';
+import '../screens/processed_products_screen.dart';
 import '../screens/reports_screen.dart';
+import '../screens/season_screen.dart';
+import '../screens/target_screen.dart';
+import '../screens/costs_screen.dart';
+import '../screens/buyers_screen.dart';
+import '../screens/feedback_screen.dart';
+import '../screens/settings_screen.dart';
 import '../utils/navigation_helper.dart';
 
 class AppBottomNav extends StatelessWidget {
@@ -26,7 +32,7 @@ class AppBottomNav extends StatelessWidget {
         NavigationHelper.navigateTo(context, const StockScreen());
         break;
       case 3:
-        NavigationHelper.navigateTo(context, const SalesScreen());
+        NavigationHelper.navigateTo(context, const ProcessedProductsScreen());
         break;
       case 4:
         NavigationHelper.navigateTo(context, const ReportsScreen());
@@ -75,14 +81,43 @@ class AppBottomNav extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              _buildMoreItem(context, 'Data Pembeli', Icons.people_alt_outlined, 'buyers'),
-              _buildMoreItem(context, 'Biaya Produksi', Icons.attach_money_rounded, 'costs'),
-              _buildMoreItem(context, 'Musim Tanam', Icons.calendar_month_outlined, 'season'),
-              _buildMoreItem(context, 'Target Panen', Icons.track_changes_outlined, 'target'),
+              _buildMoreItem(
+                context,
+                'Musim Tanam',
+                Icons.calendar_month_outlined,
+                () => NavigationHelper.navigateTo(context, const SeasonScreen()),
+              ),
+              _buildMoreItem(
+                context,
+                'Target Panen',
+                Icons.track_changes_outlined,
+                () => NavigationHelper.navigateTo(context, const TargetScreen()),
+              ),
+              _buildMoreItem(
+                context,
+                'Biaya Produksi',
+                Icons.attach_money_rounded,
+                () => NavigationHelper.navigateTo(context, const CostsScreen()),
+              ),
+              _buildMoreItem(
+                context,
+                'Data Pembeli',
+                Icons.people_alt_outlined,
+                () => NavigationHelper.navigateTo(context, const BuyersScreen()),
+              ),
               const Divider(),
-              _buildMoreItem(context, 'Chat Assistant', Icons.chat_bubble_outline_rounded, 'chatbot'),
-              _buildMoreItem(context, 'Feedback', Icons.feedback_outlined, 'feedback'),
-              _buildMoreItem(context, 'Pengaturan', Icons.settings_outlined, 'settings'),
+              _buildMoreItem(
+                context,
+                'Kirim Ulasan',
+                Icons.feedback_outlined,
+                () => NavigationHelper.navigateTo(context, const FeedbackScreen()),
+              ),
+              _buildMoreItem(
+                context,
+                'Pengaturan',
+                Icons.settings_outlined,
+                () => NavigationHelper.navigateTo(context, const SettingsScreen()),
+              ),
             ],
           ),
         ),
@@ -90,7 +125,7 @@ class AppBottomNav extends StatelessWidget {
     );
   }
 
-  Widget _buildMoreItem(BuildContext context, String title, IconData icon, String screenId) {
+  Widget _buildMoreItem(BuildContext context, String title, IconData icon, VoidCallback onTap) {
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
@@ -106,7 +141,7 @@ class AppBottomNav extends StatelessWidget {
       ),
       onTap: () {
         Navigator.pop(context);
-        NavigationHelper.buildNavItems(context, '').firstWhere((element) => element.isActive == false && element.label == title, orElse: () => NavigationHelper.buildSecondaryNavItems(context, '').firstWhere((element) => element.label == title)).onTap();
+        onTap();
       },
     );
   }
@@ -139,8 +174,8 @@ class AppBottomNav extends StatelessWidget {
           label: 'Stok',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.shopping_cart_outlined),
-          label: 'Penjualan',
+          icon: Icon(Icons.storefront_outlined),
+          label: 'Olahan',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.bar_chart_rounded),

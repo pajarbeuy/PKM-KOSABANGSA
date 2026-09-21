@@ -100,23 +100,12 @@ class _LoginScreenState extends State<LoginScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               // Logo
-                              Container(
-                                width: 80,
-                                height: 80,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.1),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                  image: const DecorationImage(
-                                    image: AssetImage('assets/images/logo.jpg'),
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
+                              Image.asset(
+                                'assets/images/logo_nama.png',
+                                width: 140,
+                                height: 140,
+                                fit: BoxFit.contain,
+                                filterQuality: FilterQuality.high,
                               ),
                               const SizedBox(height: 16),
                               // Titles

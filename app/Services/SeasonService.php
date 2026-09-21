@@ -37,12 +37,13 @@ class SeasonService
     public function formatSeason(Season $season): array
     {
         return [
-            'id'         => $season->id,
-            'name'       => $season->name,
-            'start_date' => $season->start_date,
-            'end_date'   => $season->end_date,
-            'status'     => $season->status,
-            'target_kg'  => $season->target_kg,
+            'id'              => $season->id,
+            'name'            => $season->name,
+            'start_date'      => $season->start_date,
+            'end_date'        => $season->end_date,
+            'status'          => $season->status,
+            'computed_status' => $season->computeStatus(),
+            'target_kg'       => $season->target_kg,
         ];
     }
 }

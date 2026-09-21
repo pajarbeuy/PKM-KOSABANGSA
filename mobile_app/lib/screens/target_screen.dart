@@ -155,7 +155,7 @@ class _TargetScreenState extends State<TargetScreen> {
     double total = 0;
     for (var h in _harvests) {
       if (h.seasonId == season.id) {
-        total += h.quantity.toDouble();
+        total += h.weightKg;
       }
     }
     return total;
@@ -209,7 +209,7 @@ class _TargetScreenState extends State<TargetScreen> {
                     if (isDesktop)
                       AppHeader(
                         title: 'Target Panen & Realisasi',
-                        subtitle: 'Pantau pencapaian target produksi pertanian kentang per musim',
+                        subtitle: 'Pantau pencapaian target produksi pertanian per musim',
                         userInitials: initials,
                         onRefresh: _loadData,
                       ),
@@ -271,8 +271,9 @@ class _TargetScreenState extends State<TargetScreen> {
 
     final target = activeSeason.targetKg;
     final actual = _getActualForSeason(activeSeason);
-    final pct = target > 0 ? (actual / target).clamp(0.0, 1.0) : 0.0;
-    final pctString = (pct * 100).toStringAsFixed(1);
+    final progress = target > 0 ? (actual / target).clamp(0.0, 1.0) : 0.0;
+    final achievementPct = target > 0 ? (actual / target) * 100 : 0.0;
+    final pctString = achievementPct.toStringAsFixed(1);
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -354,10 +355,10 @@ class _TargetScreenState extends State<TargetScreen> {
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: LinearProgressIndicator(
-              value: pct,
+              value: progress,
               minHeight: 12,
               backgroundColor: Colors.white.withValues(alpha: 0.2),
-              color: pct >= 1.0 ? Colors.greenAccent : Colors.amberAccent,
+              color: progress >= 1.0 ? Colors.greenAccent : Colors.amberAccent,
             ),
           ),
           const SizedBox(height: 12),
@@ -410,7 +411,8 @@ class _TargetScreenState extends State<TargetScreen> {
         final season = _seasons[index];
         final target = season.targetKg;
         final actual = _getActualForSeason(season);
-        final pct = target > 0 ? (actual / target).clamp(0.0, 1.0) : 0.0;
+        final progress = target > 0 ? (actual / target).clamp(0.0, 1.0) : 0.0;
+        final achievementPct = target > 0 ? (actual / target) * 100 : 0.0;
 
         return Container(
           padding: const EdgeInsets.all(18),
@@ -451,16 +453,16 @@ class _TargetScreenState extends State<TargetScreen> {
               ClipRRect(
                 borderRadius: BorderRadius.circular(4),
                 child: LinearProgressIndicator(
-                  value: pct,
+                  value: progress,
                   minHeight: 8,
                   backgroundColor: AppTheme.cardBorder,
-                  color: pct >= 1.0 ? AppTheme.green500 : AppTheme.amber600,
+                  color: progress >= 1.0 ? AppTheme.green500 : AppTheme.amber600,
                 ),
               ),
               const SizedBox(height: 6),
               Align(
                 alignment: Alignment.centerRight,
-                child: Text('${(pct * 100).toStringAsFixed(1)}%', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: pct >= 1.0 ? AppTheme.green700 : AppTheme.amber600)),
+                child: Text('${achievementPct.toStringAsFixed(1)}%', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: progress >= 1.0 ? AppTheme.green700 : AppTheme.amber600)),
               ),
             ],
           ),

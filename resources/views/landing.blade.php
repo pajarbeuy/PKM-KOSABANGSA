@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SIMHPSK - Pencatatan Pertanian</title>
+    <title>SumberTani berbasis AI - Platform Manajemen & Hilirisasi Pertanian</title>
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Nunito:wght@700;900&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/jpeg" href="{{ asset('images/logo.jpg') }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -21,8 +21,8 @@
                         primary: '#2d6a4f',
                         'primary-dark': '#1b4332',
                         secondary: '#40916c',
-                        surface: '#f2ede3', // Matches Flutter 0xFFF2EDE3
-                        darkbg: '#1E3A2A' // Matches Flutter How It Works
+                        surface: '#f2ede3',
+                        darkbg: '#1E3A2A'
                     }
                 }
             }
@@ -33,51 +33,11 @@
             background-color: #f8faf5;
             overflow-x: hidden;
         }
-        
-        /* Background Blurs */
-        .blur-circle {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(100px);
-            z-index: -1;
-            opacity: 0.6;
-        }
-        
-        .blur-green {
-            background-color: #a3b18a;
-            width: 800px;
-            height: 800px;
-            top: -100px;
-            left: -200px;
-        }
-
-        .blur-yellow {
-            background-color: #e9c46a;
-            width: 700px;
-            height: 700px;
-            bottom: -150px;
-            right: -150px;
-        }
-        
-        .underline-doodle {
-            position: relative;
-            display: inline-block;
-        }
-        .underline-doodle::after {
-            content: '';
-            position: absolute;
-            left: 0;
-            bottom: -2px;
-            width: 100%;
-            height: 8px;
-            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 10" preserveAspectRatio="none"><path d="M0 5 Q 50 10 100 5" stroke="%2340916c" stroke-width="3" fill="none"/></svg>') no-repeat center;
-            background-size: 100% 100%;
-        }
 
         /* Float animation */
         @keyframes float {
             0% { transform: translateY(0px); }
-            50% { transform: translateY(-20px); }
+            50% { transform: translateY(-16px); }
             100% { transform: translateY(0px); }
         }
         .animate-float {
@@ -87,19 +47,19 @@
         /* Heartbeat animation for button */
         @keyframes heartbeat {
             0%, 100% { transform: scale(1); }
-            10%, 30% { transform: scale(1.05); }
-            20% { transform: scale(1.02); }
+            10%, 30% { transform: scale(1.04); }
+            20% { transform: scale(1.01); }
         }
         .animate-heartbeat {
-            animation: heartbeat 2s infinite;
+            animation: heartbeat 2.2s infinite;
         }
 
         /* Flowing Blob animation */
         @keyframes blob {
             0% { transform: translate(0px, 0px) scale(1) rotate(0deg); }
             33% { transform: translate(15vw, -15vh) scale(1.2) rotate(90deg); }
-            66% { transform: translate(-10vw, 15vh) scale(0.8) rotate(180deg); }
-            100% { transform: translate(0px, 0px) scale(1) rotate(270deg); }
+            66% { transform: translate(-20vw, 20vh) scale(0.8) rotate(180deg); }
+            100% { transform: translate(0px, 0px) scale(1) rotate(360deg); }
         }
         .animate-blob {
             animation: blob 20s infinite alternate ease-in-out;
@@ -119,19 +79,18 @@
             background-repeat: no-repeat;
             background-position: center;
         }
-
     </style>
 </head>
-<body class="font-sans antialiased text-gray-800 flex flex-col relative min-h-screen" style="background-image: url('{{ asset('images/bg-pertanian.jpg') }}'); background-size: cover; background-position: center; background-attachment: fixed;">
+<body class="relative min-h-screen text-gray-800 font-sans selection:bg-secondary selection:text-white">
 
     <div id="potato-explosion-container" class="pointer-events-none fixed inset-0 overflow-hidden z-50"></div>
 
-    <!-- Background Overlay for readability -->
+    <!-- Dark Overlay Background Image -->
     <div class="fixed inset-0 z-[-2] bg-black/50"></div>
 
     <!-- Background Animated Elements -->
     <div class="fixed inset-0 z-[-1] w-full h-full overflow-hidden pointer-events-none">
-        <!-- Interactive Cursor Blob (Biscotti) -->
+        <!-- Interactive Cursor Blob -->
         <div id="cursor-blob" class="absolute top-0 left-0 w-[40vw] h-[40vw] -ml-[20vw] -mt-[20vw] rounded-full bg-[#e3cba8]/20 filter blur-[100px] transition-transform duration-[800ms] ease-out will-change-transform"></div>
         
         <!-- Flowing Blobs -->
@@ -140,532 +99,746 @@
         <div class="absolute bottom-[-20%] left-[20%] w-[60vw] h-[60vw] rounded-full bg-[#e3cba8]/20 filter blur-[100px] animate-blob animation-delay-4000"></div>
     </div>
 
-    <!-- Navbar -->
-    <nav class="sticky top-0 backdrop-blur-md bg-[#A39987]/90 border-b border-[#5D3A2F]/50 flex justify-between items-center px-8 py-4 mx-auto w-full z-50">
+    <!-- 1. NAVBAR -->
+    <nav class="sticky top-0 backdrop-blur-md bg-[#A39987]/90 border-b border-[#5D3A2F]/50 px-6 sm:px-8 py-3.5 mx-auto w-full z-50">
         <div class="max-w-7xl mx-auto w-full flex justify-between items-center">
             <!-- Logo -->
-            <div class="flex items-center gap-3">
-                <div class="w-12 h-12 rounded-xl overflow-hidden shadow-inner shadow-black/30 bg-white ring-1 ring-white/20">
-                    <img src="{{ asset('images/logo.jpg') }}" alt="Logo SIMHPSK" class="w-full h-full object-cover">
+            <a href="#beranda" class="flex items-center gap-3 group">
+                <div class="w-11 h-11 rounded-xl overflow-hidden shadow-inner shadow-black/30 bg-white ring-1 ring-white/20 p-1 flex items-center justify-center">
+                    <img src="{{ asset('images/logo.png') }}" alt="Logo SumberTani" class="w-full h-full object-contain">
                 </div>
                 <div>
-                    <h1 class="text-xl font-bold leading-none text-white tracking-tight">SIMHPSK</h1>
-                    <p class="text-[10px] text-white/70 font-semibold tracking-wider uppercase mt-1">Pencatatan Pertanian</p>
+                    <h1 class="text-xl font-bold leading-none text-white tracking-tight group-hover:text-[#e3cba8] transition">SumberTani</h1>
+                    <p class="text-[10px] text-white/75 font-semibold tracking-wider uppercase mt-1">Berbasis AI</p>
                 </div>
+            </a>
+
+            <!-- Desktop Links -->
+            <div class="hidden lg:flex items-center gap-6 text-sm font-semibold text-white/90">
+                <a href="#beranda" class="nav-link hover:text-white transition rounded-full px-3 py-1.5 hover:bg-white/10">Beranda</a>
+                <a href="#fitur" class="nav-link hover:text-white transition rounded-full px-3 py-1.5 hover:bg-white/10">Fitur</a>
+                <a href="#katalog" class="nav-link hover:text-white transition rounded-full px-3 py-1.5 text-[#e3cba8] font-bold hover:bg-white/10">Katalog Produk</a>
+                <a href="#cara-kerja" class="nav-link hover:text-white transition rounded-full px-3 py-1.5 hover:bg-white/10">Cara Kerja</a>
+                <a href="#tentang" class="nav-link hover:text-white transition rounded-full px-3 py-1.5 hover:bg-white/10">Tentang SumberTani</a>
             </div>
 
-            <!-- Links -->
-            <div class="hidden md:flex items-center gap-8 text-sm font-semibold text-white/90">
-                <a href="#fitur" class="nav-link hover:text-white transition rounded-full px-3 py-2 text-white/90">Fitur</a>
-                <a href="#statistik" class="nav-link hover:text-white transition rounded-full px-3 py-2 text-white/90">Statistik</a>
-                <a href="#cara-kerja" class="nav-link hover:text-white transition rounded-full px-3 py-2 text-white/90">Cara Kerja</a>
-                <a href="#ulasan" class="nav-link hover:text-white transition rounded-full px-3 py-2 text-white/90">Ulasan</a>
-                <a href="#tim" class="nav-link hover:text-white transition rounded-full px-3 py-2 text-white/90">Tim</a>
-            </div>
-
-            <!-- Actions -->
-            <div class="flex items-center gap-4">
-                <button onclick="handleAppRouting(event)" class="download-trigger text-sm font-bold text-white bg-primary hover:bg-primary-dark transition px-6 py-2.5 rounded-xl border-2 border-[#391F18] shadow-[4px_4px_0px_0px_#391F18] hover:shadow-[6px_6px_0px_0px_#391F18] hover:-translate-y-1 flex items-center gap-2 animate-heartbeat">
-                    Download Aplikasi
+            <!-- Action Button & Mobile Toggle -->
+            <div class="flex items-center gap-3">
+                <button onclick="handleAppRouting(event)" class="download-trigger text-sm font-bold text-white bg-primary hover:bg-primary-dark transition px-5 py-2.5 rounded-xl border-2 border-[#391F18] shadow-[3px_3px_0px_0px_#391F18] hover:shadow-[5px_5px_0px_0px_#391F18] hover:-translate-y-0.5 flex items-center gap-2">
+                    <span>Masuk Aplikasi</span>
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        <path fill-rule="evenodd" d="M3 3a1 1 0 011 1v12a1 1 0 11-2 0V4a1 1 0 011-1zm7.707 3.293a1 1 0 010 1.414L9.414 9H17a1 1 0 110 2H9.414l1.293 1.293a1 1 0 01-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+
+                <!-- Mobile Hamburger Toggle -->
+                <button id="mobile-menu-button" class="lg:hidden p-2 rounded-xl text-white hover:bg-white/10 transition border border-white/20" aria-label="Buka Menu">
+                    <svg id="hamburger-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                    </svg>
+                    <svg id="close-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6 hidden">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
             </div>
         </div>
+
+        <!-- Mobile Menu Dropdown -->
+        <div id="mobile-menu" class="hidden lg:hidden pt-4 pb-2 border-t border-white/10 mt-3 flex flex-col gap-2 text-sm font-semibold text-white/90">
+            <a href="#beranda" class="mobile-nav-link px-3 py-2 rounded-lg hover:bg-white/10 transition">Beranda</a>
+            <a href="#fitur" class="mobile-nav-link px-3 py-2 rounded-lg hover:bg-white/10 transition">Fitur</a>
+            <a href="#katalog" class="mobile-nav-link px-3 py-2 rounded-lg text-[#e3cba8] font-bold hover:bg-white/10 transition">Katalog Produk</a>
+            <a href="#cara-kerja" class="mobile-nav-link px-3 py-2 rounded-lg hover:bg-white/10 transition">Cara Kerja</a>
+            <a href="#tentang" class="mobile-nav-link px-3 py-2 rounded-lg hover:bg-white/10 transition">Tentang SumberTani</a>
+        </div>
     </nav>
 
-    <!-- 1. HERO SECTION -->
-    <section class="flex flex-col items-center justify-center text-center px-4 z-10 pt-20 pb-24">
+    <!-- 2. HERO SECTION -->
+    <section id="beranda" class="flex flex-col items-center justify-center text-center px-4 z-10 pt-16 pb-24">
         <!-- Badge -->
-        <div class="inline-flex items-center gap-2 bg-green-100/80 backdrop-blur-sm border border-green-200 text-primary-dark px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide mb-8 shadow-sm">
+        <div class="inline-flex items-center gap-2 bg-green-100/90 backdrop-blur-sm border border-green-200 text-primary-dark px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide mb-8 shadow-sm">
             <div class="w-2 h-2 bg-secondary rounded-full animate-pulse"></div>
-            Platform Manajemen Pertanian Digital #1
+            Platform Manajemen Pertanian & Hilirisasi Hasil Tani
         </div>
 
-        <!-- Headline -->
-        <h2 class="text-5xl md:text-6xl font-heading font-extrabold text-[#e3cba8] max-w-4xl leading-[1.15] tracking-tight">
-            Kelola Panen dan Stok Kentang dengan
+        <!-- Headline: Value proposition SumberTani -->
+        <h2 class="text-4xl sm:text-5xl md:text-6xl font-heading font-extrabold text-[#e3cba8] max-w-4xl leading-[1.15] tracking-tight">
+            Kelola Pertanian & Pasarkan Produk Olahan dengan
             <span id="animated-word" class="text-white transition-all duration-500 ease-in-out inline-block">Cerdas</span>
         </h2>
 
         <!-- Subheadline -->
-        <p class="mt-8 text-white/80 font-medium max-w-2xl text-lg leading-relaxed">
-            Sistem Informasi Manajemen Panen dan Stok Kentang yang membantu Anda mengelola usaha pertanian dengan lebih efisien dan menguntungkan.
+        <p class="mt-6 text-white/85 font-medium max-w-2xl text-base sm:text-lg leading-relaxed">
+            <strong class="text-[#e3cba8] font-semibold">SumberTani berbasis AI</strong> membantu petani mengelola musim tanam, mencatat panen, memantau stok, dan memasarkan produk olahan langsung ke pasar secara modern, transparan, dan terintegrasi.
         </p>
 
-        <!-- CTA Buttons -->
-        <div class="flex flex-col sm:flex-row items-center gap-4 mt-12">
-            <button onclick="handleAppRouting(event)" class="download-trigger text-base font-bold text-gray-900 bg-[#e3cba8] hover:bg-white transition-all px-8 py-3.5 rounded-xl border-2 border-[#391F18] shadow-[6px_6px_0px_0px_#391F18] hover:shadow-[8px_8px_0px_0px_#391F18] w-full sm:w-auto justify-center hover:-translate-y-1 animate-heartbeat flex items-center gap-3">
-                Download Aplikasi Android
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+        <!-- CTAs: "Lihat Katalog" & "Masuk Aplikasi" -->
+        <div class="flex flex-col sm:flex-row items-center gap-4 mt-10 w-full sm:w-auto">
+            <!-- CTA 1: Lihat Katalog -->
+            <a href="#katalog" class="text-base font-bold text-[#391F18] bg-[#e3cba8] hover:bg-white transition-all px-8 py-3.5 rounded-xl border-2 border-[#391F18] shadow-[5px_5px_0px_0px_#391F18] hover:shadow-[7px_7px_0px_0px_#391F18] hover:-translate-y-1 flex items-center justify-center gap-2.5 w-full sm:w-auto">
+                <span>Lihat Katalog</span>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
+                </svg>
+            </a>
+
+            <!-- CTA 2: Masuk Aplikasi -->
+            <button onclick="handleAppRouting(event)" class="download-trigger text-base font-bold text-white bg-primary hover:bg-primary-dark transition-all px-8 py-3.5 rounded-xl border-2 border-[#391F18] shadow-[5px_5px_0px_0px_#391F18] hover:shadow-[7px_7px_0px_0px_#391F18] hover:-translate-y-1 flex items-center justify-center gap-2.5 w-full sm:w-auto animate-heartbeat">
+                <span>Masuk Aplikasi</span>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
                 </svg>
             </button>
         </div>
 
         <!-- Features Checklist -->
         <div class="flex flex-wrap items-center justify-center gap-6 mt-8 text-sm font-medium text-[#e3cba8]">
-            <div class="flex items-center gap-2"><span class="text-green-400"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5"><path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clip-rule="evenodd" /></svg></span> Mudah digunakan</div>
-            <div class="flex items-center gap-2"><span class="text-blue-400"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5"><path fill-rule="evenodd" d="M9.315 1.5a.75.75 0 0 0-.44.132l-7.125 5.25a.75.75 0 0 0-.25.809l2.7 8.358A.75.75 0 0 0 4.896 16.5H19.1a.75.75 0 0 0 .696-.451l2.7-8.358a.75.75 0 0 0-.25-.809l-7.125-5.25a.75.75 0 0 0-.44-.132H9.315ZM10.5 5.25v2.25H7.5V9h3v2.25H7.5v1.5h3v2.25h1.5v-2.25h3v-1.5h-3V9h3V7.5h-3V5.25h-1.5Z" clip-rule="evenodd" /></svg></span> Gratis selamanya</div>
-            <div class="flex items-center gap-2"><span class="text-yellow-400"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5"><path fill-rule="evenodd" d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3c0-2.9-2.35-5.25-5.25-5.25Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z" clip-rule="evenodd" /></svg></span> Data aman & terenkripsi</div>
+            <div class="flex items-center gap-2"><span class="text-green-400">✓</span> Terintegrasi AI & Mobile App</div>
+            <div class="flex items-center gap-2"><span class="text-yellow-400">✓</span> Hilirisasi Produk Olahan Tani</div>
+            <div class="flex items-center gap-2"><span class="text-blue-400">✓</span> Penjualan Terpusat & Transparan</div>
         </div>
 
         <!-- Mockup Dashboard -->
-        <div class="mt-20 w-full max-w-4xl bg-white rounded-2xl shadow-[12px_12px_0px_0px_#391F18] border-2 border-[#391F18] p-4 md:p-8 animate-float relative z-10">
+        <div class="mt-16 w-full max-w-4xl bg-white rounded-2xl shadow-[12px_12px_0px_0px_#391F18] border-2 border-[#391F18] p-4 md:p-8 animate-float relative z-10 text-left">
             <!-- Window controls -->
-            <div class="flex items-center gap-2 mb-6">
-                <div class="w-3 h-3 rounded-full bg-red-500"></div>
-                <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
-                <div class="w-3 h-3 rounded-full bg-green-500"></div>
+            <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
+                <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                    <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                    <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                    <span class="text-xs text-gray-500 font-mono ml-2">SumberTani Dashboard v2.0</span>
+                </div>
+                <span class="text-xs bg-green-100 text-green-800 font-bold px-2.5 py-1 rounded-md">Live Real-time</span>
             </div>
             
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                <div class="bg-yellow-50 p-4 rounded-xl border border-yellow-100">
-                    <p class="text-yellow-800 text-xs font-bold mb-1">Stok Gudang</p>
-                    <p class="text-yellow-600 text-xl font-black">4.500 kg</p>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-yellow-50 p-4 rounded-xl border border-yellow-200">
+                    <p class="text-yellow-800 text-xs font-bold mb-1">Stok Panen Mentah</p>
+                    <p class="text-yellow-700 text-xl font-black">4.500 kg</p>
                 </div>
-                <div class="bg-green-50 p-4 rounded-xl border border-green-100">
-                    <p class="text-green-800 text-xs font-bold mb-1">Total Panen</p>
-                    <p class="text-green-600 text-xl font-black">12.400 kg</p>
+                <div class="bg-green-50 p-4 rounded-xl border border-green-200">
+                    <p class="text-green-800 text-xs font-bold mb-1">Total Panen Musim</p>
+                    <p class="text-green-700 text-xl font-black">12.400 kg</p>
                 </div>
-                <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                    <p class="text-blue-800 text-xs font-bold mb-1">Pendapatan</p>
-                    <p class="text-blue-600 text-xl font-black">Rp 74,4 jt</p>
+                <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-200">
+                    <p class="text-emerald-800 text-xs font-bold mb-1">Produk Olahan</p>
+                    <p class="text-emerald-700 text-xl font-black">280 Unit</p>
                 </div>
-                <div class="bg-teal-50 p-4 rounded-xl border border-teal-100">
-                    <p class="text-teal-800 text-xs font-bold mb-1">Est. Untung</p>
-                    <p class="text-teal-600 text-xl font-black">Rp 28,6 jt</p>
+                <div class="bg-teal-50 p-4 rounded-xl border border-teal-200">
+                    <p class="text-teal-800 text-xs font-bold mb-1">Laba Bersih Petani</p>
+                    <p class="text-teal-700 text-xl font-black">Rp 28,6 jt</p>
                 </div>
             </div>
 
             <!-- Chart mockup -->
-            <div class="h-48 border border-gray-100 rounded-xl bg-gray-50 p-4 flex items-end gap-4 justify-between">
-                <div class="w-full bg-green-200 rounded-t-sm" style="height: 60%"></div>
-                <div class="w-full bg-blue-200 rounded-t-sm" style="height: 80%"></div>
-                <div class="w-full bg-green-200 rounded-t-sm" style="height: 45%"></div>
-                <div class="w-full bg-blue-200 rounded-t-sm" style="height: 90%"></div>
-                <div class="w-full bg-green-200 rounded-t-sm" style="height: 70%"></div>
-                <div class="w-full bg-blue-200 rounded-t-sm" style="height: 100%"></div>
+            <div class="h-40 border border-gray-100 rounded-xl bg-gray-50 p-4 flex items-end gap-4 justify-between">
+                <div class="w-full bg-green-300 rounded-t-md hover:bg-green-400 transition" style="height: 60%"></div>
+                <div class="w-full bg-emerald-400 rounded-t-md hover:bg-emerald-500 transition" style="height: 80%"></div>
+                <div class="w-full bg-green-300 rounded-t-md hover:bg-green-400 transition" style="height: 45%"></div>
+                <div class="w-full bg-emerald-400 rounded-t-md hover:bg-emerald-500 transition" style="height: 90%"></div>
+                <div class="w-full bg-green-300 rounded-t-md hover:bg-green-400 transition" style="height: 70%"></div>
+                <div class="w-full bg-emerald-400 rounded-t-md hover:bg-emerald-500 transition" style="height: 100%"></div>
             </div>
         </div>
     </section>
 
-    <!-- 2. STATS SECTION -->
-    <section id="statistik" class="w-full bg-transparent text-white py-16 px-4 relative overflow-hidden">
-        <div class="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 relative z-10">
-            <div class="text-center">
-                <p class="text-4xl font-black text-[#e3cba8] mb-2">1200<span class="text-2xl text-white">+</span></p>
-                <p class="text-sm font-bold uppercase tracking-wider text-white/80 opacity-80">Petani Aktif</p>
-            </div>
-            <div class="text-center">
-                <p class="text-4xl font-black text-[#e3cba8] mb-2">98<span class="text-2xl text-white">%</span></p>
-                <p class="text-sm font-bold uppercase tracking-wider text-white/80 opacity-80">Kepuasan Pengguna</p>
-            </div>
-            <div class="text-center">
-                <p class="text-4xl font-black text-[#e3cba8] mb-2">45<span class="text-2xl text-white"> jt</span></p>
-                <p class="text-sm font-bold uppercase tracking-wider text-white/80 opacity-80">Transaksi Tercatat</p>
-            </div>
-            <div class="text-center">
-                <p class="text-4xl font-black text-[#e3cba8] mb-2">100<span class="text-2xl text-white">%</span></p>
-                <p class="text-sm font-bold uppercase tracking-wider text-white/80 opacity-80">Aman & Terenkripsi</p>
-            </div>
-        </div>
-    </section>
-
-    <!-- 3. FEATURES SECTION -->
-    <section id="fitur" class="w-full bg-transparent py-24 px-4">
+    <!-- 3. FITUR SECTION -->
+    <section id="fitur" class="w-full bg-transparent py-20 px-4">
         <div class="max-w-6xl mx-auto">
             <div class="text-center mb-16">
-                <div class="inline-flex items-center gap-1.5 px-4 py-1.5 bg-green-100 border border-green-200 rounded-full text-xs font-bold text-primary-dark uppercase tracking-wide mb-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4 text-yellow-500"><path fill-rule="evenodd" d="M9 4.5a.75.75 0 0 1 .721.544l.813 2.846a3.75 3.75 0 0 0 2.576 2.576l2.846.813a.75.75 0 0 1 0 1.442l-2.846.813a3.75 3.75 0 0 0-2.576 2.576l-.813 2.846a.75.75 0 0 1-1.442 0l-.813-2.846a3.75 3.75 0 0 0-2.576-2.576l-2.846-.813a.75.75 0 0 1 0-1.442l2.846-.813A3.75 3.75 0 0 0 7.466 7.89l.813-2.846A.75.75 0 0 1 9 4.5ZM18 1.5a.75.75 0 0 1 .728.568l.258 1.036c.236.94.97 1.674 1.91 1.91l1.036.258a.75.75 0 0 1 0 1.456l-1.036.258c-.94.236-1.674.97-1.91 1.91l-.258 1.036a.75.75 0 0 1-1.456 0l-.258-1.036a2.625 2.625 0 0 0-1.91-1.91l-1.036-.258a.75.75 0 0 1 0-1.456l1.036-.258a2.625 2.625 0 0 0 1.91-1.91l.258-1.036A.75.75 0 0 1 18 1.5ZM16.5 15a.75.75 0 0 1 .712.513l.394 1.183c.15.447.5.799.948.948l1.183.395a.75.75 0 0 1 0 1.422l-1.183.395c-.447.15-.799.5-.948.948l-.395 1.183a.75.75 0 0 1-1.422 0l-.395-1.183a1.5 1.5 0 0 0-.948-.948l-1.183-.395a.75.75 0 0 1 0-1.422l1.183-.395c.447-.15.799-.5.948-.948l.395-1.183A.75.75 0 0 1 16.5 15Z" clip-rule="evenodd" /></svg>
-                    Fitur Unggulan
+                <div class="inline-flex items-center gap-1.5 px-4 py-1.5 bg-[#e3cba8] border-2 border-[#391F18] shadow-[2px_2px_0px_0px_#391F18] rounded-full text-xs font-bold text-[#391F18] uppercase tracking-wide mb-4">
+                    Fitur Unggulan Platform
                 </div>
-                <h2 class="text-4xl font-heading font-black text-[#e3cba8]">Semua Yang Anda Butuhkan</h2>
+                <h2 class="text-4xl md:text-5xl font-heading font-black text-[#e3cba8]">Solusi Digital Komprehensif</h2>
+                <p class="mt-3 text-white/80 max-w-xl mx-auto text-base">
+                    Enam pilar utama yang menopang efisiensi operasional petani dan kesuksesan pemasaran hasil tani.
+                </p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Feature 1 -->
-                <div class="bg-white p-6 rounded-2xl border-2 border-[#391F18] shadow-[4px_4px_0px_0px_#391F18] hover:shadow-[8px_8px_0px_0px_#391F18] hover:-translate-y-2 transition-all">
+                <!-- 1. Manajemen Musim Tanam -->
+                <div class="bg-white p-6 rounded-2xl border-2 border-[#391F18] shadow-[4px_4px_0px_0px_#391F18] hover:shadow-[8px_8px_0px_0px_#391F18] hover:-translate-y-1.5 transition-all">
                     <div class="w-12 h-12 bg-[#e3cba8]/20 text-[#3b2319] flex items-center justify-center rounded-xl mb-4">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M11.35 3.836c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m8.9-4.414c.376.023.75.05 1.124.08 1.131.094 1.976 1.057 1.976 2.192V16.5A2.25 2.25 0 0 1 18 18.75h-2.25m-7.5-10.5H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V18.75m-7.5-10.5h6.375c.621 0 1.125.504 1.125 1.125v9.375m-8.25-3 1.5 1.5 3-3.75" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75Z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Manajemen Musim Tanam</h3>
+                    <p class="text-gray-600 text-sm leading-relaxed">Rencanakan dan pantau seluruh siklus tanam, varietas bibit, dan perkiraan tanggal panen secara terjadwal dan terdata rapi.</p>
+                </div>
+
+                <!-- 2. Pencatatan Panen -->
+                <div class="bg-white p-6 rounded-2xl border-2 border-[#391F18] shadow-[4px_4px_0px_0px_#391F18] hover:shadow-[8px_8px_0px_0px_#391F18] hover:-translate-y-1.5 transition-all">
+                    <div class="w-12 h-12 bg-[#e3cba8]/20 text-[#3b2319] flex items-center justify-center rounded-xl mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
                         </svg>
                     </div>
                     <h3 class="text-xl font-bold text-gray-800 mb-2">Pencatatan Panen</h3>
-                    <p class="text-gray-500 text-sm leading-relaxed">Catat setiap hasil panen lengkap dengan foto, berat, dan keterangan blok kebun.</p>
+                    <p class="text-gray-600 text-sm leading-relaxed">Rekam hasil panen secara presisi lengkap dengan bukti foto dokumentasi, berat timbangan (kg), serta catatan blok kebun.</p>
                 </div>
-                <!-- Feature 2 -->
-                <div class="bg-white p-6 rounded-2xl border-2 border-[#391F18] shadow-[4px_4px_0px_0px_#391F18] hover:shadow-[8px_8px_0px_0px_#391F18] hover:-translate-y-2 transition-all">
+
+                <!-- 3. Manajemen Stok -->
+                <div class="bg-white p-6 rounded-2xl border-2 border-[#391F18] shadow-[4px_4px_0px_0px_#391F18] hover:shadow-[8px_8px_0px_0px_#391F18] hover:-translate-y-1.5 transition-all">
                     <div class="w-12 h-12 bg-[#e3cba8]/20 text-[#3b2319] flex items-center justify-center rounded-xl mb-4">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="m21 7.5-9-5.25L3 7.5m18 0-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m21 7.5-9-5.25L3 7.5m18 0-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
                         </svg>
                     </div>
                     <h3 class="text-xl font-bold text-gray-800 mb-2">Manajemen Stok</h3>
-                    <p class="text-gray-500 text-sm leading-relaxed">Pantau stok gudang secara real-time dengan notifikasi batas minimum otomatis.</p>
+                    <p class="text-gray-600 text-sm leading-relaxed">Pantau ketersediaan gudang komoditas mentah dan stok olahan secara real-time dengan audit mutasi keluar/masuk yang akurat.</p>
                 </div>
-                <!-- Feature 3 -->
-                <div class="bg-white p-6 rounded-2xl border-2 border-[#391F18] shadow-[4px_4px_0px_0px_#391F18] hover:shadow-[8px_8px_0px_0px_#391F18] hover:-translate-y-2 transition-all">
+
+                <!-- 4. Produk Olahan -->
+                <div class="bg-white p-6 rounded-2xl border-2 border-[#391F18] shadow-[4px_4px_0px_0px_#391F18] hover:shadow-[8px_8px_0px_0px_#391F18] hover:-translate-y-1.5 transition-all">
                     <div class="w-12 h-12 bg-[#e3cba8]/20 text-[#3b2319] flex items-center justify-center rounded-xl mb-4">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 0 1-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm3 0h.008v.008H18V10.5Zm-12 0h.008v.008H6V10.5Z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 0 1 .75-.75h3a.75.75 0 0 1 .75.75V21m-4.5 0H2.36m11.14 0H18m0 0h5.25M3.75 3h16.5A1.5 1.5 0 0 1 21.75 4.5v12.75a1.5 1.5 0 0 1-1.5 1.5H3.75a1.5 1.5 0 0 1-1.5-1.5V4.5A1.5 1.5 0 0 1 3.75 3Z" />
                         </svg>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-800 mb-2">Laporan Keuangan</h3>
-                    <p class="text-gray-500 text-sm leading-relaxed">Hitung pendapatan, biaya produksi, dan estimasi untung-rugi per musim tanam.</p>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Produk Olahan</h3>
+                    <p class="text-gray-600 text-sm leading-relaxed">Daftarkan produk hilirisasi bernilai tambah tinggi lengkap dengan foto, penetapan harga jual, dan kontrol stok milik petani.</p>
                 </div>
-                <!-- Feature 4 -->
-                <div class="bg-white p-6 rounded-2xl border-2 border-[#391F18] shadow-[4px_4px_0px_0px_#391F18] hover:shadow-[8px_8px_0px_0px_#391F18] hover:-translate-y-2 transition-all">
+
+                <!-- 5. Penjualan & Pemasaran -->
+                <div class="bg-white p-6 rounded-2xl border-2 border-[#391F18] shadow-[4px_4px_0px_0px_#391F18] hover:shadow-[8px_8px_0px_0px_#391F18] hover:-translate-y-1.5 transition-all">
                     <div class="w-12 h-12 bg-[#e3cba8]/20 text-[#3b2319] flex items-center justify-center rounded-xl mb-4">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
                         </svg>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-800 mb-2">Manajemen Penjualan</h3>
-                    <p class="text-gray-500 text-sm leading-relaxed">Kelola transaksi penjualan dan data pembeli dalam satu platform terpadu.</p>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Penjualan & Pemasaran</h3>
+                    <p class="text-gray-600 text-sm leading-relaxed">Pemasaran terpusat oleh Super Admin melalui katalog publik daring dan konfirmasi transaksi cepat melalui WhatsApp.</p>
                 </div>
-                <!-- Feature 5 -->
-                <div class="bg-white p-6 rounded-2xl border-2 border-[#391F18] shadow-[4px_4px_0px_0px_#391F18] hover:shadow-[8px_8px_0px_0px_#391F18] hover:-translate-y-2 transition-all">
+
+                <!-- 6. Laporan & Analitik -->
+                <div class="bg-white p-6 rounded-2xl border-2 border-[#391F18] shadow-[4px_4px_0px_0px_#391F18] hover:shadow-[8px_8px_0px_0px_#391F18] hover:-translate-y-1.5 transition-all">
                     <div class="w-12 h-12 bg-[#e3cba8]/20 text-[#3b2319] flex items-center justify-center rounded-xl mb-4">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
                         </svg>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-800 mb-2">Analitik & Grafik</h3>
-                    <p class="text-gray-500 text-sm leading-relaxed">Visualisasi data panen dan penjualan dengan grafik interaktif yang mudah dipahami.</p>
-                </div>
-                <!-- Feature 6 -->
-                <div class="bg-white p-6 rounded-2xl border-2 border-[#391F18] shadow-[4px_4px_0px_0px_#391F18] hover:shadow-[8px_8px_0px_0px_#391F18] hover:-translate-y-2 transition-all">
-                    <div class="w-12 h-12 bg-[#e3cba8]/20 text-[#3b2319] flex items-center justify-center rounded-xl mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75Z" />
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-800 mb-2">Musim Tanam</h3>
-                    <p class="text-gray-500 text-sm leading-relaxed">Atur dan pantau setiap periode musim tanam dengan riwayat lengkap.</p>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Laporan & Analitik</h3>
+                    <p class="text-gray-600 text-sm leading-relaxed">Kalkulasi otomatis pendapatan, rincian biaya produksi, dan laporan untung-rugi transparan per siklus tanam.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- 4. HOW IT WORKS SECTION -->
-    <section id="cara-kerja" class="w-full bg-transparent py-24 px-4 text-white relative">
-        <div class="max-w-4xl mx-auto">
+    <!-- 4. KATALOG PRODUK OLAHAN SECTION -->
+    <section id="katalog" class="w-full bg-transparent py-20 px-4 text-white relative">
+        <div class="max-w-6xl mx-auto">
             <div class="text-center mb-16">
                 <div class="inline-block px-4 py-1.5 bg-[#e3cba8] border-2 border-[#391F18] shadow-[2px_2px_0px_0px_#391F18] rounded-full text-xs font-bold text-[#391F18] uppercase tracking-wide mb-4">
-                    Cara Kerja
+                    Katalog Produk Olahan Tani
                 </div>
-                <h2 class="text-4xl font-heading font-black text-[#e3cba8]">Hanya 4 Langkah Mudah</h2>
+                <h2 class="text-4xl md:text-5xl font-heading font-black text-[#e3cba8]">Produk Unggulan Petani Lokal</h2>
+                <p class="mt-3 text-white/80 max-w-2xl mx-auto text-base">
+                    Dukung petani lokal dengan menikmati aneka produk olahan hasil tani berkualitas tinggi. Pesan cepat dan mudah via WhatsApp resmi Super Admin.
+                </p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 relative">
+            @if(isset($products) && count($products) > 0)
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                    @foreach($products as $product)
+                        @php
+                            $isOutOfStock = $product->status === 'out_of_stock' || $product->stock <= 0;
+                            $cleanPhone = preg_replace('/[^0-9]/', '', $superAdminPhone ?? '6281234567890');
+                            if (str_starts_with($cleanPhone, '0')) {
+                                $cleanPhone = '62' . substr($cleanPhone, 1);
+                            }
+                            $waMessage = "Halo Admin SumberTani, saya tertarik untuk memesan produk olahan: " . $product->name . " (Rp " . number_format($product->price, 0, ',', '.') . "). Mohon info ketersediaan stok dan proses pemesanannya. Terima kasih!";
+                            $waUrl = "https://wa.me/" . $cleanPhone . "?text=" . urlencode($waMessage);
+                        @endphp
+                        <div class="bg-white rounded-2xl border-2 border-[#391F18] shadow-[6px_6px_0px_0px_#391F18] overflow-hidden flex flex-col justify-between hover:-translate-y-1 transition-all duration-300 group text-left">
+                            <!-- Foto Produk -->
+                            <div class="relative w-full h-52 bg-[#e3cba8]/20 overflow-hidden flex items-center justify-center border-b-2 border-[#391F18]">
+                                @if($product->photo)
+                                    <img src="{{ asset('storage/' . ltrim($product->photo, '/')) }}" alt="{{ $product->name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                                @elseif($product->photo_url)
+                                    <img src="{{ $product->photo_url }}" alt="{{ $product->name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                                @else
+                                    <div class="flex flex-col items-center justify-center text-[#5D3A2F]/60 gap-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-14">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
+                                        </svg>
+                                        <span class="text-xs font-bold uppercase tracking-wider">Foto Produk</span>
+                                    </div>
+                                @endif
 
+                                <!-- Status Badge -->
+                                <div class="absolute top-3 right-3">
+                                    @if($isOutOfStock)
+                                        <span class="inline-flex items-center gap-1.5 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
+                                            <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+                                            Stok Habis
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center gap-1.5 bg-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
+                                            <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+                                            Tersedia ({{ $product->stock }})
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
 
-                <div class="relative z-10 text-center">
-                    <div class="w-20 h-20 mx-auto bg-[#e3cba8] border-2 border-[#391F18] shadow-[4px_4px_0px_0px_#391F18] rounded-full flex items-center justify-center text-[#391F18] mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-8">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-                        </svg>
-                    </div>
-                    <p class="text-[#e3cba8] font-black text-xl mb-1">01</p>
-                    <h3 class="font-bold text-lg mb-2 text-white">Daftar & Masuk</h3>
-                    <p class="text-white/70 font-medium text-sm">Buat akun gratis dalam hitungan menit.</p>
+                            <!-- Detail Konten -->
+                            <div class="p-6 flex-1 flex flex-col justify-between">
+                                <div>
+                                    <!-- Petani -->
+                                    <div class="flex items-center justify-between text-xs text-gray-500 mb-1.5">
+                                        <span class="font-bold text-primary flex items-center gap-1">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5">
+                                                <path fill-rule="evenodd" d="M10 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm-7 9a7 7 0 1 1 14 0H3Z" clip-rule="evenodd" />
+                                            </svg>
+                                            Petani: {{ $product->owner?->farm_name ?? $product->owner?->name ?? 'Mitra Petani' }}
+                                        </span>
+                                        <!-- Stok -->
+                                        <span class="font-semibold text-gray-600 bg-gray-100 px-2 py-0.5 rounded">
+                                            Stok: {{ $product->stock }} unit
+                                        </span>
+                                    </div>
+
+                                    <!-- Nama Produk -->
+                                    <h3 class="text-xl font-bold text-gray-900 leading-snug mb-2 group-hover:text-primary transition-colors">
+                                        {{ $product->name }}
+                                    </h3>
+
+                                    <!-- Deskripsi -->
+                                    <p class="text-gray-600 text-sm line-clamp-2 mb-4">
+                                        {{ $product->description ?: 'Produk olahan hasil tani bermutu tinggi dari petani binaan SumberTani.' }}
+                                    </p>
+                                </div>
+
+                                <div class="pt-4 border-t border-gray-100 flex items-center justify-between mt-auto">
+                                    <!-- Harga -->
+                                    <div>
+                                        <span class="text-[11px] text-gray-400 block font-medium uppercase">Harga</span>
+                                        <span class="text-lg font-extrabold text-[#2d6a4f]">
+                                            Rp {{ number_format($product->price, 0, ',', '.') }}
+                                        </span>
+                                    </div>
+
+                                    <!-- Pesan via WhatsApp -->
+                                    @if($isOutOfStock)
+                                        <button disabled class="cursor-not-allowed bg-gray-100 text-gray-400 text-xs font-bold px-4 py-2.5 rounded-xl border border-gray-300 flex items-center gap-1.5">
+                                            <span>Stok Habis</span>
+                                        </button>
+                                    @else
+                                        <a href="{{ $waUrl }}" target="_blank" rel="noopener noreferrer" onclick="event.preventDefault(); openOrderModal({{ $product->id }}, '{{ addslashes($product->name) }}', {{ (float) $product->price }}, {{ (int) $product->stock }}, '{{ addslashes($product->owner?->farm_name ?? $product->owner?->name ?? 'Mitra Petani') }}');" class="inline-flex items-center gap-2 bg-[#25D366] hover:bg-[#20ba59] text-white text-xs font-bold px-4 py-2.5 rounded-xl border-2 border-[#1E3A2A] shadow-[2px_2px_0px_0px_#1E3A2A] hover:shadow-[4px_4px_0px_0px_#1E3A2A] hover:-translate-y-0.5 transition-all">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="size-4 fill-current" viewBox="0 0 24 24">
+                                                <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.275.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824zm-3.423-14.416c-6.627 0-12 5.373-12 12 0 2.159.57 4.187 1.564 5.946l-1.662 6.075 6.221-1.632c1.701.928 3.652 1.459 5.727 1.459 6.627 0 12-5.373 12-12 0-6.627-5.373-12-12-12z"/>
+                                            </svg>
+                                            <span>Pesan via WhatsApp</span>
+                                        </a>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
                 </div>
-                <div class="relative z-10 text-center">
-                    <div class="w-20 h-20 mx-auto bg-[#e3cba8] border-2 border-[#391F18] shadow-[4px_4px_0px_0px_#391F18] rounded-full flex items-center justify-center text-[#391F18] mb-4">
+            @else
+                <div class="bg-white/10 backdrop-blur-md rounded-2xl border-2 border-[#e3cba8]/30 p-12 text-center max-w-xl mx-auto">
+                    <div class="w-16 h-16 mx-auto bg-[#e3cba8]/20 rounded-full flex items-center justify-center text-[#e3cba8] mb-4">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-8">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
                         </svg>
                     </div>
-                    <p class="text-[#e3cba8] font-black text-xl mb-1">02</p>
-                    <h3 class="font-bold text-lg mb-2 text-white">Atur Musim Tanam</h3>
-                    <p class="text-white/70 font-medium text-sm">Tentukan periode dan blok kebun Anda.</p>
+                    <h3 class="text-xl font-bold text-white mb-2">Katalog Sedang Dipersiapkan</h3>
+                    <p class="text-white/70 text-sm leading-relaxed">
+                        Mitra petani kami sedang memproses hasil olahan terbaik. Segera hadir ragam produk olahan bermutu tinggi dari petani binaan SumberTani.
+                    </p>
                 </div>
-                <div class="relative z-10 text-center">
-                    <div class="w-20 h-20 mx-auto bg-[#e3cba8] border-2 border-[#391F18] shadow-[4px_4px_0px_0px_#391F18] rounded-full flex items-center justify-center text-[#391F18] mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-8">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
-                        </svg>
-                    </div>
-                    <p class="text-[#e3cba8] font-black text-xl mb-1">03</p>
-                    <h3 class="font-bold text-lg mb-2 text-white">Catat Aktivitas</h3>
-                    <p class="text-white/70 font-medium text-sm">Rekam panen, transaksi, dan pengeluaran.</p>
+            @endif
+
+            <!-- Tracking Bar Pelacakan Pesanan Pelanggan -->
+            <div class="mt-14 max-w-2xl mx-auto bg-[#391F18]/80 backdrop-blur-md border-2 border-[#e3cba8]/40 rounded-2xl p-6 shadow-xl text-center">
+                <div class="inline-flex items-center gap-2 text-xs font-bold text-[#e3cba8] uppercase tracking-wider mb-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="size-4 text-[#e3cba8]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    Lacak Pesanan Publik
                 </div>
-                <div class="relative z-10 text-center">
-                    <div class="w-20 h-20 mx-auto bg-[#e3cba8] border-2 border-[#391F18] shadow-[4px_4px_0px_0px_#391F18] rounded-full flex items-center justify-center text-[#391F18] mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-8">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" />
-                        </svg>
+                <h3 class="text-lg font-bold text-white mb-2">Sudah Memesan? Cek Status Pesanan Anda</h3>
+                <p class="text-white/70 text-xs mb-4">Masukkan kode pesanan Anda (contoh: <span class="font-mono text-[#e3cba8]">ORD-20260922-XXXX</span>) untuk melihat progres pemrosesan pesanan.</p>
+                <form onsubmit="event.preventDefault(); trackOrderFromInput();" class="flex flex-col sm:flex-row gap-2 max-w-lg mx-auto">
+                    <input type="text" id="landing-tracking-input" placeholder="Masukkan Kode Pesanan..." required class="flex-1 px-4 py-2.5 rounded-xl bg-white/10 border border-[#e3cba8]/40 text-white placeholder-white/40 focus:outline-none focus:border-[#e3cba8] text-sm font-mono uppercase">
+                    <button type="submit" class="px-6 py-2.5 bg-[#e3cba8] hover:bg-white text-[#391F18] font-bold rounded-xl text-sm transition-all shadow-[2px_2px_0px_0px_#000]">
+                        Lacak Status
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. CARA KERJA SECTION -->
+    <section id="cara-kerja" class="w-full bg-transparent py-20 px-4 text-white relative">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-16">
+                <div class="inline-block px-4 py-1.5 bg-[#e3cba8] border-2 border-[#391F18] shadow-[2px_2px_0px_0px_#391F18] rounded-full text-xs font-bold text-[#391F18] uppercase tracking-wide mb-4">
+                    Alur & Mekanisme Sistem
+                </div>
+                <h2 class="text-4xl md:text-5xl font-heading font-black text-[#e3cba8]">Cara Kerja Ekosistem SumberTani</h2>
+                <p class="mt-3 text-white/80 max-w-2xl mx-auto text-base">
+                    Alur hilirisasi terintegrasi: dari hasil keringat petani hingga pesanan terkonfirmasi dan stok terpotong secara transparan.
+                </p>
+            </div>
+
+            <!-- Workflow Pipeline Grid (8 Langkah Terstruktur) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 relative text-left">
+                <!-- Step 1: Petani -->
+                <div class="bg-white/95 text-gray-900 rounded-2xl border-2 border-[#391F18] shadow-[4px_4px_0px_0px_#391F18] p-5 flex flex-col justify-between hover:-translate-y-1 transition-all">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-800 font-extrabold text-sm flex items-center justify-center">01</span>
+                            <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">Hulu</span>
+                        </div>
+                        <h4 class="text-lg font-bold text-gray-900 mb-1.5">Petani</h4>
+                        <p class="text-gray-600 text-xs leading-relaxed">
+                            Mitra petani membudidayakan lahan dan mencatat hasil panen komoditas unggulan di aplikasi.
+                        </p>
                     </div>
-                    <p class="text-[#e3cba8] font-black text-xl mb-1">04</p>
-                    <h3 class="font-bold text-lg mb-2 text-white">Analisis & Tumbuh</h3>
-                    <p class="text-white/70 font-medium text-sm">Gunakan laporan untuk keputusan cerdas.</p>
+                    <div class="mt-4 pt-3 border-t border-gray-100 flex items-center text-xs text-gray-400 font-semibold gap-1">
+                        <span>Lanjut ke Olahan</span> ➔
+                    </div>
+                </div>
+
+                <!-- Step 2: Produk Olahan -->
+                <div class="bg-white/95 text-gray-900 rounded-2xl border-2 border-[#391F18] shadow-[4px_4px_0px_0px_#391F18] p-5 flex flex-col justify-between hover:-translate-y-1 transition-all">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-800 font-extrabold text-sm flex items-center justify-center">02</span>
+                            <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">Hilirisasi</span>
+                        </div>
+                        <h4 class="text-lg font-bold text-gray-900 mb-1.5">Produk Olahan</h4>
+                        <p class="text-gray-600 text-xs leading-relaxed">
+                            Petani mengolah panen mentah menjadi produk bernilai tambah dan mendaftarkannya lengkap dengan foto & stok awal.
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-gray-100 flex items-center text-xs text-gray-400 font-semibold gap-1">
+                        <span>Publikasi Etalase</span> ➔
+                    </div>
+                </div>
+
+                <!-- Step 3: Katalog Publik -->
+                <div class="bg-white/95 text-gray-900 rounded-2xl border-2 border-[#391F18] shadow-[4px_4px_0px_0px_#391F18] p-5 flex flex-col justify-between hover:-translate-y-1 transition-all">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-800 font-extrabold text-sm flex items-center justify-center">03</span>
+                            <span class="text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">Showcase</span>
+                        </div>
+                        <h4 class="text-lg font-bold text-gray-900 mb-1.5">Katalog Publik</h4>
+                        <p class="text-gray-600 text-xs leading-relaxed">
+                            Produk olahan petani otomatis tampil di etalase web secara publik untuk menjangkau pangsa pasar luas.
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-gray-100 flex items-center text-xs text-gray-400 font-semibold gap-1">
+                        <span>Dilihat Pasar</span> ➔
+                    </div>
+                </div>
+
+                <!-- Step 4: Customer -->
+                <div class="bg-white/95 text-gray-900 rounded-2xl border-2 border-[#391F18] shadow-[4px_4px_0px_0px_#391F18] p-5 flex flex-col justify-between hover:-translate-y-1 transition-all">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-800 font-extrabold text-sm flex items-center justify-center">04</span>
+                            <span class="text-xs font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded">Pasar</span>
+                        </div>
+                        <h4 class="text-lg font-bold text-gray-900 mb-1.5">Customer</h4>
+                        <p class="text-gray-600 text-xs leading-relaxed">
+                            Calon pembeli menelusuri katalog, mengecek harga serta stok aktual, lalu memilih produk olahan yang diminati.
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-gray-100 flex items-center text-xs text-gray-400 font-semibold gap-1">
+                        <span>Kirim Order</span> ➔
+                    </div>
+                </div>
+
+                <!-- Step 5: WhatsApp -->
+                <div class="bg-white/95 text-gray-900 rounded-2xl border-2 border-[#391F18] shadow-[4px_4px_0px_0px_#391F18] p-5 flex flex-col justify-between hover:-translate-y-1 transition-all">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="w-8 h-8 rounded-lg bg-green-100 text-green-800 font-extrabold text-sm flex items-center justify-center">05</span>
+                            <span class="text-xs font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded">Chat Order</span>
+                        </div>
+                        <h4 class="text-lg font-bold text-gray-900 mb-1.5">WhatsApp</h4>
+                        <p class="text-gray-600 text-xs leading-relaxed">
+                            Customer mengirim *order request* via WhatsApp resmi dengan format pesan nama produk dan estimasi harga otomatis.
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-gray-100 flex items-center text-xs text-gray-400 font-semibold gap-1">
+                        <span>Diterima Admin</span> ➔
+                    </div>
+                </div>
+
+                <!-- Step 6: Super Admin -->
+                <div class="bg-white/95 text-gray-900 rounded-2xl border-2 border-[#391F18] shadow-[4px_4px_0px_0px_#391F18] p-5 flex flex-col justify-between hover:-translate-y-1 transition-all">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="w-8 h-8 rounded-lg bg-amber-100 text-amber-800 font-extrabold text-sm flex items-center justify-center">06</span>
+                            <span class="text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded">Verifikasi</span>
+                        </div>
+                        <h4 class="text-lg font-bold text-gray-900 mb-1.5">Super Admin</h4>
+                        <p class="text-gray-600 text-xs leading-relaxed">
+                            Super Admin memvalidasi ketersediaan stok produk petani, menentukan biaya ongkir, dan mengonfirmasi bukti bayar.
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-gray-100 flex items-center text-xs text-gray-400 font-semibold gap-1">
+                        <span>Pencatatan Riil</span> ➔
+                    </div>
+                </div>
+
+                <!-- Step 7: Penjualan -->
+                <div class="bg-white/95 text-gray-900 rounded-2xl border-2 border-[#391F18] shadow-[4px_4px_0px_0px_#391F18] p-5 flex flex-col justify-between hover:-translate-y-1 transition-all">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="w-8 h-8 rounded-lg bg-blue-100 text-blue-800 font-extrabold text-sm flex items-center justify-center">07</span>
+                            <span class="text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">Transaksi</span>
+                        </div>
+                        <h4 class="text-lg font-bold text-gray-900 mb-1.5">Penjualan</h4>
+                        <p class="text-gray-600 text-xs leading-relaxed">
+                            Super Admin mencatat transaksi penjualan resmi di aplikasi atas nama petani pemilik agar laba tercatat akurat.
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-gray-100 flex items-center text-xs text-gray-400 font-semibold gap-1">
+                        <span>Sinkronisasi</span> ➔
+                    </div>
+                </div>
+
+                <!-- Step 8: Stock Update -->
+                <div class="bg-white/95 text-gray-900 rounded-2xl border-2 border-[#391F18] shadow-[4px_4px_0px_0px_#391F18] p-5 flex flex-col justify-between hover:-translate-y-1 transition-all">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="w-8 h-8 rounded-lg bg-teal-100 text-teal-800 font-extrabold text-sm flex items-center justify-center">08</span>
+                            <span class="text-xs font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded">Otomatis</span>
+                        </div>
+                        <h4 class="text-lg font-bold text-gray-900 mb-1.5">Stock Update</h4>
+                        <p class="text-gray-600 text-xs leading-relaxed">
+                            Saldo stok produk olahan otomatis berkurang dan tercatat dalam riwayat mutasi. Status beralih otomatis saat habis.
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-gray-100 flex items-center text-xs text-teal-600 font-bold gap-1">
+                        <span>Selesai & Sinkron ✓</span>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- 5. TESTIMONIALS SECTION -->
-    <section id="ulasan" class="w-full bg-transparent py-24 px-4">
+    <!-- 6. TENTANG / MANFAAT SECTION -->
+    <section id="tentang" class="w-full bg-transparent py-20 px-4">
         <div class="max-w-6xl mx-auto">
             <div class="text-center mb-16">
                 <div class="inline-flex items-center gap-1.5 px-4 py-1.5 bg-yellow-100 border border-yellow-200 rounded-full text-xs font-bold text-yellow-800 uppercase tracking-wide mb-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4 text-yellow-500"><path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" /></svg>
-                    Ulasan Pengguna
+                    Tentang & Manfaat Platform
                 </div>
-                <h2 class="text-4xl font-heading font-black text-[#e3cba8]">Kata Mereka</h2>
+                <h2 class="text-4xl md:text-5xl font-heading font-black text-[#e3cba8]">Manfaat Nyata Bagi Seluruh Pihak</h2>
+                <p class="mt-3 text-white/80 max-w-2xl mx-auto text-base">
+                    SumberTani berbasis AI hadir menciptakan ekosistem pertanian yang saling menguntungkan antara petani, pengelola, dan konsumen.
+                </p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="bg-white p-6 rounded-2xl border-2 border-[#391F18] shadow-[4px_4px_0px_0px_#391F18] hover:-translate-y-1 transition-all">
-                    <div class="flex text-yellow-400 mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4"><path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" /></svg>
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4"><path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" /></svg>
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4"><path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" /></svg>
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4"><path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" /></svg>
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4"><path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" /></svg>
-                    </div>
-                    <p class="text-gray-600 italic text-sm mb-6 leading-relaxed">"Aplikasi ini luar biasa mudah digunakan! Sekarang saya bisa pantau stok dan untung-rugi dengan mudah dari HP."</p>
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5"><path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clip-rule="evenodd" /></svg>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 text-left">
+                <!-- 1. Untuk Petani -->
+                <div class="bg-white rounded-3xl border-2 border-[#391F18] shadow-[6px_6px_0px_0px_#391F18] p-8 flex flex-col justify-between hover:-translate-y-1 transition-all">
+                    <div>
+                        <div class="w-14 h-14 bg-emerald-100 text-emerald-800 rounded-2xl flex items-center justify-center mb-6 shadow-inner">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="size-7">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                            </svg>
                         </div>
-                        <div>
-                            <p class="font-bold text-gray-800 text-sm">Pak Budi Santoso</p>
-                            <p class="text-xs text-gray-500">Pangalengan, Jawa Barat</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white p-6 rounded-2xl border-2 border-[#391F18] shadow-[4px_4px_0px_0px_#391F18] hover:-translate-y-1 transition-all">
-                    <div class="flex text-yellow-400 mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4"><path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" /></svg>
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4"><path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" /></svg>
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4"><path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" /></svg>
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4"><path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" /></svg>
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4"><path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" /></svg>
-                    </div>
-                    <p class="text-gray-600 italic text-sm mb-6 leading-relaxed">"Sangat membantu untuk mencatat hasil panen. Tulisannya besar dan jelas, cocok untuk saya yang sudah tua."</p>
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center text-pink-600">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5"><path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clip-rule="evenodd" /></svg>
-                        </div>
-                        <div>
-                            <p class="font-bold text-gray-800 text-sm">Bu Sari Dewi</p>
-                            <p class="text-xs text-gray-500">Dieng, Jawa Tengah</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-white p-6 rounded-2xl border-2 border-[#391F18] shadow-[4px_4px_0px_0px_#391F18] hover:-translate-y-1 transition-all">
-                    <div class="flex text-yellow-400 mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4"><path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" /></svg>
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4"><path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" /></svg>
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4"><path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" /></svg>
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4"><path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" /></svg>
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4"><path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" /></svg>
-                    </div>
-                    <p class="text-gray-600 italic text-sm mb-6 leading-relaxed">"Laporan keuangannya sangat detail. Saya jadi tahu persis berapa untung setiap musim panen."</p>
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center text-green-600">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5"><path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clip-rule="evenodd" /></svg>
-                        </div>
-                        <div>
-                            <p class="font-bold text-gray-800 text-sm">Pak Bambang Susilo</p>
-                            <p class="text-xs text-gray-500">Magelang</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- 6. TIM DEVELOPER SECTION -->
-    <section id="tim" class="w-full bg-transparent py-24 px-4 text-white relative">
-        <div class="max-w-6xl mx-auto">
-            <!-- Header Section -->
-            <div class="flex items-center gap-4 mb-4">
-                <div class="w-12 h-[2px] bg-[#e3cba8]"></div>
-                <p class="text-[#e3cba8] font-bold text-sm tracking-widest uppercase">// ANGGOTA.TIM</p>
-            </div>
-            
-            <h2 class="text-5xl md:text-7xl font-heading font-black mb-6 tracking-tight">
-                TIM <span class="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-[#e3cba8] drop-shadow-[0_0_15px_rgba(251,191,36,0.3)]">DEVELOPER</span>
-            </h2>
-            
-            <p class="text-white/70 max-w-xl text-lg mb-12">
-                Lima spesialis yang berkolaborasi membangun produk digital berperforma tinggi.
-            </p>
-            
-            <div class="w-full h-[1px] bg-[#e3cba8]/30 mb-20"></div>
-
-            <div class="flex flex-col gap-32">
-                <!-- Team Member 1 (Text Left, Image Right) -->
-                <div class="flex flex-col md:flex-row items-center justify-between gap-12">
-                    <div class="md:w-1/2">
-                        <div class="flex items-center gap-3 mb-6">
-                            <div class="bg-[#e3cba8] text-[#391F18] font-bold text-xs px-2 py-1 rounded">&lt; /&gt;</div>
-                            <p class="text-[#e3cba8] font-bold text-sm tracking-widest uppercase">PROJECT MANAGER</p>
-                        </div>
-                        <h3 class="text-4xl md:text-5xl font-black text-white mb-6 leading-tight uppercase">NOSA PUTRA</h3>
-                        <p class="text-white/70 text-lg leading-relaxed">
-                            Bertanggung jawab atas koordinasi tim dan memastikan proyek berjalan lancar dan selesai tepat waktu dengan kualitas terbaik.
+                        <h3 class="text-2xl font-black text-gray-900 mb-3">Untuk Petani</h3>
+                        <p class="text-gray-600 text-sm mb-6 leading-relaxed">
+                            Fokus pada budidaya dan peningkatan mutu hasil panen tanpa beban repot memasarkan sendiri ke konsumen eceran.
                         </p>
+                        
+                        <ul class="space-y-3 text-sm text-gray-700">
+                            <li class="flex items-start gap-2.5">
+                                <span class="text-emerald-600 font-bold">✓</span>
+                                <span><strong>Kepemilikan Stok Penuh:</strong> Produk olahan tetap 100% milik petani (<code class="text-xs bg-gray-100 px-1 py-0.5 rounded text-gray-700">owner_id</code>).</span>
+                            </li>
+                            <li class="flex items-start gap-2.5">
+                                <span class="text-emerald-600 font-bold">✓</span>
+                                <span><strong>Pencatatan Keuangan Rapi:</strong> Pantau biaya modal, hasil panen, dan laba-rugi per musim secara transparan.</span>
+                            </li>
+                            <li class="flex items-start gap-2.5">
+                                <span class="text-emerald-600 font-bold">✓</span>
+                                <span><strong>Nilai Tambah Hasil Tani:</strong> Hilirisasi komoditas mentah menjadi olahan dengan keuntungan lebih tinggi.</span>
+                            </li>
+                        </ul>
                     </div>
-                    <div class="md:w-1/2 flex justify-center md:justify-end">
-                        <div class="relative w-72 h-72 md:w-96 md:h-96 rounded-full p-2" style="background: linear-gradient(135deg, rgba(227,203,168,0.5) 0%, rgba(227,203,168,0.1) 100%);">
-                            <div class="w-full h-full rounded-full overflow-hidden border-[4px] border-[#e3cba8]/50 bg-black">
-                                <img src="{{ asset('images/nosa-putra.png') }}" alt="Nosa Putra" class="w-full h-full object-cover grayscale opacity-90 hover:grayscale-0 hover:opacity-100 transition duration-700">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Team Member 2 (Image Left, Text Right) -->
-                <div class="flex flex-col md:flex-row-reverse items-center justify-between gap-12">
-                    <div class="md:w-1/2">
-                        <div class="flex items-center gap-3 mb-6">
-                            <div class="bg-[#e3cba8] text-[#391F18] font-bold text-xs px-2 py-1 rounded">&lt; /&gt;</div>
-                        <p class="text-[#e3cba8] font-bold text-sm tracking-widest uppercase">FRONTEND DEVELOPER 2</p>
-                        </div>
-                        <h3 class="text-4xl md:text-5xl font-black text-white mb-6 leading-tight uppercase">NAUFAL FAUZAN AZMII</h3>
-                        <p class="text-white/70 text-lg leading-relaxed">
-                           Bertanggung jawab dalam merancang dan mengembangkan antarmuka pengguna (UI) website agar responsif, menarik, dan mudah digunakan. Mengimplementasikan desain ke dalam kode, memastikan kompatibilitas di berbagai perangkat, serta berkolaborasi dengan tim backend untuk mengintegrasikan API dan fungsionalitas aplikasi.
-                        </p>
-                    </div>
-                    <div class="md:w-1/2 flex justify-center md:justify-start">
-                        <div class="relative w-72 h-72 md:w-96 md:h-96 rounded-full p-2" style="background: linear-gradient(135deg, rgba(227,203,168,0.5) 0%, rgba(227,203,168,0.1) 100%);">
-                            <div class="w-full h-full rounded-full overflow-hidden border-[4px] border-[#e3cba8]/50 bg-black">
-                                <img src="{{ asset('images/naufal.jpg') }}" alt="Naufal Fauzan Azmi" class="w-full h-full object-cover grayscale opacity-90 hover:grayscale-0 hover:opacity-100 transition duration-700">
-                            </div>
-                        </div>
+                    <div class="mt-8 pt-4 border-t border-gray-100 text-xs font-semibold text-emerald-700">
+                        Pemberdayaan Petani Mandiri
                     </div>
                 </div>
 
-                <!-- Team Member 3 (Text Left, Image Right) -->
-                <div class="flex flex-col md:flex-row items-center justify-between gap-12">
-                    <div class="md:w-1/2">
-                        <div class="flex items-center gap-3 mb-6">
-                            <div class="bg-[#e3cba8] text-[#391F18] font-bold text-xs px-2 py-1 rounded">&lt; /&gt;</div>
-                            <p class="text-[#e3cba8] font-bold text-sm tracking-widest uppercase">FRONTEND DEVELOPER 1</p>
+                <!-- 2. Untuk Super Admin -->
+                <div class="bg-white rounded-3xl border-2 border-[#391F18] shadow-[6px_6px_0px_0px_#391F18] p-8 flex flex-col justify-between hover:-translate-y-1 transition-all">
+                    <div>
+                        <div class="w-14 h-14 bg-amber-100 text-amber-800 rounded-2xl flex items-center justify-center mb-6 shadow-inner">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="size-7">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 1 0 7.5 7.5h-7.5V6Z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0 0 13.5 3v7.5Z" />
+                            </svg>
                         </div>
-                        <h3 class="text-4xl md:text-5xl font-black text-white mb-6 leading-tight uppercase">ANGGRAENI GHEA SAPUTRI</h3>
-                        <p class="text-white/70 text-lg leading-relaxed">
-                            Membantu Frontend Developer 2 dalam mengembangkan antarmuka aplikasi, mengimplementasikan desain ke dalam kode, serta memastikan tampilan dan fungsionalitas berjalan sesuai kebutuhan proyek.
+                        <h3 class="text-2xl font-black text-gray-900 mb-3">Untuk Super Admin</h3>
+                        <p class="text-gray-600 text-sm mb-6 leading-relaxed">
+                            Pusat kendali operasional pemasaran, verifikasi transaksi, dan pengawasan inventori seluruh mitra tani.
                         </p>
+                        
+                        <ul class="space-y-3 text-sm text-gray-700">
+                            <li class="flex items-start gap-2.5">
+                                <span class="text-amber-600 font-bold">✓</span>
+                                <span><strong>Sentralisasi Penjualan:</strong> Proses transaksi terverifikasi dan hindari duplikasi inventori.</span>
+                            </li>
+                            <li class="flex items-start gap-2.5">
+                                <span class="text-amber-600 font-bold">✓</span>
+                                <span><strong>Asisten AI Operasional:</strong> Didukung Chatbot AI khusus untuk ringkasan pemasaran dan analisis stok.</span>
+                            </li>
+                            <li class="flex items-start gap-2.5">
+                                <span class="text-amber-600 font-bold">✓</span>
+                                <span><strong>Laporan Agregat Akurat:</strong> Pantau performa laba rugi gabungan seluruh kelompok tani binaan.</span>
+                            </li>
+                        </ul>
                     </div>
-                    <div class="md:w-1/2 flex justify-center md:justify-end">
-                        <div class="relative w-72 h-72 md:w-96 md:h-96 rounded-full p-2" style="background: linear-gradient(135deg, rgba(227,203,168,0.5) 0%, rgba(227,203,168,0.1) 100%);">
-                            <div class="w-full h-full rounded-full overflow-hidden border-[4px] border-[#e3cba8]/50 bg-black">
-                                <img src="{{ asset('images/ghea.jpg') }}" alt="Anggraeni Ghea Saputri" class="w-full h-full object-cover grayscale opacity-90 hover:grayscale-0 hover:opacity-100 transition duration-700">
-                            </div>
-                        </div>
+                    <div class="mt-8 pt-4 border-t border-gray-100 text-xs font-semibold text-amber-700">
+                        Manajemen Profesional & Terintegrasi
                     </div>
                 </div>
 
-                <!-- Team Member 4 (Image Left, Text Right) -->
-                <div class="flex flex-col md:flex-row-reverse items-center justify-between gap-12">
-                    <div class="md:w-1/2">
-                        <div class="flex items-center gap-3 mb-6">
-                            <div class="bg-[#e3cba8] text-[#391F18] font-bold text-xs px-2 py-1 rounded">&lt; /&gt;</div>
-                            <p class="text-[#e3cba8] font-bold text-sm tracking-widest uppercase">BACKEND DEVELOPER</p>
+                <!-- 3. Untuk Customer -->
+                <div class="bg-white rounded-3xl border-2 border-[#391F18] shadow-[6px_6px_0px_0px_#391F18] p-8 flex flex-col justify-between hover:-translate-y-1 transition-all">
+                    <div>
+                        <div class="w-14 h-14 bg-teal-100 text-teal-800 rounded-2xl flex items-center justify-center mb-6 shadow-inner">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="size-7">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.356-1.993 1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 0 1-1.12-1.243l1.264-12A1.125 1.125 0 0 1 5.513 7.5h12.974c.576 0 1.059.435 1.119 1.007ZM8.625 10.5a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm7.5 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+                            </svg>
                         </div>
-                        <h3 class="text-4xl md:text-5xl font-black text-white mb-6 leading-tight uppercase">ADI MAULANA</h3>
-                        <p class="text-white/70 text-lg leading-relaxed">
-                           Bertanggung jawab dalam mengembangkan logika sistem, mengelola database, membuat serta mengintegrasikan API, dan memastikan seluruh proses backend berjalan dengan baik.
+                        <h3 class="text-2xl font-black text-gray-900 mb-3">Untuk Customer</h3>
+                        <p class="text-gray-600 text-sm mb-6 leading-relaxed">
+                            Mendapatkan produk olahan bermutu langsung dari sumber aslinya dengan proses pemesanan yang praktis.
                         </p>
+                        
+                        <ul class="space-y-3 text-sm text-gray-700">
+                            <li class="flex items-start gap-2.5">
+                                <span class="text-teal-600 font-bold">✓</span>
+                                <span><strong>Kualitas Asli & Higienis:</strong> Produk olahan segar hasil hilirisasi tangan petani binaan terpercaya.</span>
+                            </li>
+                            <li class="flex items-start gap-2.5">
+                                <span class="text-teal-600 font-bold">✓</span>
+                                <span><strong>Pesan Cepat via WhatsApp:</strong> Pesan instan tanpa perlu repot mengunduh aplikasi atau membuat akun baru.</span>
+                            </li>
+                            <li class="flex items-start gap-2.5">
+                                <span class="text-teal-600 font-bold">✓</span>
+                                <span><strong>Kepastian Stok Aktual:</strong> Informasi ketersediaan unit terupdate secara langsung dari sistem.</span>
+                            </li>
+                        </ul>
                     </div>
-                    <div class="md:w-1/2 flex justify-center md:justify-start">
-                        <div class="relative w-72 h-72 md:w-96 md:h-96 rounded-full p-2" style="background: linear-gradient(135deg, rgba(227,203,168,0.5) 0%, rgba(227,203,168,0.1) 100%);">
-                            <div class="w-full h-full rounded-full overflow-hidden border-[4px] border-[#e3cba8]/50 bg-black">
-                                <img src="{{ asset('images/adi.jpg') }}" alt="Adi Maulana" class="w-full h-full object-cover grayscale opacity-90 hover:grayscale-0 hover:opacity-100 transition duration-700">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Team Member 5 (Text Left, Image Right) -->
-                <div class="flex flex-col md:flex-row items-center justify-between gap-12">
-                    <div class="md:w-1/2">
-                        <div class="flex items-center gap-3 mb-6">
-                            <div class="bg-[#e3cba8] text-[#391F18] font-bold text-xs px-2 py-1 rounded">&lt; /&gt;</div>
-                            <p class="text-[#e3cba8] font-bold text-sm tracking-widest uppercase">QA & TESTER</p>
-                        </div>
-                        <h3 class="text-4xl md:text-5xl font-black text-white mb-6 leading-tight uppercase">ALDY SOFYAN SUNANDAR</h3>
-                        <p class="text-white/70 text-lg leading-relaxed">
-                           Bertanggung jawab melakukan pengujian aplikasi, menyusun skenario dan test case, mengidentifikasi serta mendokumentasikan bug, serta memastikan aplikasi memenuhi standar kualitas sebelum digunakan.
-                        </p>
-                    </div>
-                    <div class="md:w-1/2 flex justify-center md:justify-end">
-                        <div class="relative w-72 h-72 md:w-96 md:h-96 rounded-full p-2" style="background: linear-gradient(135deg, rgba(227,203,168,0.5) 0%, rgba(227,203,168,0.1) 100%);">
-                            <div class="w-full h-full rounded-full overflow-hidden border-[4px] border-[#e3cba8]/50 bg-black">
-                                <img src="{{ asset('images/aldi.jpg') }}" alt="Aldy Sofyan Sunandar" class="w-full h-full object-cover grayscale opacity-90 hover:grayscale-0 hover:opacity-100 transition duration-700">
-                            </div>
-                        </div>
+                    <div class="mt-8 pt-4 border-t border-gray-100 text-xs font-semibold text-teal-700">
+                        Belanja Praktis & Berdayakan Petani
                     </div>
                 </div>
             </div>
-            
         </div>
     </section>
 
     <!-- 7. CTA SECTION -->
-    <section class="w-full bg-transparent py-24 px-4">
+    <section class="w-full bg-transparent py-20 px-4">
         <div class="max-w-4xl mx-auto bg-[#895A42] rounded-3xl border-2 border-[#391F18] p-10 md:p-16 text-center text-white shadow-[12px_12px_0px_0px_#391F18] relative overflow-hidden">
             <!-- Decorative circle -->
             <div class="absolute top-[-50px] right-[-50px] w-64 h-64 bg-white/10 rounded-full blur-2xl"></div>
             <div class="absolute bottom-[-50px] left-[-50px] w-64 h-64 bg-[#e3cba8]/20 rounded-full blur-2xl"></div>
             
-            <h2 class="text-4xl md:text-5xl font-heading font-black mb-6 relative z-10">Siap Mengelola Panen Anda?</h2>
-            <p class="text-white/90 mb-10 max-w-2xl mx-auto relative z-10 font-medium">Unduh aplikasinya sekarang dan bergabung dengan ribuan petani lain yang sudah mengoptimalkan hasil panen mereka.</p>
+            <span class="inline-block px-4 py-1.5 bg-[#e3cba8] text-[#391F18] rounded-full text-xs font-bold uppercase tracking-wide mb-4 shadow-sm relative z-10">
+                Mulai Sekarang
+            </span>
+            <h2 class="text-4xl md:text-5xl font-heading font-black mb-6 relative z-10">Temukan Produk Olahan Hasil Tani</h2>
+            <p class="text-white/90 mb-10 max-w-2xl mx-auto relative z-10 font-medium text-base sm:text-lg">
+                Jelajahi ragam produk olahan binaan petani lokal kami atau masuk ke aplikasi untuk mulai mendigitalkan pencatatan dan hilirisasi usaha pertanian Anda.
+            </p>
             
-            <button onclick="handleAppRouting()" class="relative z-10 text-[#391F18] font-bold bg-[#e3cba8] hover:bg-white transition px-10 py-4 rounded-xl border-2 border-[#391F18] shadow-[6px_6px_0px_0px_#391F18] hover:shadow-[8px_8px_0px_0px_#391F18] hover:-translate-y-1 text-lg flex items-center gap-2 mx-auto animate-heartbeat">
-                Download Aplikasi Android
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
-                </svg>
-            </button>
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 relative z-10">
+                <a href="#katalog" class="text-base font-bold text-[#391F18] bg-[#e3cba8] hover:bg-white transition-all px-8 py-3.5 rounded-xl border-2 border-[#391F18] shadow-[5px_5px_0px_0px_#391F18] hover:shadow-[7px_7px_0px_0px_#391F18] hover:-translate-y-1 flex items-center justify-center gap-2 w-full sm:w-auto">
+                    <span>Lihat Katalog Produk</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
+                    </svg>
+                </a>
+                <button onclick="handleAppRouting(event)" class="download-trigger text-base font-bold text-white bg-primary hover:bg-primary-dark transition px-8 py-3.5 rounded-xl border-2 border-[#391F18] shadow-[5px_5px_0px_0px_#391F18] hover:shadow-[7px_7px_0px_0px_#391F18] hover:-translate-y-1 flex items-center justify-center gap-2 w-full sm:w-auto animate-heartbeat">
+                    <span>Masuk Aplikasi</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
+                    </svg>
+                </button>
+            </div>
             
             <div class="flex flex-wrap items-center justify-center gap-6 mt-8 text-sm font-medium text-[#e3cba8] relative z-10">
-                <div class="flex items-center gap-2"><span>✓</span> Tanpa kartu kredit</div>
-                <div class="flex items-center gap-2"><span>✓</span> Setup 5 menit</div>
-                <div class="flex items-center gap-2"><span>✓</span> Support 7 hari</div>
+                <div class="flex items-center gap-2"><span>✓</span> Terhubung WhatsApp</div>
+                <div class="flex items-center gap-2"><span>✓</span> Bebas Biaya Pendaftaran</div>
+                <div class="flex items-center gap-2"><span>✓</span> Binaan Petani Terpercaya</div>
             </div>
         </div>
     </section>
 
-    <!-- FOOTER -->
+    <!-- 8. FOOTER -->
     <footer class="backdrop-blur-md bg-[#A39987]/90 border-t border-[#5D3A2F]/50 py-12 px-4 text-white">
         <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
             <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-lg overflow-hidden bg-white ring-1 ring-white/10">
-                    <img src="{{ asset('images/logo.jpg') }}" alt="SIMHPSK" class="w-full h-full object-cover">
+                <div class="w-9 h-9 rounded-xl overflow-hidden bg-white ring-1 ring-white/10 p-1 flex items-center justify-center">
+                    <img src="{{ asset('images/logo.png') }}" alt="SumberTani" class="w-full h-full object-contain">
                 </div>
-                <span class="font-bold text-white tracking-tight">SIMHPSK</span>
+                <div>
+                    <span class="font-bold text-white text-base tracking-tight block">SumberTani berbasis AI</span>
+                    <span class="text-[11px] text-white/70 block">Platform Manajemen & Hilirisasi Pertanian</span>
+                </div>
             </div>
             
-            <div class="flex items-center gap-6 text-sm text-white/90 font-medium">
-                <a href="#fitur" class="hover:text-white">Fitur</a>
-                <a href="#cara-kerja" class="hover:text-white">Cara Kerja</a>
-                <a href="#ulasan" class="hover:text-white">Ulasan</a>
-                <a href="#tim" class="hover:text-white">Tim</a>
+            <div class="flex flex-wrap items-center justify-center gap-6 text-sm text-white/90 font-medium">
+                <a href="#beranda" class="hover:text-white transition">Beranda</a>
+                <a href="#fitur" class="hover:text-white transition">Fitur</a>
+                <a href="#katalog" class="hover:text-white transition">Katalog Produk</a>
+                <a href="#cara-kerja" class="hover:text-white transition">Cara Kerja</a>
+                <a href="#tentang" class="hover:text-white transition">Tentang SumberTani</a>
             </div>
             
-            <div class="text-sm text-white/70">
-                © 2026 SIMHPSK. All rights reserved.
+            <div class="text-xs text-white/70 text-center md:text-right">
+                © 2026 SumberTani berbasis AI. All rights reserved.
             </div>
         </div>
     </footer>
 
-    <!-- Script for Deep Linking & Animations -->
+    <!-- Scripts: App Routing, Particle Explosions, Smooth Scrolling, & Animations -->
     <script>
-        // Deep Linking
+        // Mobile Menu Toggle
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const hamburgerIcon = document.getElementById('hamburger-icon');
+        const closeIcon = document.getElementById('close-icon');
+
+        if (mobileMenuButton && mobileMenu) {
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+                hamburgerIcon.classList.toggle('hidden');
+                closeIcon.classList.toggle('hidden');
+            });
+
+            // Auto close mobile menu on click link
+            document.querySelectorAll('.mobile-nav-link').forEach(link => {
+                link.addEventListener('click', () => {
+                    mobileMenu.classList.add('hidden');
+                    hamburgerIcon.classList.remove('hidden');
+                    closeIcon.classList.add('hidden');
+                });
+            });
+        }
+
+        // Deep Linking / App Routing
         function handleAppRouting(event) {
             triggerPotatoExplosion(event);
 
-            var appScheme = "simhpsk://open";
-            var downloadUrl = "/download/simhpsk.apk";
+            var appScheme = "sumbertani://open";
+            var downloadUrl = "/download/sumbertani.apk";
 
             window.location.href = appScheme;
 
@@ -678,15 +851,13 @@
             const container = document.getElementById('potato-explosion-container');
             if (!container) return;
 
-            const explosionEmoji = '💥';
+            const explosionEmoji = '🥔';
 
             const targetButton = event?.currentTarget || event?.target.closest('button');
             const buttonRect = targetButton?.getBoundingClientRect();
             const originX = buttonRect ? buttonRect.left + buttonRect.width / 2 : window.innerWidth / 2;
             const originY = buttonRect ? buttonRect.top + buttonRect.height / 2 : window.innerHeight / 2;
 
-            const footer = document.querySelector('footer');
-            const footerRect = footer ? footer.getBoundingClientRect() : { left: window.innerWidth / 2, top: window.innerHeight, width: 0, height: 0 };
             const count = 8;
 
             for (let i = 0; i < count; i++) {
@@ -698,26 +869,21 @@
                 particle.style.position = 'fixed';
                 particle.style.left = `${originX}px`;
                 particle.style.top = `${originY}px`;
-                particle.style.borderRadius = '18%';
-                particle.style.backgroundColor = 'transparent';
-                particle.style.boxShadow = 'none';
                 particle.style.opacity = '0';
                 particle.style.fontSize = `${size}px`;
                 particle.style.display = 'flex';
                 particle.style.alignItems = 'center';
                 particle.style.justifyContent = 'center';
-                particle.style.textAlign = 'center';
                 particle.style.transform = 'translate(-50%, -50%) scale(0.8) rotate(0deg)';
                 particle.style.transition = 'transform 0.6s ease-out, opacity 0.2s ease, left 2s ease-in, top 2s ease-in';
                 particle.textContent = explosionEmoji;
                 container.appendChild(particle);
 
                 const angle = Math.random() * Math.PI * 2;
-                const distance = 200 + Math.random() * 90;
+                const distance = 180 + Math.random() * 80;
                 const burstX = Math.cos(angle) * distance;
                 const burstY = Math.sin(angle) * distance * -1;
                 const rotate = Math.random() * 720;
-                const driftX = Math.random() * 40 - 20;
 
                 requestAnimationFrame(() => {
                     particle.style.opacity = '1';
@@ -745,12 +911,12 @@
             }
         }
 
-        // Scroll Animations (FadeSlideOnScroll equivalent)
+        // Scroll Animations (IntersectionObserver)
         document.addEventListener('DOMContentLoaded', function() {
             const observerOptions = {
                 root: null,
                 rootMargin: '0px',
-                threshold: 0.15
+                threshold: 0.12
             };
 
             const observer = new IntersectionObserver((entries, observer) => {
@@ -763,99 +929,361 @@
                 });
             }, observerOptions);
 
-            // Select all sections and feature cards to animate
             const animatedElements = document.querySelectorAll('section > div, .grid > div');
             animatedElements.forEach(el => {
-                // Add initial state classes
-                el.classList.add('transition-all', 'duration-1000', 'opacity-0', 'translate-y-8');
+                el.classList.add('transition-all', 'duration-700', 'opacity-0', 'translate-y-8');
                 observer.observe(el);
             });
 
             // Animated Headline Word
-            const words = ["Cerdas", "Terintegrasi", "Mudah", "Efisien"];
+            const words = ["Cerdas", "Terintegrasi", "Modern", "Efisien"];
             let wordIndex = 0;
             const animatedWordElement = document.getElementById("animated-word");
             
             if (animatedWordElement) {
                 setInterval(() => {
-                    // Fade out and move down slightly
                     animatedWordElement.style.opacity = '0';
                     animatedWordElement.style.transform = 'translateY(10px)';
                     
                     setTimeout(() => {
-                        // Change text
                         wordIndex = (wordIndex + 1) % words.length;
                         animatedWordElement.textContent = words[wordIndex];
-                        
-                        // Fade back in
                         animatedWordElement.style.opacity = '1';
                         animatedWordElement.style.transform = 'translateY(0)';
-                    }, 500); // matches the 500ms duration of the transition
-                }, 2000);
+                    }, 400);
+                }, 2200);
             }
 
             // Cursor Blob Follower
             const cursorBlob = document.getElementById('cursor-blob');
             if (cursorBlob) {
-                // Set initial position out of view or center
-                cursorBlob.style.transform = `translate(50vw, 50vh)`;
-                
                 document.addEventListener('mousemove', (e) => {
-                    // Use requestAnimationFrame for smoother performance if needed, 
-                    // but CSS transition-transform makes it smooth enough automatically
                     cursorBlob.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
                 });
             }
+        });
 
-            // Navigation active click effect and reset on scroll
-            const navLinks = document.querySelectorAll('.nav-link');
-            const activeLinkClasses = ['bg-[#5D3A2F]/90', 'text-white', 'animate-bounce'];
-            let ignoreScrollReset = false;
-            let scrollTimer;
-            let scrollIgnoreTimer;
+        // ─── Order & WhatsApp Handling ─────────────────────────────────────
+        var currentMaxStock = 0;
+        var superAdminPhone = '{{ $cleanPhone ?? "6281234567890" }}';
 
-            function clearNavActive() {
-                navLinks.forEach(link => {
-                    link.classList.remove(...activeLinkClasses);
-                    if (!link.classList.contains('text-white/90')) {
-                        link.classList.add('text-white/90');
-                    }
-                });
+        function openOrderModal(id, name, price, stock, farmer) {
+            currentMaxStock = stock;
+            document.getElementById('order-product-id').value = id;
+            document.getElementById('order-product-name').value = name;
+            document.getElementById('order-product-price').value = price;
+            document.getElementById('order-product-farmer').value = farmer;
+
+            document.getElementById('order-summary-name').textContent = name;
+            document.getElementById('order-summary-farmer').textContent = farmer;
+            document.getElementById('order-summary-price').textContent = 'Rp ' + Number(price).toLocaleString('id-ID');
+            document.getElementById('order-summary-stock').textContent = 'Tersedia: ' + stock + ' unit';
+            document.getElementById('order-max-stock-hint').textContent = 'Maksimal: ' + stock + ' unit';
+
+            var qtyInput = document.getElementById('order-quantity');
+            qtyInput.max = stock;
+            qtyInput.value = 1;
+
+            document.getElementById('order-error-message').classList.add('hidden');
+            calculateOrderTotal();
+
+            document.getElementById('modal-order-checkout').classList.remove('hidden');
+        }
+
+        function closeOrderModal() {
+            document.getElementById('modal-order-checkout').classList.add('hidden');
+        }
+
+        function adjustOrderQty(delta) {
+            var qtyInput = document.getElementById('order-quantity');
+            var val = parseInt(qtyInput.value) || 1;
+            val += delta;
+            if (val < 1) val = 1;
+            if (val > currentMaxStock) val = currentMaxStock;
+            qtyInput.value = val;
+            calculateOrderTotal();
+        }
+
+        function calculateOrderTotal() {
+            var price = parseFloat(document.getElementById('order-product-price').value) || 0;
+            var qty = parseInt(document.getElementById('order-quantity').value) || 1;
+            if (qty > currentMaxStock) {
+                qty = currentMaxStock;
+                document.getElementById('order-quantity').value = qty;
+            }
+            var total = price * qty;
+            document.getElementById('order-total-display').textContent = 'Rp ' + total.toLocaleString('id-ID');
+        }
+
+        async function submitOrderCheckout() {
+            var btn = document.getElementById('btn-submit-order');
+            var errEl = document.getElementById('order-error-message');
+            errEl.classList.add('hidden');
+
+            var productId = parseInt(document.getElementById('order-product-id').value);
+            var productName = document.getElementById('order-product-name').value;
+            var farmerName = document.getElementById('order-product-farmer').value;
+            var price = parseFloat(document.getElementById('order-product-price').value);
+            var qty = parseInt(document.getElementById('order-quantity').value) || 1;
+            var customerName = document.getElementById('order-customer-name').value.trim();
+            var customerPhone = document.getElementById('order-customer-phone').value.trim();
+            var customerAddress = document.getElementById('order-customer-address').value.trim();
+            var notes = document.getElementById('order-notes').value.trim();
+
+            if (!customerName || !customerPhone) {
+                errEl.textContent = 'Nama dan Nomor WhatsApp wajib diisi.';
+                errEl.classList.remove('hidden');
+                return;
             }
 
-            function setActiveLink(link) {
-                clearNavActive();
-                link.classList.remove('text-white/90');
-                link.classList.add(...activeLinkClasses);
-                setTimeout(() => link.classList.remove('animate-bounce'), 600);
-                ignoreScrollReset = true;
-                clearTimeout(scrollIgnoreTimer);
-                scrollIgnoreTimer = setTimeout(() => {
-                    ignoreScrollReset = false;
-                }, 700);
-            }
+            btn.disabled = true;
+            btn.innerHTML = '<span>Memproses Pesanan...</span>';
 
-            navLinks.forEach(link => {
-                link.addEventListener('click', () => {
-                    setActiveLink(link);
+            try {
+                var response = await fetch('/api/catalog/orders', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        customer_name: customerName,
+                        customer_phone: customerPhone,
+                        customer_address: customerAddress || null,
+                        notes: notes || null,
+                        processed_product_id: productId,
+                        quantity: qty
+                    })
                 });
-            });
 
-            window.addEventListener('scroll', () => {
-                if (ignoreScrollReset) {
-                    clearTimeout(scrollIgnoreTimer);
-                    scrollIgnoreTimer = setTimeout(() => {
-                        ignoreScrollReset = false;
-                    }, 700);
+                var resData = await response.json();
+
+                if (!response.ok || !resData.success) {
+                    throw new Error(resData.message || 'Gagal membuat pesanan');
+                }
+
+                var orderCode = resData.data.order_code;
+                var total = price * qty;
+
+                // Format WhatsApp Message
+                var waMsg = "Halo Admin SumberTani berbasis AI,\n\n" +
+                            "Saya ingin memesan produk olahan:\n" +
+                            "Kode Pesanan: " + orderCode + "\n" +
+                            "Produk: " + productName + "\n" +
+                            "Petani: " + farmerName + "\n" +
+                            "Jumlah: " + qty + " unit\n" +
+                            "Harga: Rp" + price.toLocaleString('id-ID') + "\n" +
+                            "Estimasi Total: Rp" + total.toLocaleString('id-ID') + "\n\n" +
+                            "Nama Pemesan: " + customerName + "\n" +
+                            "No. HP: " + customerPhone + "\n" +
+                            (customerAddress ? "Alamat: " + customerAddress + "\n" : "") +
+                            (notes ? "Catatan: " + notes + "\n" : "");
+
+                var waUrl = "https://wa.me/" + superAdminPhone + "?text=" + encodeURIComponent(waMsg);
+
+                closeOrderModal();
+
+                // Open WhatsApp in new tab
+                window.open(waUrl, '_blank');
+
+                // Open Confirmation & Public Tracking Modal
+                openTrackingModal(orderCode);
+            } catch (err) {
+                errEl.textContent = err.message || 'Terjadi kesalahan saat memproses pesanan.';
+                errEl.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span>Pesan & Lanjut WhatsApp</span>';
+            }
+        }
+
+        // ─── Public Tracking Modal Logic ──────────────────────────────────
+        function closeTrackingModal() {
+            document.getElementById('modal-order-tracking').classList.add('hidden');
+        }
+
+        function trackOrderFromInput() {
+            var code = document.getElementById('landing-tracking-input').value.trim();
+            if (!code) return;
+            openTrackingModal(code);
+        }
+
+        async function openTrackingModal(orderCode) {
+            var modal = document.getElementById('modal-order-tracking');
+            var container = document.getElementById('tracking-content');
+            modal.classList.remove('hidden');
+
+            container.innerHTML = '<div class="text-center py-8"><div class="animate-spin size-8 border-4 border-[#391F18] border-t-transparent rounded-full mx-auto mb-3"></div><p class="text-xs text-gray-500">Mengambil data pesanan...</p></div>';
+
+            try {
+                var response = await fetch('/api/catalog/orders/' + encodeURIComponent(orderCode));
+                var resData = await response.json();
+
+                if (!response.ok || !resData.success) {
+                    container.innerHTML = '<div class="text-center py-6"><p class="text-red-600 font-bold text-sm mb-1">Pesanan Tidak Ditemukan</p><p class="text-xs text-gray-500">Kode pesanan <strong>' + orderCode + '</strong> tidak terdaftar di sistem SumberTani.</p><button onclick="closeTrackingModal()" class="mt-4 px-4 py-2 bg-gray-100 rounded-lg text-xs font-bold text-gray-700">Tutup</button></div>';
                     return;
                 }
 
-                clearTimeout(scrollTimer);
-                scrollTimer = setTimeout(() => {
-                    clearNavActive();
-                }, 120);
-            });
-        });
+                var o = resData.data;
+
+                var badgeClass = 'bg-gray-100 text-gray-700';
+                var statusLabel = 'Menunggu Konfirmasi';
+                if (o.status === 'pending') {
+                    badgeClass = 'bg-amber-100 text-amber-800 border border-amber-300';
+                    statusLabel = 'Pending (Menunggu Konfirmasi Admin)';
+                } else if (o.status === 'confirmed') {
+                    badgeClass = 'bg-blue-100 text-blue-800 border border-blue-300';
+                    statusLabel = 'Dikonfirmasi (Pesanan Diterima)';
+                } else if (o.status === 'processing') {
+                    badgeClass = 'bg-indigo-100 text-indigo-800 border border-indigo-300';
+                    statusLabel = 'Sedang Diproses';
+                } else if (o.status === 'completed') {
+                    badgeClass = 'bg-emerald-100 text-emerald-800 border border-emerald-300';
+                    statusLabel = 'Selesai (Transaksi Berhasil)';
+                } else if (o.status === 'cancelled') {
+                    badgeClass = 'bg-red-100 text-red-800 border border-red-300';
+                    statusLabel = 'Dibatalkan';
+                }
+
+                var itemsHtml = '';
+                if (o.items && o.items.length) {
+                    itemsHtml = o.items.map(function(item) {
+                        return '<div class="flex justify-between items-center py-2 border-b border-gray-100 text-xs">' +
+                               '<div><p class="font-bold text-gray-800">' + item.product_name + '</p><p class="text-gray-500">' + item.quantity + ' unit × Rp ' + Number(item.price_snapshot).toLocaleString('id-ID') + '</p></div>' +
+                               '<div class="font-bold text-gray-900">Rp ' + Number(item.subtotal).toLocaleString('id-ID') + '</div>' +
+                               '</div>';
+                    }).join('');
+                }
+
+                container.innerHTML = 
+                    '<div class="text-center pb-4 border-b border-gray-100">' +
+                        '<span class="text-xs font-mono text-gray-400 block mb-1">Kode Pesanan</span>' +
+                        '<h4 class="text-xl font-black text-gray-900 font-mono tracking-wide">' + o.order_code + '</h4>' +
+                        '<div class="mt-2 inline-block px-3 py-1 rounded-full text-xs font-bold ' + badgeClass + '">' + statusLabel + '</div>' +
+                    '</div>' +
+                    '<div class="py-3 text-xs space-y-1.5 bg-gray-50 p-3 rounded-xl border border-gray-200">' +
+                        '<p class="text-gray-600"><span class="font-semibold text-gray-800">Nama:</span> ' + o.customer_name + '</p>' +
+                        '<p class="text-gray-600"><span class="font-semibold text-gray-800">No. Kontak:</span> ' + o.customer_phone + '</p>' +
+                        '<p class="text-gray-600"><span class="font-semibold text-gray-800">Alamat:</span> <span class="italic text-gray-500">' + o.customer_address + '</span></p>' +
+                        (o.notes ? '<p class="text-gray-600"><span class="font-semibold text-gray-800">Catatan:</span> ' + o.notes + '</p>' : '') +
+                    '</div>' +
+                    '<div>' +
+                        '<h5 class="text-xs font-bold text-gray-700 uppercase mb-2">Rincian Item</h5>' +
+                        '<div class="bg-white rounded-lg">' + itemsHtml + '</div>' +
+                    '</div>' +
+                    '<div class="pt-2 flex justify-between items-center text-sm font-bold border-t border-gray-200">' +
+                        '<span>Total Biaya:</span>' +
+                        '<span class="text-emerald-700 font-black text-base">Rp ' + Number(o.total_amount).toLocaleString('id-ID') + '</span>' +
+                    '</div>' +
+                    '<button onclick="closeTrackingModal()" class="w-full mt-4 py-2.5 bg-[#391F18] text-[#e3cba8] font-bold rounded-xl text-xs hover:bg-[#522c22] transition-all">Tutup</button>';
+            } catch (e) {
+                container.innerHTML = '<div class="text-center py-6 text-red-600 text-xs">Gagal memuat status: ' + e.message + '</div>';
+            }
+        }
     </script>
+
+    <!-- MODAL 1: CHECKOUT PESANAN PRODUK OLAHAN -->
+    <div id="modal-order-checkout" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div class="bg-white text-gray-900 w-full max-w-lg rounded-2xl border-2 border-[#391F18] shadow-[8px_8px_0px_0px_#391F18] overflow-hidden flex flex-col max-h-[90vh]">
+            <!-- Header -->
+            <div class="bg-[#391F18] text-[#e3cba8] px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-[#25D366]"></span>
+                    <h3 class="font-bold text-base">Formulir Pesanan Produk Olahan</h3>
+                </div>
+                <button type="button" onclick="closeOrderModal()" class="text-white/70 hover:text-white text-lg font-bold">✕</button>
+            </div>
+
+            <!-- Body -->
+            <form id="form-order-checkout" onsubmit="event.preventDefault(); submitOrderCheckout();" class="p-6 overflow-y-auto space-y-4">
+                <input type="hidden" id="order-product-id">
+                <input type="hidden" id="order-product-price">
+                <input type="hidden" id="order-product-name">
+                <input type="hidden" id="order-product-farmer">
+
+                <!-- Product Summary Card -->
+                <div class="bg-amber-50/80 p-3.5 rounded-xl border border-amber-200 text-xs text-gray-700 flex justify-between items-center">
+                    <div>
+                        <p class="font-bold text-sm text-gray-900" id="order-summary-name">Nama Produk</p>
+                        <p class="text-gray-500">Petani: <span id="order-summary-farmer" class="font-semibold text-primary">Nama Petani</span></p>
+                    </div>
+                    <div class="text-right">
+                        <span class="block text-primary font-bold text-sm" id="order-summary-price">Rp 0</span>
+                        <span class="text-gray-500" id="order-summary-stock">Tersedia: 0 unit</span>
+                    </div>
+                </div>
+
+                <!-- Nama Lengkap -->
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Nama Pemesan <span class="text-red-500">*</span></label>
+                    <input type="text" id="order-customer-name" required placeholder="Contoh: Budi Santoso" class="w-full px-3.5 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                </div>
+
+                <!-- Nomor WhatsApp -->
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Nomor WhatsApp / HP <span class="text-red-500">*</span></label>
+                    <input type="tel" id="order-customer-phone" required placeholder="Contoh: 081234567890" class="w-full px-3.5 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                    <span class="text-[11px] text-gray-500">Akan digunakan Super Admin untuk konfirmasi pesanan.</span>
+                </div>
+
+                <!-- Jumlah Unit -->
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Jumlah Pesanan (Unit) <span class="text-red-500">*</span></label>
+                    <div class="flex items-center gap-3">
+                        <button type="button" onclick="adjustOrderQty(-1)" class="w-9 h-9 rounded-lg border border-gray-300 font-bold bg-gray-100 hover:bg-gray-200">-</button>
+                        <input type="number" id="order-quantity" value="1" min="1" oninput="calculateOrderTotal()" class="w-20 text-center font-bold px-2 py-1.5 rounded-lg border border-gray-300 text-sm">
+                        <button type="button" onclick="adjustOrderQty(1)" class="w-9 h-9 rounded-lg border border-gray-300 font-bold bg-gray-100 hover:bg-gray-200">+</button>
+                        <span class="text-xs text-gray-500" id="order-max-stock-hint">Maksimal: 0 unit</span>
+                    </div>
+                </div>
+
+                <!-- Alamat Pengiriman -->
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Alamat Pengiriman</label>
+                    <textarea id="order-customer-address" rows="2" placeholder="Nama jalan, RT/RW, kelurahan, kecamatan, kota/kabupaten..." class="w-full px-3.5 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary"></textarea>
+                </div>
+
+                <!-- Catatan Tambahan -->
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Catatan Pesanan (Opsional)</label>
+                    <input type="text" id="order-notes" placeholder="Contoh: Tolong bungkus ekstra aman..." class="w-full px-3.5 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                </div>
+
+                <!-- Total Estimasi -->
+                <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-200 flex justify-between items-center">
+                    <span class="text-xs font-bold text-emerald-900 uppercase">Estimasi Total</span>
+                    <span class="text-lg font-black text-emerald-800" id="order-total-display">Rp 0</span>
+                </div>
+
+                <div id="order-error-message" class="hidden text-xs text-red-600 bg-red-50 p-2.5 rounded-lg border border-red-200"></div>
+
+                <!-- Actions -->
+                <div class="pt-2 flex items-center justify-end gap-3 border-t border-gray-100">
+                    <button type="button" onclick="closeOrderModal()" class="px-4 py-2 text-xs font-bold text-gray-600 hover:text-gray-800">Batal</button>
+                    <button type="submit" id="btn-submit-order" class="px-5 py-2.5 bg-[#25D366] hover:bg-[#20ba59] text-white text-xs font-bold rounded-xl border-2 border-[#1E3A2A] shadow-[2px_2px_0px_0px_#1E3A2A] transition-all flex items-center gap-1.5">
+                        <span>Pesan & Lanjut WhatsApp</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="size-4 fill-current" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.275.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824zm-3.423-14.416c-6.627 0-12 5.373-12 12 0 2.159.57 4.187 1.564 5.946l-1.662 6.075 6.221-1.632c1.701.928 3.652 1.459 5.727 1.459 6.627 0 12-5.373 12-12 0-6.627-5.373-12-12-12z"/></svg>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: DETAIL STATUS PELACAKAN PESANAN (PUBLIC TRACKING) -->
+    <div id="modal-order-tracking" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div class="bg-white text-gray-900 w-full max-w-md rounded-2xl border-2 border-[#391F18] shadow-[8px_8px_0px_0px_#391F18] overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="bg-[#391F18] text-[#e3cba8] px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-blue-400"></span>
+                    <h3 class="font-bold text-base">Status Pelacakan Pesanan</h3>
+                </div>
+                <button type="button" onclick="closeTrackingModal()" class="text-white/70 hover:text-white text-lg font-bold">✕</button>
+            </div>
+
+            <div id="tracking-content" class="p-6 overflow-y-auto space-y-4">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
 </body>
 </html>

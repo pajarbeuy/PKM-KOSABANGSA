@@ -12,7 +12,8 @@ import 'landing_editor_screen.dart';
 import 'feedback_management_screen.dart';
 
 class CustomMenusScreen extends StatefulWidget {
-  const CustomMenusScreen({super.key});
+  final bool isEmbedded;
+  const CustomMenusScreen({super.key, this.isEmbedded = false});
 
   @override
   State<CustomMenusScreen> createState() => _CustomMenusScreenState();
@@ -300,6 +301,68 @@ class _CustomMenusScreenState extends State<CustomMenusScreen> {
     final email = auth.user?.email ?? '';
     final initials = name.isNotEmpty ? name[0].toUpperCase() : 'S';
 
+    Widget buildMainContent() {
+      return _isLoading
+          ? const Center(child: CircularProgressIndicator(color: AppTheme.green700))
+          : RefreshIndicator(
+              onRefresh: _loadMenus,
+              color: AppTheme.green700,
+              child: _menus.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.widgets_outlined, size: 64, color: Colors.grey.shade300),
+                          const SizedBox(height: 12),
+                          const Text('Belum ada menu shortcut tambahan', style: TextStyle(color: Colors.grey)),
+                        ],
+                      ),
+                    )
+                  : LayoutBuilder(
+                      builder: (context, constraints) {
+                        final isDesktopContent = constraints.maxWidth > 800;
+                        if (isDesktopContent) {
+                          return GridView.builder(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: const EdgeInsets.all(24),
+                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: constraints.maxWidth > 1200 ? 3 : 2,
+                              crossAxisSpacing: 16,
+                              mainAxisSpacing: 16,
+                              childAspectRatio: 2.2,
+                            ),
+                            itemCount: _menus.length,
+                            itemBuilder: (context, index) {
+                              return _buildMenuTile(_menus[index]);
+                            },
+                          );
+                        }
+                        return ListView.separated(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: _menus.length,
+                          separatorBuilder: (context, index) => const SizedBox(height: 12),
+                          itemBuilder: (context, index) {
+                            return _buildMenuTile(_menus[index]);
+                          },
+                        );
+                      },
+                    ),
+            );
+    }
+
+    if (widget.isEmbedded) {
+      return Scaffold(
+        backgroundColor: Colors.transparent,
+        body: buildMainContent(),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () => _showAddEditMenuBottomSheet(),
+          backgroundColor: AppTheme.green700,
+          icon: const Icon(Icons.add_box_rounded),
+          label: const Text('Tambah Menu'),
+        ),
+      );
+    }
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final isDesktop = constraints.maxWidth >= 900;
@@ -342,54 +405,7 @@ class _CustomMenusScreenState extends State<CustomMenusScreen> {
                         userInitials: initials,
                         onRefresh: _loadMenus,
                       ),
-                    Expanded(
-                      child: _isLoading
-                          ? const Center(child: CircularProgressIndicator(color: AppTheme.green700))
-                          : RefreshIndicator(
-                              onRefresh: _loadMenus,
-                              color: AppTheme.green700,
-                              child: _menus.isEmpty
-                                  ? Center(
-                                      child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Icon(Icons.widgets_outlined, size: 64, color: Colors.grey.shade300),
-                                          const SizedBox(height: 12),
-                                          const Text('Belum ada menu shortcut tambahan', style: TextStyle(color: Colors.grey)),
-                                        ],
-                                      ),
-                                    )
-                                  : LayoutBuilder(
-                                      builder: (context, constraints) {
-                                        final isDesktopContent = constraints.maxWidth > 800;
-                                        if (isDesktopContent) {
-                                          return GridView.builder(
-                                            physics: const AlwaysScrollableScrollPhysics(),
-                                            padding: const EdgeInsets.all(24),
-                                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                              crossAxisCount: constraints.maxWidth > 1200 ? 3 : 2,
-                                              crossAxisSpacing: 16,
-                                              mainAxisSpacing: 16,
-                                              childAspectRatio: 2.2,
-                                            ),
-                                            itemCount: _menus.length,
-                                            itemBuilder: (context, index) {
-                                              return _buildMenuTile(_menus[index]);
-                                            },
-                                          );
-                                        }
-                                        return ListView.separated(
-                                          padding: const EdgeInsets.all(16),
-                                          itemCount: _menus.length,
-                                          separatorBuilder: (context, index) => const SizedBox(height: 12),
-                                          itemBuilder: (context, index) {
-                                            return _buildMenuTile(_menus[index]);
-                                          },
-                                        );
-                                      },
-                                    ),
-                            ),
-                    ),
+                    Expanded(child: buildMainContent()),
                   ],
                 ),
               ),

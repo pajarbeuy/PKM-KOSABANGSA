@@ -31,7 +31,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Super Admin Demo',
             'email' => 'superadmin@simhpsk.com',
             'password' => Hash::make('superadmin123'),
-            'phone' => '089876543210',
+            'phone' => '085138003594',
             'farm_name' => 'SIMHPSK Central',
             'role' => 'super_admin',
             'status' => 'active',
@@ -40,8 +40,8 @@ class DatabaseSeeder extends Seeder
 
         // Create landing page content
         $landingContent = [
-            'hero_title' => 'Kelola Panen dan Stok Kentang dengan Mudah',
-            'hero_description' => 'Sistem Informasi Manajemen Panen dan Stok Kentang yang membantu Anda mengelola usaha pertanian dengan lebih efisien dan menguntungkan.',
+            'hero_title' => 'Kelola Panen dan Stok Hasil Tani dengan Mudah',
+            'hero_description' => 'Sistem Informasi Manajemen Panen dan Stok Hasil Tani yang membantu Anda mengelola usaha pertanian dengan lebih efisien dan menguntungkan.',
             'hero_cta_1' => 'Daftar Sekarang',
             'hero_cta_2' => 'Login',
             'feature_1_title' => 'Manajemen Stok Real-time',

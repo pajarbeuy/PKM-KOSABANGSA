@@ -15,7 +15,25 @@ use Illuminate\Support\Facades\Route;
 
 // Landing Page
 Route::get('/', function () {
-    return view('landing');
+    $products = collect();
+    $superAdminPhone = '6281234567890';
+
+    try {
+        if (\Illuminate\Support\Facades\Schema::hasTable('processed_products')) {
+            $processedProductService = app(\App\Services\ProcessedProductService::class);
+            $products = $processedProductService->getActiveCatalog([], 12);
+        }
+        if (\Illuminate\Support\Facades\Schema::hasTable('users')) {
+            $superAdminUser = \App\Models\User::where('role', 'super_admin')->whereNotNull('phone')->first();
+            if ($superAdminUser && $superAdminUser->phone) {
+                $superAdminPhone = $superAdminUser->phone;
+            }
+        }
+    } catch (\Throwable $e) {
+        // Fallback gracefully if database table not yet migrated
+    }
+
+    return view('landing', compact('products', 'superAdminPhone'));
 })->name('landing');
 
 // Password Reset Flow (renders Blade views — required for email links)

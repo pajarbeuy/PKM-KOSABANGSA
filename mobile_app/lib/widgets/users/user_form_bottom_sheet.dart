@@ -27,6 +27,8 @@ class _UserFormBottomSheetState extends State<UserFormBottomSheet> {
   late TextEditingController _phoneController;
   late TextEditingController _farmNameController;
   late TextEditingController _passwordController;
+  late TextEditingController _confirmPasswordController;
+  bool _obscurePassword = true;
 
   late String _role;
   late String _status;
@@ -41,6 +43,7 @@ class _UserFormBottomSheetState extends State<UserFormBottomSheet> {
     _phoneController = TextEditingController(text: u?['phone'] ?? '');
     _farmNameController = TextEditingController(text: u?['farm_name'] ?? '');
     _passwordController = TextEditingController();
+    _confirmPasswordController = TextEditingController();
     _role = u?['role'] ?? 'user';
     _status = u?['status'] ?? 'active';
   }
@@ -52,6 +55,7 @@ class _UserFormBottomSheetState extends State<UserFormBottomSheet> {
     _phoneController.dispose();
     _farmNameController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -68,8 +72,14 @@ class _UserFormBottomSheetState extends State<UserFormBottomSheet> {
       'role': _role,
       'status': _status,
     };
+    final pass = _passwordController.text.trim();
+    final passConfirm = _confirmPasswordController.text.trim();
     if (!isEdit) {
-      dataMap['password'] = _passwordController.text;
+      dataMap['password'] = pass;
+      dataMap['password_confirmation'] = passConfirm;
+    } else if (pass.isNotEmpty) {
+      dataMap['password'] = pass;
+      dataMap['password_confirmation'] = passConfirm;
     }
 
     try {
@@ -157,14 +167,58 @@ class _UserFormBottomSheetState extends State<UserFormBottomSheet> {
                 validator: (val) => val == null || val.isEmpty ? 'Email wajib diisi' : null,
               ),
               const SizedBox(height: 12),
-              if (!isEdit)
-                TextFormField(
-                  controller: _passwordController,
-                  decoration: const InputDecoration(labelText: 'Password'),
-                  obscureText: true,
-                  validator: (val) => val == null || val.isEmpty ? 'Password wajib diisi' : null,
+              TextFormField(
+                controller: _passwordController,
+                obscureText: _obscurePassword,
+                decoration: InputDecoration(
+                  labelText: isEdit
+                      ? 'Reset Password Baru (Opsional)'
+                      : 'Password (Minimal 8 Karakter)',
+                  helperText: isEdit
+                      ? 'Kosongkan jika tidak ingin mengubah password akun ini'
+                      : null,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                      size: 20,
+                    ),
+                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                  ),
                 ),
-              if (!isEdit) const SizedBox(height: 12),
+                validator: (val) {
+                  if (!isEdit && (val == null || val.isEmpty)) {
+                    return 'Password wajib diisi';
+                  }
+                  if (val != null && val.isNotEmpty && val.length < 8) {
+                    return 'Password minimal 8 karakter';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _confirmPasswordController,
+                obscureText: _obscurePassword,
+                decoration: InputDecoration(
+                  labelText: isEdit
+                      ? 'Konfirmasi Password Baru'
+                      : 'Konfirmasi Password',
+                  helperText: isEdit && _passwordController.text.isEmpty
+                      ? 'Hanya diisi jika Anda mengganti password di atas'
+                      : null,
+                ),
+                validator: (val) {
+                  final pass = _passwordController.text;
+                  if (!isEdit && (val == null || val.isEmpty)) {
+                    return 'Konfirmasi password wajib diisi';
+                  }
+                  if (pass.isNotEmpty && val != pass) {
+                    return 'Konfirmasi password tidak cocok dengan password di atas';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
               TextFormField(
                 controller: _phoneController,
                 decoration: const InputDecoration(labelText: 'Nomor Telepon'),

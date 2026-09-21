@@ -13,6 +13,8 @@ use App\Http\Controllers\SeasonController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\SuperAdmin\SuperAdminController;
+use App\Http\Controllers\ProcessedProductController;
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\Api\ChatbotController;
 use Illuminate\Support\Facades\Route;
 
@@ -30,8 +32,29 @@ Route::post('/auth/login',    [AuthController::class, 'login']);
 Route::post('/auth/forgot-password', [PasswordResetController::class, 'sendResetLinkEmailApi']);
 Route::post('/auth/reset-password',  [PasswordResetController::class, 'resetPasswordApi']);
 
-Route::post('/chat',    [ChatbotController::class, 'chat']);
 Route::get('/landing',  [SuperAdminController::class, 'getLanding']);
+Route::get('/catalog/processed-products', [ProcessedProductController::class, 'publicCatalog']);
+Route::post('/catalog/orders',            [OrderController::class, 'storePublic']);
+Route::get('/catalog/orders/{code}',      [OrderController::class, 'trackPublic']);
+
+// Media / Storage file serving with CORS support for mobile & web apps
+Route::get('/storage/{path}', function (string $path) {
+    $cleanPath = ltrim($path, '/');
+    if (!\Illuminate\Support\Facades\Storage::disk('public')->exists($cleanPath)) {
+        abort(404, 'File not found');
+    }
+
+    $fullPath = \Illuminate\Support\Facades\Storage::disk('public')->path($cleanPath);
+    $mime = mime_content_type($fullPath) ?: 'application/octet-stream';
+
+    return response()->file($fullPath, [
+        'Content-Type' => $mime,
+        'Access-Control-Allow-Origin' => '*',
+        'Access-Control-Allow-Methods' => 'GET, OPTIONS',
+        'Access-Control-Allow-Headers' => '*',
+        'Cache-Control' => 'public, max-age=86400',
+    ]);
+})->where('path', '.*');
 
 // ─── Protected Routes ─────────────────────────────────────────────────────────
 
@@ -46,10 +69,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/menus',     [SuperAdminController::class, 'indexMenus']);
 
     // Resources (standard Laravel resource method names)
-    Route::apiResource('seasons',  SeasonController::class)->names('api.seasons');
-    Route::apiResource('harvests', HarvestController::class)->names('api.harvests');
-    Route::apiResource('sales',    SaleController::class)->names('api.sales');
-    Route::apiResource('costs',    CostController::class)->names('api.costs');
+    Route::apiResource('seasons',            SeasonController::class)->names('api.seasons');
+    Route::apiResource('harvests',           HarvestController::class)->names('api.harvests');
+    Route::apiResource('sales',              SaleController::class)->names('api.sales');
+    Route::apiResource('costs',              CostController::class)->names('api.costs');
+    Route::apiResource('processed-products', ProcessedProductController::class)->names('api.processed-products');
 
     // Stock (custom routes — not a standard CRUD resource)
     Route::get('/stock',                      [StockController::class, 'index']);
@@ -102,9 +126,29 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/menus/{menu}',       [SuperAdminController::class, 'updateMenu']);
         Route::delete('/menus/{menu}',    [SuperAdminController::class, 'destroyMenu']);
 
+        // Processed Products Marketing Management
+        Route::get('/processed-products',                           [ProcessedProductController::class, 'superAdminIndex']);
+        Route::patch('/processed-products/{processedProduct}/status', [ProcessedProductController::class, 'superAdminUpdateStatus']);
+
+        // Orders Management & Tracking
+        Route::get('/orders',                  [OrderController::class, 'index']);
+        Route::get('/orders/{order}',          [OrderController::class, 'show']);
+        Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus']);
+        Route::post('/orders/{order}/complete',[OrderController::class, 'complete']);
+        Route::post('/orders/{order}/cancel',  [OrderController::class, 'cancel']);
+
         // Feedbacks
         Route::get('/feedbacks',                           [FeedbackController::class, 'indexSuperAdmin']);
         Route::post('/feedbacks/{feedback}/read',          [FeedbackController::class, 'markAsRead']);
         Route::delete('/feedbacks/{feedback}',             [FeedbackController::class, 'destroy']);
+
+        // Reports Aggregate
+        Route::get('/reports/farmer-profit-loss-aggregate', [SuperAdminController::class, 'farmerProfitLossAggregate']);
+
+        // Chatbot AI Operational Assistant
+        Route::post('/chat', [ChatbotController::class, 'chat']);
     });
+
+    // Chatbot endpoint protected for Super Admin
+    Route::middleware('role:super_admin')->post('/chat', [ChatbotController::class, 'chat']);
 });

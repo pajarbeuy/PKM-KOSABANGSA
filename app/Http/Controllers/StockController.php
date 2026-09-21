@@ -17,9 +17,9 @@ class StockController extends Controller
     public function index(Request $request)
     {
         $userId         = $request->user()->id;
-        $currentBalance = (int) $this->stockService->getCurrentBalance($userId);
-        $totalIncoming  = (int) StockTransaction::where('user_id', $userId)->where('type', 'in')->sum('amount');
-        $totalOutgoing  = (int) StockTransaction::where('user_id', $userId)->where('type', 'out')->sum('amount');
+        $currentBalance = (float) $this->stockService->getCurrentBalance($userId);
+        $totalIncoming  = (float) StockTransaction::where('user_id', $userId)->where('type', 'in')->sum('amount');
+        $totalOutgoing  = (float) StockTransaction::where('user_id', $userId)->where('type', 'out')->sum('amount');
 
         $transactions = StockTransaction::where('user_id', $userId)
             ->latest('date')
@@ -27,7 +27,9 @@ class StockController extends Controller
             ->map(fn ($t) => [
                 'id'               => $t->id,
                 'type'             => $t->type,
-                'quantity'         => (int) $t->amount,
+                'quantity'         => (float) $t->amount,
+                'amount'           => (float) $t->amount,
+                'balance_after'    => (float) $t->balance_after,
                 'transaction_date' => $t->date,
                 'notes'            => $t->notes,
                 'reference'        => $t->reference,

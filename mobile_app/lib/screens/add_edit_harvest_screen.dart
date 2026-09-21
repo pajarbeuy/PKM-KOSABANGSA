@@ -27,8 +27,6 @@ class _AddEditHarvestScreenState extends State<AddEditHarvestScreen> {
   late TextEditingController _dateController;
   late TextEditingController _weightController;
   late TextEditingController _notesController;
-  // Komoditas is static, but we'll use a controller for the UI
-  final TextEditingController _komoditasController = TextEditingController(text: 'Kentang');
 
   List<Season> _seasons = [];
   Season? _selectedSeason;
@@ -209,7 +207,6 @@ class _AddEditHarvestScreenState extends State<AddEditHarvestScreen> {
     _dateController.dispose();
     _weightController.dispose();
     _notesController.dispose();
-    _komoditasController.dispose();
     super.dispose();
   }
 

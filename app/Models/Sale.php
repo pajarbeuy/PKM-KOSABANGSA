@@ -10,7 +10,23 @@ class Sale extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $fillable = ['user_id', 'season_id', 'date', 'buyer_name', 'buyer_phone', 'buyer_address', 'weight_kg', 'price_per_kg', 'total', 'payment_status', 'notes'];
+    protected $fillable = [
+        'user_id',
+        'order_id',
+        'season_id',
+        'product_type',
+        'processed_product_id',
+        'created_by',
+        'date',
+        'buyer_name',
+        'buyer_phone',
+        'buyer_address',
+        'weight_kg',
+        'price_per_kg',
+        'total',
+        'payment_status',
+        'notes',
+    ];
 
     protected $casts = [
         'date' => 'date',
@@ -24,9 +40,24 @@ class Sale extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function order()
+    {
+        return $this->belongsTo(Order::class);
+    }
+
     public function season()
     {
         return $this->belongsTo(Season::class);
+    }
+
+    public function processedProduct()
+    {
+        return $this->belongsTo(ProcessedProduct::class, 'processed_product_id');
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public static function getTotalSales($userId = null)

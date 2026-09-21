@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ProductionCost;
+use App\Models\Season;
 use App\Services\CostService;
 use App\Traits\ApiResponseTrait;
 use Illuminate\Http\Request;
@@ -51,6 +52,13 @@ class CostController extends Controller
                 'notes'     => 'nullable|string|max:255',
             ]);
 
+            if (!empty($validated['season_id'])) {
+                $seasonExists = Season::where('id', $validated['season_id'])->where('user_id', $request->user()->id)->exists();
+                if (!$seasonExists) {
+                    return $this->forbiddenResponse('Musim tanam tidak ditemukan atau bukan milik Anda.');
+                }
+            }
+
             $cost      = $this->costService->createCost($validated, $request->user()->id);
             $formatted = array_merge($this->costService->formatCost($cost), ['created_at' => $cost->created_at]);
 
@@ -58,6 +66,20 @@ class CostController extends Controller
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e->errors());
         }
+    }
+
+    public function show(Request $request, ProductionCost $cost)
+    {
+        if ($cost->user_id !== $request->user()->id) {
+            return $this->forbiddenResponse('Anda tidak berhak melihat data ini.');
+        }
+
+        $formatted = array_merge($this->costService->formatCost($cost), [
+            'created_at' => $cost->created_at,
+            'updated_at' => $cost->updated_at,
+        ]);
+
+        return $this->successResponse($formatted, 'Detail biaya produksi.');
     }
 
     public function update(Request $request, ProductionCost $cost)
@@ -74,6 +96,13 @@ class CostController extends Controller
                 'amount'    => 'required|numeric|min:0.01',
                 'notes'     => 'nullable|string|max:255',
             ]);
+
+            if (!empty($validated['season_id'])) {
+                $seasonExists = Season::where('id', $validated['season_id'])->where('user_id', $request->user()->id)->exists();
+                if (!$seasonExists) {
+                    return $this->forbiddenResponse('Musim tanam tidak ditemukan atau bukan milik Anda.');
+                }
+            }
 
             $updated   = $this->costService->updateCost($cost, $validated);
             $formatted = array_merge($this->costService->formatCost($updated), ['updated_at' => $updated->updated_at]);

@@ -25,6 +25,7 @@ class ApiClient {
       'Accept': 'application/json',
       'Cache-Control': 'no-cache',
       'Pragma': 'no-cache',
+      "ngrok-skip-browser-warning": "true"
     };
     if (!forMultipart) {
       headers['Content-Type'] = 'application/json';

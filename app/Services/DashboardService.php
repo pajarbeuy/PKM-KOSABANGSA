@@ -16,12 +16,17 @@ class DashboardService
      */
     public function getSummary(int $userId): array
     {
-        $activeSeason    = Season::where('user_id', $userId)->where('status', 'active')->first();
-        $stockBalance    = (int) StockTransaction::getCurrentBalance($userId);
-        $totalRevenue    = (int) Sale::where('user_id', $userId)->sum('total');
-        $totalCost       = (int) ProductionCost::where('user_id', $userId)->sum('amount');
+        $activeSeason    = Season::where('user_id', $userId)
+            ->where('status', '!=', 'cancelled')
+            ->whereDate('start_date', '<=', today())
+            ->whereDate('end_date', '>=', today())
+            ->latest('start_date')
+            ->first();
+        $stockBalance    = (float) StockTransaction::getCurrentBalance($userId);
+        $totalRevenue    = (float) Sale::where('user_id', $userId)->sum('total');
+        $totalCost       = (float) ProductionCost::where('user_id', $userId)->sum('amount');
         $estimatedProfit = $totalRevenue - $totalCost;
-        $totalHarvest    = (int) Harvest::where('user_id', $userId)->sum('weight_kg');
+        $totalHarvest    = (float) Harvest::where('user_id', $userId)->sum('weight_kg');
 
         return [
             'totalStok'       => $stockBalance,
@@ -29,7 +34,7 @@ class DashboardService
             'totalBiaya'      => $totalCost,
             'totalPanen'      => $totalHarvest,
             'estimatedProfit' => $estimatedProfit,
-            'targetPanen'     => (int) ($activeSeason?->target_kg ?? 0),
+            'targetPanen'     => (float) ($activeSeason?->target_kg ?? 0),
             'minStock'        => (int) Setting::get('min_stock', 100),
             'maxStock'        => (int) Setting::get('max_stock', 5000),
             'notifyLowStock'  => (bool) Setting::get('notify_low_stock', 1),

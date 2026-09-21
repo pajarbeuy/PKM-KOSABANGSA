@@ -113,10 +113,10 @@ class _AppSidebarState extends State<AppSidebar> with SingleTickerProviderStateM
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('SIMHPSK',
+                                  Text('SumberTani',
                                     style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800, letterSpacing: 0.8),
                                   ),
-                                  Text('Pencatatan Pertanian',
+                                  Text('Pencatatan Pertanian AI',
                                     style: TextStyle(color: AppTheme.sidebarText, fontSize: 10, letterSpacing: 0.2),
                                   ),
                                 ],
@@ -435,8 +435,8 @@ class AppDrawer extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('SIMHPSK', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800, letterSpacing: 0.8)),
-                      Text('Pencatatan Pertanian', style: TextStyle(color: AppTheme.sidebarText, fontSize: 10)),
+                      Text('SumberTani', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800, letterSpacing: 0.8)),
+                      Text('Pencatatan Pertanian AI', style: TextStyle(color: AppTheme.sidebarText, fontSize: 10)),
                     ],
                   ),
                 ],

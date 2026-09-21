@@ -9,7 +9,8 @@ import '../widgets/app_shell.dart';
 import 'add_edit_sale_screen.dart';
 
 class SalesScreen extends StatefulWidget {
-  const SalesScreen({super.key});
+  final bool isEmbedded;
+  const SalesScreen({super.key, this.isEmbedded = false});
 
   @override
   State<SalesScreen> createState() => _SalesScreenState();
@@ -60,9 +61,9 @@ class _SalesScreenState extends State<SalesScreen> {
               onPressed: () => Navigator.pop(context, false),
               child: const Text('Batal')),
           TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Hapus', style: TextStyle(color: Colors.red)),
-          ),
+              onPressed: () => Navigator.pop(context, true),
+              child:
+                  const Text('Hapus', style: TextStyle(color: Colors.red))),
         ],
       ),
     );
@@ -73,7 +74,7 @@ class _SalesScreenState extends State<SalesScreen> {
         messenger.showSnackBar(
           const SnackBar(
             content: Text('Penjualan berhasil dihapus'),
-            backgroundColor: Colors.green,
+            backgroundColor: AppTheme.green700,
           ),
         );
         _loadSales();
@@ -106,6 +107,53 @@ class _SalesScreenState extends State<SalesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final content = _isLoading
+        ? const Center(child: CircularProgressIndicator(color: AppTheme.green700))
+        : RefreshIndicator(
+            onRefresh: _loadSales,
+            color: AppTheme.green700,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                if (constraints.maxWidth > 800) {
+                  return _buildDesktopLayout();
+                }
+                return _buildMobileLayout();
+              },
+            ),
+          );
+
+    if (widget.isEmbedded) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Transaksi Penjualan Terpusat',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.dark900),
+                ),
+                ElevatedButton.icon(
+                  onPressed: _showSaleForm,
+                  icon: const Icon(Icons.add, size: 16),
+                  label: const Text('Catat Penjualan', style: TextStyle(fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.green700,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(child: content),
+        ],
+      );
+    }
+
     return AppShell(
       currentRoute: 'sales',
       title: 'Penjualan',
@@ -138,22 +186,7 @@ class _SalesScreenState extends State<SalesScreen> {
           );
         },
       ),
-      child: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(
-                  color: AppTheme.green700))
-          : RefreshIndicator(
-              onRefresh: _loadSales,
-              color: AppTheme.green700,
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  if (constraints.maxWidth > 800) {
-                    return _buildDesktopLayout();
-                  }
-                  return _buildMobileLayout();
-                },
-              ),
-            ),
+      child: content,
     );
   }
 

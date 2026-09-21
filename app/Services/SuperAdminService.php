@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\DashboardMenu;
 use App\Models\LandingContent;
+use App\Models\ProductionCost;
+use App\Models\Sale;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
@@ -162,6 +164,59 @@ class SuperAdminService
         return [
             'totalUsers'  => User::count(),
             'activeUsers' => User::where('status', 'active')->count(),
+        ];
+    }
+
+    // ─── Aggregate Profit/Loss ───────────────────────────────────────────────────
+
+    /**
+     * Calculate aggregate profit/loss across all farmers.
+     * Formula strictly matches ReportService: Profit = Total Revenue - Total Cost.
+     */
+    public function getFarmerProfitLossAggregate(?string $startDate = null, ?string $endDate = null): array
+    {
+        $farmers = User::where('role', 'user')->orderBy('name')->get();
+        $totalRevenue = 0;
+        $totalCost = 0;
+        $farmerSummaries = [];
+
+        foreach ($farmers as $farmer) {
+            $saleQuery = Sale::where('user_id', $farmer->id);
+            $costQuery = ProductionCost::where('user_id', $farmer->id);
+
+            if ($startDate) {
+                $saleQuery->where('date', '>=', $startDate);
+                $costQuery->where('date', '>=', $startDate);
+            }
+            if ($endDate) {
+                $saleQuery->where('date', '<=', $endDate);
+                $costQuery->where('date', '<=', $endDate);
+            }
+
+            $rev = (int) $saleQuery->sum('total');
+            $cost = (int) $costQuery->sum('amount');
+            $pl = $rev - $cost;
+
+            $totalRevenue += $rev;
+            $totalCost += $cost;
+
+            $farmerSummaries[] = [
+                'farmer_id'   => $farmer->id,
+                'farmer_name' => $farmer->name,
+                'farm_name'   => $farmer->farm_name,
+                'phone'       => $farmer->phone,
+                'revenue'     => $rev,
+                'cost'        => $cost,
+                'profit_loss' => $pl,
+            ];
+        }
+
+        return [
+            'total_farmer_revenue'     => $totalRevenue,
+            'total_farmer_cost'        => $totalCost,
+            'total_farmer_profit_loss' => $totalRevenue - $totalCost,
+            'farmer_count'             => count($farmers),
+            'farmers'                  => $farmerSummaries,
         ];
     }
 }

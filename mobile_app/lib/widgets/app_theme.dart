@@ -20,6 +20,7 @@ class AppTheme {
   static const Color textPrimary        = Color(0xFF111827);
   static const Color textSecondary      = Color(0xFF6B7280);
   static const Color textMuted          = Color(0xFF9CA3AF);
+  static const Color dark900            = Color(0xFF111827);
 
   static const Color green900           = Color(0xFF1B4332);
   static const Color green700           = Color(0xFF2D6A4F);
