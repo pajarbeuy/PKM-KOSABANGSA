@@ -402,6 +402,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final harvests = stats.map((s) => s.harvest).toList();
     final sales = stats.map((s) => s.sales).toList();
     final labels = stats.map((s) => s.label).toList();
+    final salesUnits = stats.map((s) => s.salesUnit).toList();
+    final salesHarvests = stats.map((s) => s.salesHarvest).toList();
+    final salesProcesseds = stats.map((s) => s.salesProcessed).toList();
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -415,6 +418,9 @@ class _HomeScreenState extends State<HomeScreen> {
         harvestData: harvests,
         salesData: sales,
         labels: labels,
+        salesUnits: salesUnits,
+        salesHarvestData: salesHarvests,
+        salesProcessedData: salesProcesseds,
       ),
     );
   }

@@ -256,12 +256,26 @@ class _SalesScreenState extends State<SalesScreen> {
                       fontWeight: FontWeight.bold,
                       color: AppTheme.textPrimary),
                 ),
+                if (sale.productName != null) ...[
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppTheme.green100,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      sale.productName!,
+                      style: const TextStyle(fontSize: 11, color: AppTheme.green700, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 10),
                 Row(
                   children: [
-                    const Icon(Icons.scale_outlined, size: 14, color: AppTheme.textSecondary),
+                    Icon(sale.productType == 'processed' ? Icons.inventory_2_outlined : Icons.scale_outlined, size: 14, color: AppTheme.textSecondary),
                     const SizedBox(width: 4),
-                    Text('${sale.quantity} kg', style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary)),
+                    Text('${sale.quantity} ${sale.unit}', style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary)),
                   ],
                 ),
                 const SizedBox(height: 10),
@@ -394,9 +408,9 @@ class _SalesScreenState extends State<SalesScreen> {
                     child: const Row(
                       children: [
                         _ColHeader(text: 'TANGGAL', flex: 2),
-                        _ColHeader(text: 'PEMBELI', flex: 4),
+                        _ColHeader(text: 'PEMBELI / PRODUK', flex: 4),
                         _ColHeader(text: 'JUMLAH', flex: 2),
-                        _ColHeader(text: 'HARGA/KG', flex: 2),
+                        _ColHeader(text: 'HARGA/SATUAN', flex: 2),
                         _ColHeader(text: 'TOTAL', flex: 3),
                         _ColHeader(text: 'STATUS', flex: 2),
                         _ColHeader(text: 'AKSI', flex: 2),
@@ -427,24 +441,39 @@ class _SalesScreenState extends State<SalesScreen> {
                                       fontSize: 14, color: AppTheme.textPrimary),
                                 ),
                               ),
-                              // PEMBELI
+                              // PEMBELI / PRODUK
                               Expanded(
                                 flex: 4,
-                                child: Text(
-                                  sale.buyerName,
-                                  style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppTheme.textPrimary),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      sale.buyerName,
+                                      style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppTheme.textPrimary),
+                                    ),
+                                    if (sale.productName != null) ...[
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'Produk: ${sale.productName}',
+                                        style: const TextStyle(
+                                            fontSize: 12,
+                                            color: AppTheme.green700,
+                                            fontWeight: FontWeight.w600),
+                                      ),
+                                    ],
+                                  ],
                                 ),
                               ),
                               // JUMLAH
                               Expanded(
                                 flex: 2,
                                 child: Text(
-                                  '${sale.quantity} kg',
+                                  '${sale.quantity} ${sale.unit}',
                                   style: const TextStyle(
-                                      fontSize: 14, color: AppTheme.textPrimary),
+                                      fontSize: 14, color: AppTheme.textPrimary, fontWeight: FontWeight.w600),
                                 ),
                               ),
                               // HARGA/KG

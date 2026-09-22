@@ -104,7 +104,7 @@ class LandingFeaturesSection extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 const Text(
-                  'Dari pencatatan panen hingga laporan keuangan, SIMHPSK menyediakan semua alat untuk petani modern.',
+                  'Dari pencatatan panen hingga laporan keuangan, SumberTani menyediakan semua alat untuk petani modern.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 16,

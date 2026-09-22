@@ -12,6 +12,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Global: CORS harus dijalankan paling awal (termasuk preflight OPTIONS)
+        $middleware->prepend(\Illuminate\Http\Middleware\HandleCors::class);
+
         // API Middleware
         $middleware->api(append: [
             \App\Http\Middleware\SetJsonHeader::class,

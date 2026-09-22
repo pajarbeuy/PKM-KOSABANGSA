@@ -211,7 +211,7 @@
 @endif
 
 <div class="footer">
-    Laporan ini digenerate otomatis oleh sistem SIMHPSK &bull; {{ now()->format('d M Y H:i:s') }}
+    Laporan ini digenerate otomatis oleh sistem SumberTani &bull; {{ now()->format('d M Y H:i:s') }}
 </div>
 
 </body>

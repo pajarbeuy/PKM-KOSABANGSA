@@ -77,7 +77,7 @@ class LandingFooter extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'SIMHPSK',
+              'SumberTani',
               style: TextStyle(
                 fontFamily: 'Nunito',
                 fontWeight: FontWeight.w900,
@@ -86,7 +86,7 @@ class LandingFooter extends StatelessWidget {
               ),
             ),
             Text(
-              'Sistem Informasi Manajemen Hasil Pertanian',
+              'Sistem Informasi Manajemen Pertanian Modern Berbasis AI',
               style: TextStyle(
                 fontSize: 11.2,
                 color: Color(0xFF6B6050),
@@ -127,7 +127,7 @@ class LandingFooter extends StatelessWidget {
 
   Widget _buildFooterCopyright() {
     return const Text(
-      '© 2026 SIMHPSK. All rights reserved.',
+      '© 2026 SumberTani. All rights reserved.',
       style: TextStyle(
         fontSize: 12.5,
         color: Color(0xFFA8A090),
