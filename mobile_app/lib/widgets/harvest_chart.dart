@@ -8,7 +8,18 @@ class ChartDataPoint {
   final String label;
   final double harvest;
   final double sales;
-  const ChartDataPoint({required this.label, required this.harvest, required this.sales});
+  final String salesUnit;
+  final double salesHarvest;
+  final double salesProcessed;
+
+  const ChartDataPoint({
+    required this.label,
+    required this.harvest,
+    required this.sales,
+    this.salesUnit = 'kg',
+    this.salesHarvest = 0.0,
+    this.salesProcessed = 0.0,
+  });
 }
 
 // ─── Harvest Sales Chart ──────────────────────────────────────────────────────
@@ -16,12 +27,18 @@ class HarvestSalesChart extends StatefulWidget {
   final List<double> harvestData;
   final List<double> salesData;
   final List<String> labels;
+  final List<String>? salesUnits;
+  final List<double>? salesHarvestData;
+  final List<double>? salesProcessedData;
 
   const HarvestSalesChart({
     super.key,
     required this.harvestData,
     required this.salesData,
     this.labels = const ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul'],
+    this.salesUnits,
+    this.salesHarvestData,
+    this.salesProcessedData,
   });
 
   @override
@@ -36,10 +53,23 @@ class _HarvestSalesChartState extends State<HarvestSalesChart> {
   List<ChartDataPoint> get _points {
     final count = math.max(widget.harvestData.length, widget.salesData.length);
     return List.generate(count, (i) {
+      final sHarvest = (widget.salesHarvestData != null && i < widget.salesHarvestData!.length)
+          ? widget.salesHarvestData![i]
+          : 0.0;
+      final sProc = (widget.salesProcessedData != null && i < widget.salesProcessedData!.length)
+          ? widget.salesProcessedData![i]
+          : 0.0;
+      final unit = (widget.salesUnits != null && i < widget.salesUnits!.length)
+          ? widget.salesUnits![i]
+          : (sProc > 0 && sHarvest == 0 ? 'pcs' : 'kg');
+
       return ChartDataPoint(
         label: i < widget.labels.length ? widget.labels[i] : 'P${i + 1}',
         harvest: i < widget.harvestData.length ? widget.harvestData[i] : 0,
         sales: i < widget.salesData.length ? widget.salesData[i] : 0,
+        salesUnit: unit,
+        salesHarvest: sHarvest,
+        salesProcessed: sProc,
       );
     });
   }
@@ -481,7 +511,7 @@ class _Tooltip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const tooltipW = 185.0;
+    const tooltipW = 205.0;
     const tooltipH = 78.0;
     const safeMargin = 28.0; // allow for box shadow and border space
 
@@ -530,7 +560,7 @@ class _Tooltip extends StatelessWidget {
                 Container(width: 8, height: 8, decoration: const BoxDecoration(color: Color(0xFFE07C00), shape: BoxShape.circle)),
                 const SizedBox(width: 6),
                 Expanded(
-                  child: Text('Penjualan: ${fmt(point.sales)} kg',
+                  child: Text('Penjualan: ${_formatSales(point)}',
                     style: const TextStyle(fontSize: 12, color: Color(0xFFE07C00), fontWeight: FontWeight.w600)),
                 ),
               ]),
@@ -539,6 +569,16 @@ class _Tooltip extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _formatSales(ChartDataPoint point) {
+    if (point.salesProcessed > 0 && point.salesHarvest > 0) {
+      return '${fmt(point.salesHarvest)} kg + ${fmt(point.salesProcessed)} pcs';
+    }
+    if (point.salesProcessed > 0 || point.salesUnit == 'pcs') {
+      return '${fmt(point.sales)} pcs';
+    }
+    return '${fmt(point.sales)} kg';
   }
 
   String fmt(double v) {

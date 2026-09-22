@@ -96,7 +96,7 @@ class LandingNavbar extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'SIMHPSK',
+                          'SumberTani',
                           style: TextStyle(
                             fontFamily: 'Nunito',
                             color: Color(0xFF1A3428),

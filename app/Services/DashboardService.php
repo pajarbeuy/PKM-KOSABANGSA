@@ -119,15 +119,39 @@ class DashboardService
                 ->whereMonth('date', $monthNum)
                 ->sum('weight_kg');
 
-            $salesSum = (float) Sale::where('user_id', $userId)
+            // Raw harvest sales (in kg)
+            $harvestSalesSum = (float) Sale::where('user_id', $userId)
                 ->whereYear('date', $year)
                 ->whereMonth('date', $monthNum)
+                ->where(function ($q) {
+                    $q->where('product_type', 'harvest')
+                      ->orWhereNull('product_type');
+                })
                 ->sum('weight_kg');
 
+            // Processed product sales (in pcs / unit)
+            $processedSalesSum = (float) Sale::where('user_id', $userId)
+                ->whereYear('date', $year)
+                ->whereMonth('date', $monthNum)
+                ->where('product_type', 'processed')
+                ->sum('weight_kg');
+
+            $totalSales = $harvestSalesSum + $processedSalesSum;
+
+            $unit = 'kg';
+            if ($processedSalesSum > 0 && $harvestSalesSum == 0) {
+                $unit = 'pcs';
+            } elseif ($processedSalesSum > 0 && $harvestSalesSum > 0) {
+                $unit = 'mix';
+            }
+
             $monthlyStats[] = [
-                'label'   => $monthsIndo[$monthNum] ?? $date->format('M'),
-                'harvest' => $harvestSum,
-                'sales'   => $salesSum,
+                'label'           => $monthsIndo[$monthNum] ?? $date->format('M'),
+                'harvest'         => $harvestSum,
+                'sales'           => $totalSales,
+                'sales_harvest'   => $harvestSalesSum,
+                'sales_processed' => $processedSalesSum,
+                'sales_unit'      => $unit,
             ];
         }
 

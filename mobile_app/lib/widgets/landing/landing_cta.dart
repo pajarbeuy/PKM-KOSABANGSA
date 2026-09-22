@@ -40,7 +40,7 @@ class LandingCtaSection extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               const Text(
-                'Bergabunglah dengan 1.200+ petani yang sudah menggunakan SIMHPSK dan rasakan perbedaannya.',
+                'Bergabunglah dengan 1.200+ petani yang sudah menggunakan SumberTani dan rasakan perbedaannya.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16,

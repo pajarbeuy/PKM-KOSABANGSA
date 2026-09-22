@@ -363,7 +363,7 @@ class MockupDashboard extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'simhpsk.app/dashboard',
+                          'sumbertani.app/dashboard',
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.5),
                             fontSize: 12,

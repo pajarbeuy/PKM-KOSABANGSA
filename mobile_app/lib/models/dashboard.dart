@@ -68,18 +68,31 @@ class MonthlyStat {
   final String label;
   final double harvest;
   final double sales;
+  final double salesHarvest;
+  final double salesProcessed;
+  final String salesUnit;
 
   MonthlyStat({
     required this.label,
     required this.harvest,
     required this.sales,
+    this.salesHarvest = 0.0,
+    this.salesProcessed = 0.0,
+    this.salesUnit = 'kg',
   });
 
   factory MonthlyStat.fromJson(Map<String, dynamic> json) {
+    final sHarvest = double.tryParse(json['sales_harvest']?.toString() ?? '') ?? 0.0;
+    final sProc = double.tryParse(json['sales_processed']?.toString() ?? '') ?? 0.0;
+    final unit = json['sales_unit']?.toString() ?? (sProc > 0 && sHarvest == 0 ? 'pcs' : 'kg');
+
     return MonthlyStat(
       label: json['label']?.toString() ?? '',
       harvest: double.tryParse(json['harvest']?.toString() ?? '') ?? 0.0,
       sales: double.tryParse(json['sales']?.toString() ?? '') ?? 0.0,
+      salesHarvest: sHarvest,
+      salesProcessed: sProc,
+      salesUnit: unit,
     );
   }
 }

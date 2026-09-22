@@ -132,7 +132,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                           const SizedBox(height: 16),
                           const Text(
-                            'Daftar SIMHPSK',
+                            'Daftar SumberTani',
                             style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,

@@ -321,10 +321,10 @@ class _LandingScreenState extends State<LandingScreen> with TickerProviderStateM
                             child: LandingHeroSection(
                               isDesktop: isDesktop,
                               heroTitle: _landingValue('hero_title', 'Kelola Pencatatan Pertanian'),
-                              heroTitleEmphasis: _landingValue('hero_title_emphasis', 'Kentang'),
+                              heroTitleEmphasis: _landingValue('hero_title_emphasis', 'Lebih Cerdas & Modern'),
                               heroDescription: _landingValue(
                                 'hero_description',
-                                'SIMHPSK hadir membantu petani mengelola panen, stok, penjualan, dan laporan keuangan — dalam satu platform yang modern, mudah, dan bisa diakses kapan saja dari HP.',
+                                'SumberTani hadir membantu petani mengelola panen, stok produk olahan, penjualan, dan laporan keuangan — dalam satu platform yang modern, mudah, dan bisa diakses kapan saja.',
                               ),
                               onStartFreeTap: () {
                                 Navigator.push(

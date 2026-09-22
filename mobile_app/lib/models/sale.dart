@@ -10,6 +10,10 @@ class Sale {
   final String? notes;
   final int? seasonId;
   final String status;
+  final String productType;
+  final String? productName;
+
+  String get unit => productType == 'processed' ? 'pcs' : 'kg';
 
   Sale({
     required this.id,
@@ -23,6 +27,8 @@ class Sale {
     this.notes,
     this.seasonId,
     required this.status,
+    this.productType = 'harvest',
+    this.productName,
   });
 
   factory Sale.fromJson(Map<String, dynamic> json) {
@@ -44,6 +50,9 @@ class Sale {
     }
     if (statusVal.isEmpty) statusVal = 'completed';
 
+    final pType = json['product_type']?.toString() ?? 'harvest';
+    final pName = json['product_name']?.toString() ?? json['processed_product']?['name']?.toString();
+
     return Sale(
       id: int.tryParse(json['id']?.toString() ?? '') ?? 0,
       quantity: qty,
@@ -56,6 +65,8 @@ class Sale {
       notes: json['notes']?.toString(),
       seasonId: int.tryParse(json['season_id']?.toString() ?? ''),
       status: statusVal,
+      productType: pType,
+      productName: pName,
     );
   }
 }
