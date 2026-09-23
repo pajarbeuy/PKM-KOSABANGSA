@@ -5,7 +5,7 @@ import 'package:mobile_app/main.dart';
 import 'package:mobile_app/providers/auth_provider.dart';
 
 void main() {
-  testWidgets('SIMHPSK App displays landing screen when not authenticated', 
+  testWidgets('SumberTani App displays landing screen when not authenticated', 
     (WidgetTester tester) async {
       // Build the app with a mock AuthProvider
       await tester.pumpWidget(
@@ -20,11 +20,11 @@ void main() {
       // Wait for the app to build
       await tester.pumpAndSettle();
 
-      // Verify landing screen is displayed (not authenticated)
+      // Verify login screen is displayed (not authenticated)
       expect(
-        find.text('SIMHPSK'),
+        find.text('Login SumberTani'),
         findsOneWidget,
-        reason: 'App should show SIMHPSK title on landing screen',
+        reason: 'App should show Login SumberTani title on login screen',
       );
     },
   );

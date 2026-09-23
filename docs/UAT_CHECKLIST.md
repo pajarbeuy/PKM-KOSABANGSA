@@ -92,3 +92,15 @@
 | 4. Evaluasi performa query database | Hasil query di-cache selama 1 jam (`3600 detik`) via `Cache::remember('superadmin_dashboard_stats')`, tidak dieksekusi tiap menit | [x] PASSED |
 | 5. Navigasi tab & tombol Refresh Desktop | Berpindah tab ke Penjualan Terpusat atau menekan tombol Refresh 🔄 langsung memuat data terbaru secara otomatis | [x] PASSED |
 
+---
+
+### Skenario 8 — Dashboard Petani: Pemisahan Dua Grafik (Bahan Mentah kg & Produk Olahan pcs/Rp)
+| Langkah Pengujian | Hasil yang Diharapkan | Status |
+|---|---|---|
+| 1. Login Petani: Buka Dashboard | Tampil dua grafik terpisah: "Grafik Bahan Mentah" dan "Grafik Produk Olahan" secara berdampingan di Desktop | [x] PASSED |
+| 2. Grafik Bahan Mentah: Periksa Satuan & Nilai | Menampilkan volume panen (kg) dan penjualan hasil panen (kg) secara murni dalam satuan kg (Area & Bar toggle) | [x] PASSED |
+| 3. Grafik Produk Olahan: Mode Switcher & Visual | Menampilkan dual scale bar volume terjual (pcs) & kurva nilai penjualan (Rp) dengan toggle filter: Semua, pcs, Rp | [x] PASSED |
+| 4. Grafik Produk Olahan: Hover Tooltip | Tooltip interaktif menampilkan nama bulan, "Olahan Terjual: X pcs", dan "Penjualan: Rp Y" | [x] PASSED |
+| 5. Layout & Responsivitas | Tampilan rapi dan seimbang di Desktop (berdampingan) serta Mobile (bertingkat ergonomis) | [x] PASSED |
+
+

@@ -866,6 +866,51 @@ Menambahkan mekanisme pencatatan dan pelacakan pesanan produk olahan (*Order Dom
 - **Flutter Static Analysis**: `flutter analyze` ➔ ✅ **No issues found! (0 errors, 0 warnings)**.
 - **UAT End-to-End**: Seluruh Skenario 1 s/d 7 berstatus ✅ **[x] PASSED**.
 
+---
+
+## 14. Pembaruan 23 September 2026: Pemisahan Dua Grafik Dashboard Petani (Bahan Mentah kg & Produk Olahan pcs/Rp)
+
+### A. Latar Belakang & Kebutuhan
+Sebelumnya, grafik di dashboard petani menggabungkan pencatatan panen (kg) dan penjualan (yang dapat berupa bahan mentah kg maupun produk olahan pcs) ke dalam satu diagram tunggal, sehingga skala dan interpretasi data menjadi tercampur. User menghendaki pemisahan menjadi dua grafik terpisah yang tegas:
+1. **Grafik 1 (Bahan Mentah)**: Khusus memvisualisasikan volume panen dan penjualan bahan mentah dalam satuan **kg**.
+2. **Grafik 2 (Produk Olahan)**: Khusus memvisualisasikan volume penjualan produk olahan dalam satuan **pcs** dan nilai penjualan dalam bentuk nominal **Rupiah (Rp)**.
+
+### B. Perubahan Backend (`app/Services/DashboardService.php`)
+1. **`getMonthlyStats(int $userId)`**:
+   - Menghitung secara terpisah per bulan selama 6 bulan terakhir:
+     - `harvest_kg`: total bobot panen (kg).
+     - `harvest_sales_kg`: total volume penjualan komoditas mentah (`product_type = 'harvest'`) dalam kg.
+     - `harvest_sales_rp`: total omset rupiah dari penjualan bahan mentah (Rp).
+     - `processed_sales_pcs`: total kuantitas penjualan produk olahan (`product_type = 'processed'`) dalam pcs.
+     - `processed_sales_rp`: total omset rupiah dari penjualan produk olahan (Rp).
+2. **`getSummary(int $userId)`**:
+   - Menambahkan field ringkasan: `totalRawSalesKg`, `totalRawSalesRp`, `totalProcessedSalesPcs`, `totalProcessedSalesRp`.
+3. **Automated Testing (`tests/Feature/API/FarmerDashboardChartsTest.php`)**:
+   - Menambahkan feature test komprehensif yang memvalidasi pembagian kalkulasi bahan mentah (kg & Rp) serta produk olahan (pcs & Rp) pada endpoint `GET /api/dashboard`.
+
+### C. Perubahan Frontend Flutter (`mobile_app/lib`)
+1. **Model (`mobile_app/lib/models/dashboard.dart`)**:
+   - Memperluas class `DashboardData` dan `MonthlyStat` dengan field `harvestKg`, `harvestSalesKg`, `harvestSalesRp`, `processedSalesPcs`, dan `processedSalesRp`.
+2. **Grafik Bahan Mentah (`mobile_app/lib/widgets/harvest_chart.dart`)**:
+   - Dikhususkan untuk **Bahan Mentah** dengan badge satuan **kg**.
+   - Menampilkan perbandingan Panen (kg) dan Penjualan (kg) baik dalam mode Area maupun Bar.
+   - Tooltip dan sumbu Y secara tegas menampilkan nilai dalam format `kg`.
+3. **Widget Baru Grafik Produk Olahan (`mobile_app/lib/widgets/charts/processed_sales_chart.dart`)**:
+   - Komponen chart responsif dengan custom painter Vanilla Flutter:
+     - **Dual Scale Visual**: Bar chart elegan untuk volume terjual (pcs, sumbu Y kiri) dan Line kurva halus bergradien untuk nominal pendapatan (Rp, sumbu Y kanan).
+     - **Mode Switcher**: Pilihan tampilan `Semua` (kombinasi), `pcs` (fokus unit), dan `Rp` (fokus nominal).
+     - **Interactive Tooltip**: Menampilkan detail kuantitas terjual (pcs) dan total nominal Rupiah saat di-hover/tap.
+     - **Empty State**: Menampilkan ilustrasi dan pesan informatif yang ramah jika belum ada data transaksi produk olahan.
+4. **Layout Dashboard (`mobile_app/lib/screens/home_screen.dart`)**:
+   - Pada layar Desktop (lebar >= 900px): Kedua grafik ditampilkan berdampingan (*side-by-side*) dengan pembagian flex 1 : 1, diikuti oleh baris Ringkasan Keuangan dan Transaksi Stok Terbaru.
+   - Pada layar Mobile: Ditata vertikal bertingkat secara ergonomis.
+
+### D. Hasil Verifikasi Akhir
+- **Backend API Test Suite**: `php artisan test tests/Feature/API` ➔ ✅ **110/110 Passed (437 assertions)**.
+- **Flutter Widget Tests**: `flutter test` ➔ ✅ **All 5 tests passed**.
+- **Flutter Static Analysis**: `flutter analyze` ➔ ✅ **No issues found! (0 errors, 0 warnings)**.
+
+
 
 
 

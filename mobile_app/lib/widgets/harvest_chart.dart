@@ -107,8 +107,52 @@ class _HarvestSalesChartState extends State<HarvestSalesChart> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Grafik Panen & Penjualan',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppTheme.textPrimary),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Text(
+                        'Grafik Bahan Mentah',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE8F5E9),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Text(
+                          'kg',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF2E7D32),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Panen & penjualan hasil panen mentah (kg)',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.textSecondary.withValues(alpha: 0.8),
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
             if (hasData)
               _ToggleButtons(isArea: _isArea, onToggle: (v) => setState(() => _isArea = v)),
@@ -132,7 +176,7 @@ class _HarvestSalesChartState extends State<HarvestSalesChart> {
                     ),
                     const SizedBox(height: 10),
                     const Text(
-                      'Belum ada data panen & penjualan',
+                      'Belum ada data panen & penjualan bahan mentah',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -141,7 +185,7 @@ class _HarvestSalesChartState extends State<HarvestSalesChart> {
                     ),
                     const SizedBox(height: 4),
                     const Text(
-                      'Data grafik akan muncul setelah Anda mencatat panen atau penjualan.',
+                      'Data grafik akan muncul setelah Anda mencatat panen atau penjualan bahan mentah.',
                       style: TextStyle(
                         fontSize: 12,
                         color: AppTheme.textMuted,
@@ -174,11 +218,11 @@ class _HarvestSalesChartState extends State<HarvestSalesChart> {
           children: [
             legendDot(AppTheme.green700),
             const SizedBox(width: 6),
-            const Text('Panen', style: TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+            const Text('Panen (kg)', style: TextStyle(fontSize: 12, color: AppTheme.textSecondary, fontWeight: FontWeight.w500)),
             const SizedBox(width: 16),
             legendDot(const Color(0xFFE07C00)),
             const SizedBox(width: 6),
-            const Text('Penjualan', style: TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+            const Text('Penjualan (kg)', style: TextStyle(fontSize: 12, color: AppTheme.textSecondary, fontWeight: FontWeight.w500)),
           ],
         ),
       ],
@@ -572,12 +616,6 @@ class _Tooltip extends StatelessWidget {
   }
 
   String _formatSales(ChartDataPoint point) {
-    if (point.salesProcessed > 0 && point.salesHarvest > 0) {
-      return '${fmt(point.salesHarvest)} kg + ${fmt(point.salesProcessed)} pcs';
-    }
-    if (point.salesProcessed > 0 || point.salesUnit == 'pcs') {
-      return '${fmt(point.sales)} pcs';
-    }
     return '${fmt(point.sales)} kg';
   }
 

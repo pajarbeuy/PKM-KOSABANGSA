@@ -1590,6 +1590,7 @@ Feature PKM dianggap selesai apabila:
 * [x] Stock tidak boleh negatif.
 * [x] Stock 0 → `out_of_stock`.
 * [x] Restock → `active`.
+* [x] Dashboard Petani memisahkan Grafik Bahan Mentah (kg) dan Grafik Produk Olahan (pcs & Rp).
 
 ## Marketing
 
@@ -1635,8 +1636,8 @@ Feature PKM dianggap selesai apabila:
 * [x] Boundary tests.
 * [x] Consistency tests.
 * [x] Authorization tests.
-* [x] Full regression suite pass (109/109 tests passed).
-* [x] Flutter analyze clean (0 issues).
+* [x] Full regression suite pass (110/110 tests passed).
+* [x] Flutter analyze clean (0 issues) & widget tests passed (5/5).
 * [x] UAT complete & verified.
 
 ---

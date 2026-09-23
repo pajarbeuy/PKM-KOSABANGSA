@@ -28,18 +28,35 @@ class DashboardService
         $estimatedProfit = $totalRevenue - $totalCost;
         $totalHarvest    = (float) Harvest::where('user_id', $userId)->sum('weight_kg');
 
+        $rawSalesRev       = (float) Sale::where('user_id', $userId)
+            ->where(fn($q) => $q->where('product_type', 'harvest')->orWhereNull('product_type'))
+            ->sum('total');
+        $rawSalesKg        = (float) Sale::where('user_id', $userId)
+            ->where(fn($q) => $q->where('product_type', 'harvest')->orWhereNull('product_type'))
+            ->sum('weight_kg');
+        $processedSalesRev = (float) Sale::where('user_id', $userId)
+            ->where('product_type', 'processed')
+            ->sum('total');
+        $processedSalesPcs = (float) Sale::where('user_id', $userId)
+            ->where('product_type', 'processed')
+            ->sum('weight_kg');
+
         return [
-            'totalStok'       => $stockBalance,
-            'totalPenjualan'  => $totalRevenue,
-            'totalBiaya'      => $totalCost,
-            'totalPanen'      => $totalHarvest,
-            'estimatedProfit' => $estimatedProfit,
-            'targetPanen'     => (float) ($activeSeason?->target_kg ?? 0),
-            'minStock'        => (int) Setting::get('min_stock', 100),
-            'maxStock'        => (int) Setting::get('max_stock', 5000),
-            'notifyLowStock'  => (bool) Setting::get('notify_low_stock', 1),
-            'notifyNewSale'   => (bool) Setting::get('notify_new_sale', 1),
-            'notifyCost'      => (bool) Setting::get('notify_cost', 1),
+            'totalStok'               => $stockBalance,
+            'totalPenjualan'          => $totalRevenue,
+            'totalBiaya'              => $totalCost,
+            'totalPanen'              => $totalHarvest,
+            'estimatedProfit'         => $estimatedProfit,
+            'totalRawSalesKg'         => $rawSalesKg,
+            'totalRawSalesRp'         => $rawSalesRev,
+            'totalProcessedSalesPcs'  => $processedSalesPcs,
+            'totalProcessedSalesRp'   => $processedSalesRev,
+            'targetPanen'             => (float) ($activeSeason?->target_kg ?? 0),
+            'minStock'                => (int) Setting::get('min_stock', 100),
+            'maxStock'                => (int) Setting::get('max_stock', 5000),
+            'notifyLowStock'          => (bool) Setting::get('notify_low_stock', 1),
+            'notifyNewSale'           => (bool) Setting::get('notify_new_sale', 1),
+            'notifyCost'              => (bool) Setting::get('notify_cost', 1),
         ];
     }
 
@@ -129,6 +146,16 @@ class DashboardService
                 })
                 ->sum('weight_kg');
 
+            // Raw harvest revenue (in Rp)
+            $harvestRevenueSum = (float) Sale::where('user_id', $userId)
+                ->whereYear('date', $year)
+                ->whereMonth('date', $monthNum)
+                ->where(function ($q) {
+                    $q->where('product_type', 'harvest')
+                      ->orWhereNull('product_type');
+                })
+                ->sum('total');
+
             // Processed product sales (in pcs / unit)
             $processedSalesSum = (float) Sale::where('user_id', $userId)
                 ->whereYear('date', $year)
@@ -136,25 +163,30 @@ class DashboardService
                 ->where('product_type', 'processed')
                 ->sum('weight_kg');
 
-            $totalSales = $harvestSalesSum + $processedSalesSum;
-
-            $unit = 'kg';
-            if ($processedSalesSum > 0 && $harvestSalesSum == 0) {
-                $unit = 'pcs';
-            } elseif ($processedSalesSum > 0 && $harvestSalesSum > 0) {
-                $unit = 'mix';
-            }
+            // Processed product revenue (in Rp)
+            $processedRevenueSum = (float) Sale::where('user_id', $userId)
+                ->whereYear('date', $year)
+                ->whereMonth('date', $monthNum)
+                ->where('product_type', 'processed')
+                ->sum('total');
 
             $monthlyStats[] = [
-                'label'           => $monthsIndo[$monthNum] ?? $date->format('M'),
-                'harvest'         => $harvestSum,
-                'sales'           => $totalSales,
-                'sales_harvest'   => $harvestSalesSum,
-                'sales_processed' => $processedSalesSum,
-                'sales_unit'      => $unit,
+                'label'               => $monthsIndo[$monthNum] ?? $date->format('M'),
+                'harvest'             => $harvestSum,
+                'sales'               => $harvestSalesSum, // Bahan mentah kg
+                'harvest_kg'          => $harvestSum,
+                'harvest_sales_kg'    => $harvestSalesSum,
+                'harvest_sales_rp'    => $harvestRevenueSum,
+                'processed_sales_pcs' => $processedSalesSum,
+                'processed_sales_rp'  => $processedRevenueSum,
+                'sales_harvest'       => $harvestSalesSum,
+                'sales_processed'     => $processedSalesSum,
+                'sales_unit'          => 'kg',
             ];
         }
 
         return $monthlyStats;
     }
 }
+
+
