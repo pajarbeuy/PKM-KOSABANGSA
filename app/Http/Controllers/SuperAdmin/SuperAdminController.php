@@ -24,10 +24,12 @@ class SuperAdminController extends Controller
 
     // ─── Dashboard ────────────────────────────────────────────────────────────────
 
-    public function dashboard()
+    public function dashboard(Request $request)
     {
+        $forceRefresh = $request->boolean('refresh', false);
+
         return $this->successResponse(
-            $this->superAdminService->getDashboardStats(),
+            $this->superAdminService->getDashboardStats($forceRefresh),
             'Data dashboard super admin berhasil diambil.'
         );
     }

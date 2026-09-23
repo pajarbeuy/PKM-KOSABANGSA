@@ -15,6 +15,8 @@ import 'super_admin_orders_screen.dart';
 import 'sales_screen.dart';
 import 'super_admin_profit_loss_screen.dart';
 import 'chatbot_screen.dart';
+import '../widgets/charts/monthly_product_bar_chart.dart';
+import '../widgets/charts/cumulative_revenue_line_chart.dart';
 
 class SuperAdminDashboardScreen extends StatefulWidget {
   final int initialTabIndex;
@@ -32,6 +34,10 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
   bool _isLoading = true;
   int _totalUsers = 0;
   int _activeUsers = 0;
+  int _totalProductsSoldYear = 0;
+  int _totalFarmerRevenueYear = 0;
+  List<MonthlyProductBarPoint> _monthlyProductSales = [];
+  List<CumulativeRevenuePoint> _cumulativeFarmerRevenue = [];
 
   @override
   void initState() {
@@ -48,6 +54,22 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
         setState(() {
           _totalUsers = stats['totalUsers'] as int? ?? 0;
           _activeUsers = stats['activeUsers'] as int? ?? 0;
+          _totalProductsSoldYear = (stats['total_products_sold_year'] as num?)?.toInt() ?? 0;
+          _totalFarmerRevenueYear = (stats['total_farmer_revenue_year'] as num?)?.toInt() ?? 0;
+
+          if (stats['monthly_product_sales'] is List) {
+            _monthlyProductSales = (stats['monthly_product_sales'] as List)
+                .whereType<Map<String, dynamic>>()
+                .map((m) => MonthlyProductBarPoint.fromJson(m))
+                .toList();
+          }
+
+          if (stats['cumulative_farmer_revenue'] is List) {
+            _cumulativeFarmerRevenue = (stats['cumulative_farmer_revenue'] as List)
+                .whereType<Map<String, dynamic>>()
+                .map((m) => CumulativeRevenuePoint.fromJson(m))
+                .toList();
+          }
         });
       }
       setState(() => _isLoading = false);
@@ -195,6 +217,70 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
                             children: cards
                                  .map((c) => SizedBox(width: cardWidth, child: c))
                                  .toList(),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 28),
+                      // ─── Analytics Charts Section ─────────────────────────────
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Analitik Penjualan & Pendapatan Mitra',
+                            style: TextStyle(
+                              fontSize: isDesktop ? 18 : 16,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.dark900,
+                            ),
+                          ),
+                          Text(
+                            'Tahun ${DateTime.now().year}',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      LayoutBuilder(
+                        builder: (context, chartConstraints) {
+                          if (isDesktop && chartConstraints.maxWidth > 850) {
+                            final chartWidth = (chartConstraints.maxWidth - 16) / 2;
+                            return Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SizedBox(
+                                  width: chartWidth,
+                                  child: MonthlyProductBarChart(
+                                    data: _monthlyProductSales,
+                                    totalYearSold: _totalProductsSoldYear,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                SizedBox(
+                                  width: chartWidth,
+                                  child: CumulativeRevenueLineChart(
+                                    data: _cumulativeFarmerRevenue,
+                                    totalYearRevenue: _totalFarmerRevenueYear,
+                                  ),
+                                ),
+                              ],
+                            );
+                          }
+                          return Column(
+                            children: [
+                              MonthlyProductBarChart(
+                                data: _monthlyProductSales,
+                                totalYearSold: _totalProductsSoldYear,
+                              ),
+                              const SizedBox(height: 16),
+                              CumulativeRevenueLineChart(
+                                data: _cumulativeFarmerRevenue,
+                                totalYearRevenue: _totalFarmerRevenueYear,
+                              ),
+                            ],
                           );
                         },
                       ),
