@@ -11,12 +11,13 @@ $uri = urldecode(
     parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?? ''
 );
 
-// Always set CORS headers for cross-origin web clients
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Origin, Content-Type, Accept, Authorization, X-Requested-With, X-XSRF-TOKEN');
-
+// Handle CORS preflight directly
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    header('Access-Control-Allow-Origin: *');
+    header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    $requestHeaders = $_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS'] ?? '*';
+    header("Access-Control-Allow-Headers: $requestHeaders");
+    header('Access-Control-Max-Age: 86400');
     http_response_code(200);
     exit;
 }
@@ -27,6 +28,9 @@ if ($uri !== '/' && file_exists($publicPath.$uri)) {
         $filePath = $publicPath.$uri;
         if (is_file($filePath)) {
             $mime = mime_content_type($filePath) ?: 'application/octet-stream';
+            header('Access-Control-Allow-Origin: *');
+            header('Access-Control-Allow-Methods: GET, OPTIONS');
+            header('Access-Control-Allow-Headers: *');
             header("Content-Type: $mime");
             header("Content-Length: " . filesize($filePath));
             header('Cache-Control: public, max-age=86400');
