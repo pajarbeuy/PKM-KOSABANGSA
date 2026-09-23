@@ -7,6 +7,7 @@ use App\Models\LandingContent;
 use App\Models\ProductionCost;
 use App\Models\Sale;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 
 class SuperAdminService
@@ -157,14 +158,75 @@ class SuperAdminService
     // ─── Dashboard Stats ─────────────────────────────────────────────────────────
 
     /**
-     * Get super admin dashboard summary.
+     * Get super admin dashboard summary with 1-hour caching.
+     * Caches query results for 3600 seconds to prevent running heavy aggregates every minute.
      */
-    public function getDashboardStats(): array
+    public function getDashboardStats(bool $forceRefresh = false): array
     {
-        return [
-            'totalUsers'  => User::count(),
-            'activeUsers' => User::where('status', 'active')->count(),
-        ];
+        $cacheKey = 'superadmin_dashboard_stats';
+
+        if ($forceRefresh) {
+            Cache::forget($cacheKey);
+        }
+
+        return Cache::remember($cacheKey, 3600, function () {
+            $year = now()->year;
+
+            $monthsIndo = [
+                1 => 'Jan', 2 => 'Feb', 3 => 'Mar', 4 => 'Apr', 5 => 'Mei', 6 => 'Jun',
+                7 => 'Jul', 8 => 'Agt', 9 => 'Sep', 10 => 'Okt', 11 => 'Nov', 12 => 'Des',
+            ];
+
+            // 1. Monthly Processed Product Sales (Bar Chart)
+            $monthlyProductSales = [];
+            $totalProductSoldYear = 0;
+
+            for ($m = 1; $m <= 12; $m++) {
+                $sold = (float) Sale::where('product_type', 'processed')
+                    ->whereYear('date', $year)
+                    ->whereMonth('date', $m)
+                    ->sum('weight_kg');
+
+                $totalProductSoldYear += (int) $sold;
+
+                $monthlyProductSales[] = [
+                    'month'      => $m,
+                    'label'      => $monthsIndo[$m],
+                    'total_sold' => (int) $sold,
+                ];
+            }
+
+            // 2. Monthly Cumulative Farmer Revenue (Line Chart)
+            $cumulativeFarmerRevenue = [];
+            $runningRevenue = 0.0;
+
+            for ($m = 1; $m <= 12; $m++) {
+                $monthlyRevenue = (float) Sale::whereYear('date', $year)
+                    ->whereMonth('date', $m)
+                    ->sum('total');
+
+                $runningRevenue += $monthlyRevenue;
+
+                $cumulativeFarmerRevenue[] = [
+                    'month'              => $m,
+                    'label'              => $monthsIndo[$m],
+                    'monthly_revenue'    => (int) $monthlyRevenue,
+                    'cumulative_revenue' => (int) $runningRevenue,
+                ];
+            }
+
+            return [
+                'totalUsers'                 => User::count(),
+                'activeUsers'                => User::where('status', 'active')->count(),
+                'year'                       => $year,
+                'total_products_sold_year'   => $totalProductSoldYear,
+                'total_farmer_revenue_year'  => (int) $runningRevenue,
+                'monthly_product_sales'      => $monthlyProductSales,
+                'cumulative_farmer_revenue'  => $cumulativeFarmerRevenue,
+                'cached_at'                  => now()->toIso8601String(),
+                'cache_ttl_seconds'          => 3600,
+            ];
+        });
     }
 
     // ─── Aggregate Profit/Loss ───────────────────────────────────────────────────
