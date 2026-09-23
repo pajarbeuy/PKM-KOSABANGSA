@@ -28,6 +28,7 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
   final ApiService _apiService = ApiService();
   
   late int _selectedIndex;
+  int _refreshTick = 0;
   bool _isLoading = true;
   int _totalUsers = 0;
   int _activeUsers = 0;
@@ -312,7 +313,11 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
                         subtitle: _currentSubtitle,
                         userInitials: initials,
                         onRefresh: () {
-                          if (_selectedIndex == 0) _loadStats();
+                          if (_selectedIndex == 0) {
+                            _loadStats();
+                          } else {
+                            setState(() => _refreshTick++);
+                          }
                         },
                       ),
                     Expanded(
@@ -322,15 +327,24 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
                           _isLoading
                               ? const Center(child: CircularProgressIndicator(color: AppTheme.green700))
                               : buildDashboardOverview(),
-                          const SuperAdminOrdersScreen(isEmbedded: true),
+                          SuperAdminOrdersScreen(
+                            key: ValueKey('orders_${_refreshTick}_${_selectedIndex == 1}'),
+                            isEmbedded: true,
+                          ),
                           const UserManagementScreen(isEmbedded: true),
                           const FeedbackManagementScreen(isEmbedded: true),
                           SuperAdminMarketingScreen(
                             isEmbedded: true,
                             onOpenOrders: () => setState(() => _selectedIndex = 1),
                           ),
-                          const SalesScreen(isEmbedded: true),
-                          const SuperAdminProfitLossScreen(isEmbedded: true),
+                          SalesScreen(
+                            key: ValueKey('sales_${_refreshTick}_${_selectedIndex == 5}'),
+                            isEmbedded: true,
+                          ),
+                          SuperAdminProfitLossScreen(
+                            key: ValueKey('pl_${_refreshTick}_${_selectedIndex == 6}'),
+                            isEmbedded: true,
+                          ),
                           const ChatbotScreen(isEmbedded: true),
                         ],
                       ),
