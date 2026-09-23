@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reset Password Berhasil - SIMHPSK</title>
+    <title>Reset Password Berhasil - SumberTani</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -106,7 +106,7 @@
 
         <div class="card-body">
             <p class="success-message">
-                Password Anda telah berhasil diperbarui. Silakan kembali ke aplikasi mobile/web <strong>SIMHPSK</strong> untuk melakukan login dengan password baru Anda.
+                Password Anda telah berhasil diperbarui. Silakan kembali ke aplikasi mobile/web <strong>SumberTani</strong> untuk melakukan login dengan password baru Anda.
             </p>
             <a href="javascript:window.close();" class="btn-action">Tutup Halaman</a>
         </div>

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// ─── SIMHPSK Design Tokens (Figma palette) ──────────────────────────────────
+/// ─── SumberTani Design Tokens (Figma palette) ──────────────────────────────────
 class AppTheme {
   AppTheme._();
 
