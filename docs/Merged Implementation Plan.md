@@ -1,8 +1,8 @@
-# SIMHPSK PKM — Merged Implementation Plan
+# SumberTani PKM — Merged Implementation Plan
 
-> Status: Draft untuk implementasi
+> Status: ✅ COMPLETED / VERIFIED (Semua Task Telah Selesai & Terverifikasi)
 >
-> Tanggal: 21 September 2026
+> Tanggal: 23 September 2026
 >
 > Tujuan: Menggabungkan hasil functional audit, generalization, UAT, dan kebutuhan fitur PKM baru menjadi satu rencana implementasi yang konsisten.
 
@@ -1581,63 +1581,63 @@ Feature PKM dianggap selesai apabila:
 
 ## Product
 
-* [ ] Petani dapat membuat produk olahan.
-* [ ] Product owner tersimpan sebagai Petani.
-* [ ] Petani hanya dapat mengakses produknya sendiri.
-* [ ] Super Admin dapat melihat seluruh produk.
-* [ ] Tidak ada duplicate stock Super Admin.
-* [ ] Product fields sesuai scope.
-* [ ] Stock tidak boleh negatif.
-* [ ] Stock 0 → `out_of_stock`.
-* [ ] Restock → `active`.
+* [x] Petani dapat membuat produk olahan.
+* [x] Product owner tersimpan sebagai Petani.
+* [x] Petani hanya dapat mengakses produknya sendiri.
+* [x] Super Admin dapat melihat seluruh produk.
+* [x] Tidak ada duplicate stock Super Admin.
+* [x] Product fields sesuai scope.
+* [x] Stock tidak boleh negatif.
+* [x] Stock 0 → `out_of_stock`.
+* [x] Restock → `active`.
 
 ## Marketing
 
-* [ ] Super Admin memiliki Manajemen Pemasaran.
-* [ ] Produk Petani dapat ditampilkan pada katalog.
-* [ ] Informasi produk benar.
-* [ ] Produk out_of_stock tidak dapat dibeli.
+* [x] Super Admin memiliki Manajemen Pemasaran.
+* [x] Produk Petani dapat ditampilkan pada katalog.
+* [x] Informasi produk benar.
+* [x] Produk out_of_stock tidak dapat dibeli.
 
 ## Customer
 
-* [ ] Customer dapat melihat katalog.
-* [ ] Customer dapat memilih produk.
-* [ ] Customer dapat menentukan quantity.
-* [ ] Quantity tidak boleh melebihi stock.
-* [ ] Checkout menghasilkan order request.
-* [ ] Customer diarahkan ke WhatsApp Super Admin.
+* [x] Customer dapat melihat katalog.
+* [x] Customer dapat memilih produk.
+* [x] Customer dapat menentukan quantity.
+* [x] Quantity tidak boleh melebihi stock.
+* [x] Checkout menghasilkan order request.
+* [x] Customer diarahkan ke WhatsApp Super Admin.
 
 ## Sales
 
-* [ ] Penjualan Super Admin tersedia.
-* [ ] Authorization benar.
-* [ ] Stock berkurang secara atomic.
-* [ ] Tidak ada stock negatif.
-* [ ] Existing sales behavior tidak rusak tanpa alasan.
+* [x] Penjualan Super Admin tersedia.
+* [x] Authorization benar.
+* [x] Stock berkurang secara atomic.
+* [x] Tidak ada stock negatif.
+* [x] Existing sales behavior tidak rusak tanpa alasan.
 
 ## Profit/Loss
 
-* [ ] Farmer Profit/Loss tetap tersedia.
-* [ ] Super Admin dapat melihat aggregate.
-* [ ] Aggregate = SUM Farmer Profit/Loss.
-* [ ] Tidak terjadi double counting.
+* [x] Farmer Profit/Loss tetap tersedia.
+* [x] Super Admin dapat melihat aggregate.
+* [x] Aggregate = SUM Farmer Profit/Loss.
+* [x] Tidak terjadi double counting.
 
 ## Chatbot
 
-* [ ] Chatbot tidak tersedia untuk Petani.
-* [ ] Chatbot tersedia untuk Super Admin.
-* [ ] Backend endpoint protected by role authorization.
+* [x] Chatbot tidak tersedia untuk Petani.
+* [x] Chatbot tersedia untuk Super Admin.
+* [x] Backend endpoint protected by role authorization.
 
 ## Testing
 
-* [ ] Positive tests.
-* [ ] Negative tests.
-* [ ] Boundary tests.
-* [ ] Consistency tests.
-* [ ] Authorization tests.
-* [ ] Full regression suite pass.
-* [ ] Flutter analyze clean.
-* [ ] UAT complete.
+* [x] Positive tests.
+* [x] Negative tests.
+* [x] Boundary tests.
+* [x] Consistency tests.
+* [x] Authorization tests.
+* [x] Full regression suite pass (109/109 tests passed).
+* [x] Flutter analyze clean (0 issues).
+* [x] UAT complete & verified.
 
 ---
 

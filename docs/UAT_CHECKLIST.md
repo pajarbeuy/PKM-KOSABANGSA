@@ -3,7 +3,7 @@
 **Proyek:** SumberTani berbasis AI  
 **Dokumen:** `docs/UAT_CHECKLIST.md`  
 **Status:** Verification Baseline & Future QA Guide  
-**Terakhir Diperbarui:** 21 September 2026  
+**Terakhir Diperbarui:** 23 September 2026  
 
 ---
 
@@ -80,3 +80,15 @@
 | 5. Login Super Admin: Buka Laba/Rugi Agregat | Menampilkan total agregat omset, biaya produksi, dan laba/rugi bersih seluruh petani sesuai formula | [x] PASSED |
 | 6. Login Super Admin: Akses TaniBot AI | Chatbot operasional merespons pertanyaan panduan pemasaran, stok petani, dan manajemen platform | [x] PASSED |
 | 7. Login Petani: Periksa sidebar & bottom nav | Menu Produk Olahan tampil; menu Penjualan & Chatbot dialihkan/terpusat pada Super Admin | [x] PASSED |
+
+---
+
+### Skenario 7 — Dashboard Super Admin: Bar Chart, Line Chart & 1-Hour Cache
+| Langkah Pengujian | Hasil yang Diharapkan | Status |
+|---|---|---|
+| 1. Buka Dashboard Super Admin | Menampilkan Bar Chart volume produk olahan terjual per bulan (Jan–Des) dan Line Chart kurva akumulasi penghasilan | [x] PASSED |
+| 2. Hover pada diagram batang Bar Chart | Menampilkan tooltip jumlah pcs/unit produk terjual per bulan | [x] PASSED |
+| 3. Hover pada kurva Line Chart | Menampilkan tooltip nominal akumulasi pendapatan berjalan (Rp) dan omset bulan bersangkutan | [x] PASSED |
+| 4. Evaluasi performa query database | Hasil query di-cache selama 1 jam (`3600 detik`) via `Cache::remember('superadmin_dashboard_stats')`, tidak dieksekusi tiap menit | [x] PASSED |
+| 5. Navigasi tab & tombol Refresh Desktop | Berpindah tab ke Penjualan Terpusat atau menekan tombol Refresh 🔄 langsung memuat data terbaru secara otomatis | [x] PASSED |
+
