@@ -156,12 +156,14 @@ class TransactionSummary {
   final int id;
   final String type;
   final int quantity;
+  final String unit;
   final String createdAt;
 
   TransactionSummary({
     required this.id,
     required this.type,
     required this.quantity,
+    this.unit = 'kg',
     required this.createdAt,
   });
 
@@ -170,6 +172,7 @@ class TransactionSummary {
       id: int.tryParse(json['id']?.toString() ?? '') ?? 0,
       type: json['type']?.toString() ?? 'unknown',
       quantity: int.tryParse(json['quantity']?.toString() ?? '') ?? 0,
+      unit: json['unit']?.toString() ?? 'kg',
       createdAt: json['created_at']?.toString() ?? '',
     );
   }

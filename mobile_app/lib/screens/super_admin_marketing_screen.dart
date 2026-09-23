@@ -360,12 +360,12 @@ class _SuperAdminMarketingScreenState extends State<SuperAdminMarketingScreen> {
                 Row(
                   children: [
                     Text(
-                      _currencyFormat.format(p.price),
+                      '${_currencyFormat.format(p.price)} / ${p.unit}',
                       style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.green700),
                     ),
                     const SizedBox(width: 16),
                     Text(
-                      'Sisa Stok: ${p.stock} unit',
+                      'Sisa Stok: ${p.stock} ${p.unit}',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,

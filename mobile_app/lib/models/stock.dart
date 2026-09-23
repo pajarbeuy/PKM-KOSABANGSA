@@ -2,6 +2,7 @@ class StockTransaction {
   final int id;
   final String type;
   final int quantity;
+  final String unit;
   final String transactionDate;
   final String? notes;
   final String? reference;
@@ -11,6 +12,7 @@ class StockTransaction {
     required this.id,
     required this.type,
     required this.quantity,
+    this.unit = 'kg',
     required this.transactionDate,
     this.notes,
     this.reference,
@@ -22,6 +24,7 @@ class StockTransaction {
       id: int.tryParse(json['id']?.toString() ?? '') ?? 0,
       type: json['type']?.toString() ?? 'unknown',
       quantity: int.tryParse(json['quantity']?.toString() ?? '') ?? 0,
+      unit: json['unit']?.toString() ?? 'kg',
       transactionDate: json['transaction_date']?.toString() ?? '',
       notes: json['notes']?.toString(),
       reference: json['reference']?.toString(),

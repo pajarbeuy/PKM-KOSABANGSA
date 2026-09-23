@@ -576,7 +576,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          '${txn.quantity} kg',
+                          '${txn.quantity} ${txn.unit}',
                           style: AppTheme.labelBold,
                         ),
                       ),

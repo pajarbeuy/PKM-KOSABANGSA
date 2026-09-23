@@ -103,4 +103,17 @@
 | 4. Grafik Produk Olahan: Hover Tooltip | Tooltip interaktif menampilkan nama bulan, "Olahan Terjual: X pcs", dan "Penjualan: Rp Y" | [x] PASSED |
 | 5. Layout & Responsivitas | Tampilan rapi dan seimbang di Desktop (berdampingan) serta Mobile (bertingkat ergonomis) | [x] PASSED |
 
+---
+
+### Skenario 9 — Opsi Satuan Produk Olahan (pcs/kg), Resolusi Overflow Bulan Grafik, & Satuan Transaksi Stok
+| Langkah Pengujian | Hasil yang Diharapkan | Status |
+|---|---|---|
+| 1. Form Input Produk Olahan: Pilihan Satuan | Form Tambah & Edit Produk Olahan memiliki dropdown satuan dengan 2 opsi: `pcs` dan `kg` | [x] PASSED |
+| 2. Simpan Produk dengan Satuan kg / pcs | Produk berhasil disimpan dan nilai unit tersimpan di database serta ditampilkan dinamis di card produk | [x] PASSED |
+| 3. Dashboard: Grafik Produk Olahan | Bulan transaksi (misal: September) tidak lagi terlewat akibat date subtraction overflow saat ada panen akhir bulan Oktober | [x] PASSED |
+| 4. Dashboard: Kartu Transaksi Stok Terbaru | Menampilkan kuantitas beserta satuan yang sesuai (`1000 kg` untuk panen masuk, `40 pcs`, `4 pcs`, `3 pcs` untuk produk olahan keluar) | [x] PASSED |
+| 5. Layar Stok Gudang (Data Stok) | Header tabel kuantitas generik `Jumlah`, kolom kuantitas menampilkan satuan dinamis (`40 pcs`, `1000 kg`), dan Total Keluar gudang mentah tidak tercampur produk olahan | [x] PASSED |
+| 6. Sisa Stok di Layar Super Admin | Menampilkan label sisa stok dinamis sesuai unit produk (misal: `Sisa Stok: 40 pcs` atau `Sisa Stok: 50 kg`) | [x] PASSED |
+
+
 

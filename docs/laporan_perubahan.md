@@ -910,6 +910,62 @@ Sebelumnya, grafik di dashboard petani menggabungkan pencatatan panen (kg) dan p
 - **Flutter Widget Tests**: `flutter test` ➔ ✅ **All 5 tests passed**.
 - **Flutter Static Analysis**: `flutter analyze` ➔ ✅ **No issues found! (0 errors, 0 warnings)**.
 
+---
+
+## 15. Pembaruan 24 September 2026: Resolusi Overflow Bulan Chart Dashboard, Opsi Satuan Produk Olahan (pcs / kg), & Satuan Transaksi Stok
+
+### A. Latar Belakang Masalah
+1. **Grafik Produk Olahan Kosong Padahal Ada Transaksi**:
+   - Di database terdapat transaksi penjualan produk olahan pada bulan September (misal tanggal 21 & 23 September 2026).
+   - Namun, terdapat juga data panen di masa depan pada tanggal `2026-10-31` (tanggal 31).
+   - Saat logika `getMonthlyStats` melakukan `$referenceDate->subMonths($i)` dari tanggal 31 Oktober, Carbon mengalami *month date overflow* saat mengurangi 1 bulan ke September (karena September hanya memiliki 30 hari). Tanggal 31 September otomatis meluap kembali menjadi tanggal 1 Oktober!
+   - Akibatnya, iterasi bulan melewati September sama sekali dan melompat dari Oktober ke Agustus, sehingga transaksi produk olahan bulan September tidak pernah masuk ke chart.
+2. **Keterangan Satuan Stok Keluar Tercampur**:
+   - Transaksi stok keluar yang berasal dari penjualan produk olahan tertulis `40 kg`, `4 kg`, dan `3 kg`, padahal produk olahan tersebut dijual dalam satuan unit/pcs.
+   - Angka ringkasan `Total Keluar` di halaman Data Stok gudang raw harvest ikut menjumlahkan unit pcs produk olahan ke dalam total kilogram bahan mentah.
+3. **Ketiadaan Opsi Satuan pada Produk Olahan**:
+   - Produk olahan petani tidak selalu berupa kemasan pcs (misal olahan tepung singkong atau pakan ternak dapat dijual dalam kg). Form input produk olahan belum menyediakan pemilihan satuan.
+
+### B. Solusi & Perubahan Backend (Laravel)
+1. **Resolusi Date Subtraction Overflow (`app/Services/DashboardService.php`)**:
+   - Mengubah komputasi iterasi bulan menjadi `$date = $referenceDate->copy()->startOfMonth()->subMonths($i);`.
+   - Hal ini menjamin setiap bulan selalu dihitung dari hari pertama bulan tersebut (`01`), mengeliminasi bug date overflow. Bulan September kini selalu tercakup dengan tepat.
+2. **Database Migration & Backfill (`database/migrations/2026_09_23_235000_add_unit_to_processed_products_and_stock_transactions.php`)**:
+   - Menambahkan kolom `unit` (varchar, default `'pcs'`) pada tabel `processed_products`.
+   - Menambahkan kolom `unit` (varchar, default `'kg'`) pada tabel `stock_transactions`.
+   - Menjalankan migrasi database dan melakukan *backfill* otomatis pada transaksi historis produk olahan ke unit `'pcs'`.
+3. **Pembaruan Model & Service**:
+   - [`app/Models/ProcessedProduct.php`](file:///d:/laragon/www/PKM/app/Models/ProcessedProduct.php): Menambahkan `unit` ke `$fillable`.
+   - [`app/Models/StockTransaction.php`](file:///d:/laragon/www/PKM/app/Models/StockTransaction.php): Menambahkan `unit` ke `$fillable`; method `recordProcessedProductTransaction` otomatis mengisi unit sesuai produk olahan (`$product->unit ?? 'pcs'`), dan `addTransaction` mengisi `'kg'`.
+   - [`app/Services/ProcessedProductService.php`](file:///d:/laragon/www/PKM/app/Services/ProcessedProductService.php): Memasukkan `unit` pada `createForOwner` dan `formatProduct`.
+   - [`app/Http/Controllers/ProcessedProductController.php`](file:///d:/laragon/www/PKM/app/Http/Controllers/ProcessedProductController.php): Validasi `store` dan `update` menerima `'unit' => 'nullable|string|in:pcs,kg'`.
+   - [`app/Http/Controllers/StockController.php`](file:///d:/laragon/www/PKM/app/Http/Controllers/StockController.php): `totalIncoming` dan `totalOutgoing` difilter dengan `whereNull('processed_product_id')` agar saldo stok gudang hasil panen mentah murni mencatat komoditas mentah (kg), serta menyertakan `unit` pada daftar riwayat transaksi.
+   - [`app/Services/DashboardService.php`](file:///d:/laragon/www/PKM/app/Services/DashboardService.php): `getRecentTransactions` memetakan atribut `unit` transaksi.
+
+### C. Solusi & Perubahan Frontend Flutter (`mobile_app/lib`)
+1. **Model Deserialization**:
+   - [`mobile_app/lib/models/processed_product.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/models/processed_product.dart): Ditambahkan field `unit` (default `'pcs'`).
+   - [`mobile_app/lib/models/stock.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/models/stock.dart): Ditambahkan field `unit` pada `StockTransaction` (default `'kg'`).
+   - [`mobile_app/lib/models/dashboard.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/models/dashboard.dart): Ditambahkan field `unit` pada `TransactionSummary` (default `'kg'`).
+2. **Form Tambah & Edit Produk Olahan (`mobile_app/lib/screens/processed_products_screen.dart`)**:
+   - Ditambahkan field pilihan satuan (Dropdown dengan 2 opsi: `pcs` atau `kg`) berdampingan dengan form kuantitas Stok.
+   - Pengiriman parameter `unit` pada fungsi create dan update produk olahan via API service.
+   - Kartu katalog produk kini menampilkan satuan dinamis: `Tersedia (X pcs/kg)`, `Harga (Rp) / unit`, dan sisa stok.
+3. **Dashboard (`mobile_app/lib/screens/home_screen.dart`)**:
+   - Kartu Transaksi Stok Terbaru menampilkan satuan dinamis: `${txn.quantity} ${txn.unit}` (menghasilkan `1000 kg` untuk panen masuk dan `40 pcs`, `4 pcs`, `3 pcs` untuk penjualan produk olahan).
+4. **Data Stok Gudang (`mobile_app/lib/screens/stock_screen.dart`)**:
+   - Label kolom tabel diubah dari `Jumlah (Kg)` menjadi `Jumlah`.
+   - Kuantitas baris transaksi menampilkan `${transaction.quantity} ${transaction.unit}`.
+5. **Super Admin Marketing Screen (`mobile_app/lib/screens/super_admin_marketing_screen.dart`)**:
+   - Menampilkan sisa stok dinamis sesuai satuan produk: `Sisa Stok: ${p.stock} ${p.unit}`.
+
+### D. Hasil Pengujian & Status Verifikasi
+- **Backend API Tests**: `php artisan test tests/Feature/API/FarmerDashboardChartsTest.php` ➔ ✅ **3/3 Passed (67 assertions)** (mencakup verifikasi overflow bulan dan CRUD satuan unit).
+- **Processed Product Tests**: `php artisan test tests/Feature/API/ProcessedProductApiTest.php` ➔ ✅ **14/14 Passed (31 assertions)**.
+- **Flutter Static Analysis**: `flutter analyze` ➔ ✅ **No issues found! (0 errors, 0 warnings)**.
+- **UAT Checklist**: Skenario 9 ditambahkan dan berstatus ✅ **[x] PASSED**.
+
+
 
 
 

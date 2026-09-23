@@ -91,7 +91,8 @@ class DashboardService
             ->map(fn ($t) => [
                 'id'         => $t->id,
                 'type'       => $t->type,
-                'quantity'   => (int) $t->amount,
+                'quantity'   => (float) $t->amount,
+                'unit'       => $t->unit ?? ($t->processed_product_id ? 'pcs' : 'kg'),
                 'created_at' => $t->created_at->toIso8601String(),
             ])
             ->toArray();
@@ -127,7 +128,7 @@ class DashboardService
 
         $monthlyStats = [];
         for ($i = 5; $i >= 0; $i--) {
-            $date     = $referenceDate->copy()->subMonths($i);
+            $date     = $referenceDate->copy()->startOfMonth()->subMonths($i);
             $monthNum = $date->month;
             $year     = $date->year;
 
