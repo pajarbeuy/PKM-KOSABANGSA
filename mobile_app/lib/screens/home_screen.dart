@@ -11,6 +11,7 @@ import '../widgets/app_header.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/dashboard_widgets.dart';
 import '../widgets/harvest_chart.dart';
+import '../widgets/charts/processed_sales_chart.dart';
 import '../widgets/app_bottom_nav.dart';
 import 'super_admin_dashboard_screen.dart';
 import '../utils/navigation_helper.dart';
@@ -284,26 +285,39 @@ class _HomeScreenState extends State<HomeScreen> {
 
           const SizedBox(height: 24),
 
-          // Chart + Financial summary
+          // ── Two Dedicated Charts ─────────────────────────────────────────────
           if (isDesktop)
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(flex: 8, child: _buildChartSection()),
+                Expanded(child: _buildRawMaterialChartSection()),
                 const SizedBox(width: AppTheme.cardGap),
-                Expanded(flex: 4, child: _buildFinancialSummary()),
+                Expanded(child: _buildProcessedProductChartSection()),
               ],
             )
           else ...[
-            _buildChartSection(),
+            _buildRawMaterialChartSection(),
             const SizedBox(height: 16),
-            _buildFinancialSummary(),
+            _buildProcessedProductChartSection(),
           ],
 
           const SizedBox(height: 24),
 
-          // Transactions only
-          _buildTransactionsSection(),
+          // ── Financial Summary & Transactions ─────────────────────────────────
+          if (isDesktop)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(flex: 5, child: _buildFinancialSummary()),
+                const SizedBox(width: AppTheme.cardGap),
+                Expanded(flex: 7, child: _buildTransactionsSection()),
+              ],
+            )
+          else ...[
+            _buildFinancialSummary(),
+            const SizedBox(height: 16),
+            _buildTransactionsSection(),
+          ],
         ],
 
         const SizedBox(height: 24),
@@ -397,14 +411,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildChartSection() {
+  Widget _buildRawMaterialChartSection() {
     final stats = _dashboardData!.monthlyStats;
-    final harvests = stats.map((s) => s.harvest).toList();
-    final sales = stats.map((s) => s.sales).toList();
+    final harvests = stats.map((s) => s.harvestKg).toList();
+    final sales = stats.map((s) => s.harvestSalesKg).toList();
     final labels = stats.map((s) => s.label).toList();
-    final salesUnits = stats.map((s) => s.salesUnit).toList();
-    final salesHarvests = stats.map((s) => s.salesHarvest).toList();
-    final salesProcesseds = stats.map((s) => s.salesProcessed).toList();
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -418,10 +429,13 @@ class _HomeScreenState extends State<HomeScreen> {
         harvestData: harvests,
         salesData: sales,
         labels: labels,
-        salesUnits: salesUnits,
-        salesHarvestData: salesHarvests,
-        salesProcessedData: salesProcesseds,
       ),
+    );
+  }
+
+  Widget _buildProcessedProductChartSection() {
+    return ProcessedSalesChart(
+      monthlyStats: _dashboardData!.monthlyStats,
     );
   }
 

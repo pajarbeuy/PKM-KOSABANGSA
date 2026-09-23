@@ -826,5 +826,91 @@ Menambahkan mekanisme pencatatan dan pelacakan pesanan produk olahan (*Order Dom
 | **Landing Page Catalog Test** | `tests/Feature/LandingPageCatalogTest.php` | ✅ **1/1 Passed (7 Assertions)** |
 | **Flutter Static Analysis** | `flutter analyze` (`mobile_app/`) | ✅ **0 Errors, 0 Warnings, 0 Issues** |
 
+---
+
+## 13. Pembaruan 23 September 2026: Resolusi CORS, Generalisasi Branding, Auto-Refresh & Dashboard Analytics Charts
+
+### A. Resolusi Isu CORS & Header Duplikasi
+1. **Akar Masalah**: Penambahan router `server.php` pada built-in PHP web server mencegat preflight `OPTIONS` dengan daftar `Access-Control-Allow-Headers` terbatas (tanpa `Cache-Control`) serta menyebabkan duplikasi header `Access-Control-Allow-Origin: *, *` saat diteruskan ke middleware Laravel `HandleCors`.
+2. **Solusi Teknis**:
+   - `server.php` diperbarui agar secara dinamis merefleksikan requested headers (`$_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS'] ?? '*'`) pada request `OPTIONS` dan file statis storage.
+   - Header CORS untuk request normal didelegasikan sepenuhnya ke Laravel `HandleCors` middleware, mengeliminasi duplikasi nilai origin.
+
+### B. Pembersihan Sisa Teks Branding & Generalisasi Komoditas
+1. **Blade Views (`resources/views/auth`)**:
+   - Menyelaraskan teks judul `<title>` dan pesan sukses di `reset-password.blade.php` dan `reset-success.blade.php` dari `SIMHPSK` menjadi `SumberTani`.
+2. **Frontend Flutter (`mobile_app/lib`)**:
+   - `reports_screen.dart`: Menggeneralisasi subtitle dari *"Penjualan kentang terverifikasi"* dan *"Akumulasi ubi kentang"* menjadi istilah hasil tani umum.
+   - `chatbot_screen.dart`: Mengubah sapaan bot dari *"budidaya kentang"* menjadi *"budidaya hasil tani"*.
+   - `landing_hero.dart`: Mengubah testimoni *"Petani Kentang"* menjadi *"Petani Mitra"*.
+   - `processed_products_screen.dart`: Mengubah placeholder produk olahan menjadi *"Keripik Jamur Crispy"*.
+
+### C. Auto-Refresh State & Desktop Header Synchronization
+1. **Masalah**: `IndexedStack` pada layar Super Admin mempertahankan state memori lama, sehingga transaksi penjualan baru hasil penyelesaian pesanan tidak langsung tampil saat tab `Penjualan Terpusat` dibuka.
+2. **Solusi**: Memasang dynamic key berbasis index dan `_refreshTick` serta mengaktifkan tombol refresh (🔄) pada desktop header agar langsung memuat data terbaru secara otomatis.
+
+### D. Fitur Analitik Dashboard Super Admin (Bar Chart & Line Chart)
+1. **Bar Chart Produk Olahan Terjual Bulanan**:
+   - Menampilkan visualisasi diagram batang 12 bulan (Jan–Des) untuk volume penjualan produk olahan (pcs/unit).
+   - Dilengkapi interaksi hover tooltip unit terjual dan badge info pembaruan.
+2. **Line Chart Akumulasi Penghasilan Petani**:
+   - Menampilkan grafik kurva halus (*smooth cubic bezier*) area bergradien untuk memvisualisasikan pertumbuhan akumulasi (*cumulative running revenue*) pendapatan seluruh petani mitra.
+   - Dilengkapi titik koordinat interaktif dengan tooltip format Rupiah (`Rp xxx.xxx`).
+3. **Optimasi Caching 1 Jam di Backend**:
+   - Menggunakan `Cache::remember('superadmin_dashboard_stats', 3600, ...)` di `SuperAdminService.php`.
+   - Mengurangi beban komputasi query database agregat berat agar tidak dieksekusi setiap menit.
+   - Menyediakan parameter `?refresh=true` untuk on-demand cache invalidation.
+
+### E. Hasil Verifikasi Akhir
+- **Backend API Test Suite**: `php artisan test tests/Feature/API` ➔ ✅ **109/109 Passed (378 assertions)**.
+- **Flutter Static Analysis**: `flutter analyze` ➔ ✅ **No issues found! (0 errors, 0 warnings)**.
+- **UAT End-to-End**: Seluruh Skenario 1 s/d 7 berstatus ✅ **[x] PASSED**.
+
+---
+
+## 14. Pembaruan 23 September 2026: Pemisahan Dua Grafik Dashboard Petani (Bahan Mentah kg & Produk Olahan pcs/Rp)
+
+### A. Latar Belakang & Kebutuhan
+Sebelumnya, grafik di dashboard petani menggabungkan pencatatan panen (kg) dan penjualan (yang dapat berupa bahan mentah kg maupun produk olahan pcs) ke dalam satu diagram tunggal, sehingga skala dan interpretasi data menjadi tercampur. User menghendaki pemisahan menjadi dua grafik terpisah yang tegas:
+1. **Grafik 1 (Bahan Mentah)**: Khusus memvisualisasikan volume panen dan penjualan bahan mentah dalam satuan **kg**.
+2. **Grafik 2 (Produk Olahan)**: Khusus memvisualisasikan volume penjualan produk olahan dalam satuan **pcs** dan nilai penjualan dalam bentuk nominal **Rupiah (Rp)**.
+
+### B. Perubahan Backend (`app/Services/DashboardService.php`)
+1. **`getMonthlyStats(int $userId)`**:
+   - Menghitung secara terpisah per bulan selama 6 bulan terakhir:
+     - `harvest_kg`: total bobot panen (kg).
+     - `harvest_sales_kg`: total volume penjualan komoditas mentah (`product_type = 'harvest'`) dalam kg.
+     - `harvest_sales_rp`: total omset rupiah dari penjualan bahan mentah (Rp).
+     - `processed_sales_pcs`: total kuantitas penjualan produk olahan (`product_type = 'processed'`) dalam pcs.
+     - `processed_sales_rp`: total omset rupiah dari penjualan produk olahan (Rp).
+2. **`getSummary(int $userId)`**:
+   - Menambahkan field ringkasan: `totalRawSalesKg`, `totalRawSalesRp`, `totalProcessedSalesPcs`, `totalProcessedSalesRp`.
+3. **Automated Testing (`tests/Feature/API/FarmerDashboardChartsTest.php`)**:
+   - Menambahkan feature test komprehensif yang memvalidasi pembagian kalkulasi bahan mentah (kg & Rp) serta produk olahan (pcs & Rp) pada endpoint `GET /api/dashboard`.
+
+### C. Perubahan Frontend Flutter (`mobile_app/lib`)
+1. **Model (`mobile_app/lib/models/dashboard.dart`)**:
+   - Memperluas class `DashboardData` dan `MonthlyStat` dengan field `harvestKg`, `harvestSalesKg`, `harvestSalesRp`, `processedSalesPcs`, dan `processedSalesRp`.
+2. **Grafik Bahan Mentah (`mobile_app/lib/widgets/harvest_chart.dart`)**:
+   - Dikhususkan untuk **Bahan Mentah** dengan badge satuan **kg**.
+   - Menampilkan perbandingan Panen (kg) dan Penjualan (kg) baik dalam mode Area maupun Bar.
+   - Tooltip dan sumbu Y secara tegas menampilkan nilai dalam format `kg`.
+3. **Widget Baru Grafik Produk Olahan (`mobile_app/lib/widgets/charts/processed_sales_chart.dart`)**:
+   - Komponen chart responsif dengan custom painter Vanilla Flutter:
+     - **Dual Scale Visual**: Bar chart elegan untuk volume terjual (pcs, sumbu Y kiri) dan Line kurva halus bergradien untuk nominal pendapatan (Rp, sumbu Y kanan).
+     - **Mode Switcher**: Pilihan tampilan `Semua` (kombinasi), `pcs` (fokus unit), dan `Rp` (fokus nominal).
+     - **Interactive Tooltip**: Menampilkan detail kuantitas terjual (pcs) dan total nominal Rupiah saat di-hover/tap.
+     - **Empty State**: Menampilkan ilustrasi dan pesan informatif yang ramah jika belum ada data transaksi produk olahan.
+4. **Layout Dashboard (`mobile_app/lib/screens/home_screen.dart`)**:
+   - Pada layar Desktop (lebar >= 900px): Kedua grafik ditampilkan berdampingan (*side-by-side*) dengan pembagian flex 1 : 1, diikuti oleh baris Ringkasan Keuangan dan Transaksi Stok Terbaru.
+   - Pada layar Mobile: Ditata vertikal bertingkat secara ergonomis.
+
+### D. Hasil Verifikasi Akhir
+- **Backend API Test Suite**: `php artisan test tests/Feature/API` ➔ ✅ **110/110 Passed (437 assertions)**.
+- **Flutter Widget Tests**: `flutter test` ➔ ✅ **All 5 tests passed**.
+- **Flutter Static Analysis**: `flutter analyze` ➔ ✅ **No issues found! (0 errors, 0 warnings)**.
+
+
+
 
 

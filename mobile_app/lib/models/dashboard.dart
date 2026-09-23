@@ -9,6 +9,10 @@ class DashboardData {
   final bool notifyLowStock;
   final bool notifyNewSale;
   final bool notifyCost;
+  final double totalRawSalesKg;
+  final double totalRawSalesRp;
+  final double totalProcessedSalesPcs;
+  final double totalProcessedSalesRp;
   final List<HarvestSummary> harvests;
   final List<TransactionSummary> transactions;
   final ProfitLoss profitLoss;
@@ -25,6 +29,10 @@ class DashboardData {
     required this.notifyLowStock,
     required this.notifyNewSale,
     required this.notifyCost,
+    this.totalRawSalesKg = 0.0,
+    this.totalRawSalesRp = 0.0,
+    this.totalProcessedSalesPcs = 0.0,
+    this.totalProcessedSalesRp = 0.0,
     required this.harvests,
     required this.transactions,
     required this.profitLoss,
@@ -43,6 +51,10 @@ class DashboardData {
       notifyLowStock: json['notifyLowStock'] == null ? true : (json['notifyLowStock'] == true || json['notifyLowStock'].toString() == '1'),
       notifyNewSale: json['notifyNewSale'] == null ? true : (json['notifyNewSale'] == true || json['notifyNewSale'].toString() == '1'),
       notifyCost: json['notifyCost'] == null ? true : (json['notifyCost'] == true || json['notifyCost'].toString() == '1'),
+      totalRawSalesKg: double.tryParse(json['totalRawSalesKg']?.toString() ?? '') ?? 0.0,
+      totalRawSalesRp: double.tryParse(json['totalRawSalesRp']?.toString() ?? '') ?? 0.0,
+      totalProcessedSalesPcs: double.tryParse(json['totalProcessedSalesPcs']?.toString() ?? '') ?? 0.0,
+      totalProcessedSalesRp: double.tryParse(json['totalProcessedSalesRp']?.toString() ?? '') ?? 0.0,
       harvests: (json['harvests'] as List?)
               ?.whereType<Map<String, dynamic>>()
               .map((e) => HarvestSummary.fromJson(e))
@@ -71,6 +83,11 @@ class MonthlyStat {
   final double salesHarvest;
   final double salesProcessed;
   final String salesUnit;
+  final double harvestKg;
+  final double harvestSalesKg;
+  final double harvestSalesRp;
+  final double processedSalesPcs;
+  final double processedSalesRp;
 
   MonthlyStat({
     required this.label,
@@ -79,20 +96,35 @@ class MonthlyStat {
     this.salesHarvest = 0.0,
     this.salesProcessed = 0.0,
     this.salesUnit = 'kg',
-  });
+    double? harvestKg,
+    double? harvestSalesKg,
+    this.harvestSalesRp = 0.0,
+    double? processedSalesPcs,
+    this.processedSalesRp = 0.0,
+  })  : harvestKg = harvestKg ?? harvest,
+        harvestSalesKg = harvestSalesKg ?? salesHarvest,
+        processedSalesPcs = processedSalesPcs ?? salesProcessed;
 
   factory MonthlyStat.fromJson(Map<String, dynamic> json) {
-    final sHarvest = double.tryParse(json['sales_harvest']?.toString() ?? '') ?? 0.0;
-    final sProc = double.tryParse(json['sales_processed']?.toString() ?? '') ?? 0.0;
+    final rawHarvest = double.tryParse(json['harvest_kg']?.toString() ?? json['harvest']?.toString() ?? '') ?? 0.0;
+    final sHarvest = double.tryParse(json['harvest_sales_kg']?.toString() ?? json['sales_harvest']?.toString() ?? '') ?? 0.0;
+    final sProc = double.tryParse(json['processed_sales_pcs']?.toString() ?? json['sales_processed']?.toString() ?? '') ?? 0.0;
+    final hRp = double.tryParse(json['harvest_sales_rp']?.toString() ?? '') ?? 0.0;
+    final pRp = double.tryParse(json['processed_sales_rp']?.toString() ?? '') ?? 0.0;
     final unit = json['sales_unit']?.toString() ?? (sProc > 0 && sHarvest == 0 ? 'pcs' : 'kg');
 
     return MonthlyStat(
       label: json['label']?.toString() ?? '',
-      harvest: double.tryParse(json['harvest']?.toString() ?? '') ?? 0.0,
-      sales: double.tryParse(json['sales']?.toString() ?? '') ?? 0.0,
+      harvest: rawHarvest,
+      sales: sHarvest > 0 ? sHarvest : (double.tryParse(json['sales']?.toString() ?? '') ?? 0.0),
       salesHarvest: sHarvest,
       salesProcessed: sProc,
       salesUnit: unit,
+      harvestKg: rawHarvest,
+      harvestSalesKg: sHarvest,
+      harvestSalesRp: hRp,
+      processedSalesPcs: sProc,
+      processedSalesRp: pRp,
     );
   }
 }
