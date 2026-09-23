@@ -429,7 +429,7 @@ class MockupDashboard extends StatelessWidget {
                             ),
                             const SizedBox(height: 2),
                             const Text(
-                              'Petani Kentang — Musim 1 · 2026',
+                              'Petani Mitra — Musim 1 · 2026',
                               style: TextStyle(
                                 fontFamily: 'Nunito',
                                 fontWeight: FontWeight.bold,

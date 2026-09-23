@@ -265,7 +265,7 @@ class _ProcessedProductsScreenState extends State<ProcessedProductsScreen> {
                       controller: nameController,
                       decoration: InputDecoration(
                         labelText: 'Nama Produk *',
-                        hintText: 'Contoh: Keripik Kentang Balado',
+                        hintText: 'Contoh: Keripik Jamur Crispy',
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         prefixIcon: const Icon(Icons.shopping_bag_outlined),
                       ),

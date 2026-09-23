@@ -230,7 +230,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           ),
           const SizedBox(height: 12),
           const Text(
-            'Asisten pintar Anda untuk manajemen hasil panen, stok gudang, penjualan, dan budidaya kentang. Silakan tanyakan apa saja kepada saya!',
+            'Asisten pintar Anda untuk manajemen hasil panen, stok gudang, penjualan, dan budidaya hasil tani. Silakan tanyakan apa saja kepada saya!',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 14, color: AppTheme.textSecondary, height: 1.5),
           ),
