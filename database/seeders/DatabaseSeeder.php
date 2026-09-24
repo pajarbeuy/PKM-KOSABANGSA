@@ -15,6 +15,9 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Seed 10 Kelompok Tani (Poktan)
+        $this->call(FarmerGroupSeeder::class);
+
         // Create demo users
         User::create([
             'name' => 'Admin Demo',

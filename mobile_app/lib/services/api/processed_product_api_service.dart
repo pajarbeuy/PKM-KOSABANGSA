@@ -149,6 +149,7 @@ class ProcessedProductApiService {
     required String name,
     required double price,
     int stock = 0,
+    String? unit = 'pcs',
     String? description,
     String? status,
     XFile? photoFile,
@@ -161,6 +162,7 @@ class ProcessedProductApiService {
         request.fields['name'] = name;
         request.fields['price'] = price.toString();
         request.fields['stock'] = stock.toString();
+        if (unit != null && unit.isNotEmpty) request.fields['unit'] = unit;
         if (description != null && description.isNotEmpty) request.fields['description'] = description;
         if (status != null && status.isNotEmpty) request.fields['status'] = status;
 
@@ -186,6 +188,7 @@ class ProcessedProductApiService {
         'name': name,
         'price': price,
         'stock': stock,
+        'unit': unit ?? 'pcs',
       };
       if (description != null && description.isNotEmpty) payload['description'] = description;
       if (status != null && status.isNotEmpty) payload['status'] = status;
@@ -214,6 +217,7 @@ class ProcessedProductApiService {
     String? name,
     double? price,
     int? stock,
+    String? unit,
     String? description,
     String? status,
     XFile? photoFile,
@@ -229,6 +233,7 @@ class ProcessedProductApiService {
         if (name != null) request.fields['name'] = name;
         if (price != null) request.fields['price'] = price.toString();
         if (stock != null) request.fields['stock'] = stock.toString();
+        if (unit != null) request.fields['unit'] = unit;
         if (description != null) request.fields['description'] = description;
         if (status != null) request.fields['status'] = status;
 
@@ -254,6 +259,7 @@ class ProcessedProductApiService {
       if (name != null) payload['name'] = name;
       if (price != null) payload['price'] = price;
       if (stock != null) payload['stock'] = stock;
+      if (unit != null) payload['unit'] = unit;
       if (description != null) payload['description'] = description;
       if (status != null) payload['status'] = status;
 

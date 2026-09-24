@@ -16,6 +16,7 @@ use App\Http\Controllers\SuperAdmin\SuperAdminController;
 use App\Http\Controllers\ProcessedProductController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\Api\ChatbotController;
+use App\Http\Controllers\Api\FarmerGroupController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -33,6 +34,7 @@ Route::post('/auth/forgot-password', [PasswordResetController::class, 'sendReset
 Route::post('/auth/reset-password',  [PasswordResetController::class, 'resetPasswordApi']);
 
 Route::get('/landing',  [SuperAdminController::class, 'getLanding']);
+Route::get('/farmer-groups', [FarmerGroupController::class, 'index']);
 Route::get('/catalog/processed-products', [ProcessedProductController::class, 'publicCatalog']);
 Route::post('/catalog/orders',            [OrderController::class, 'storePublic']);
 Route::get('/catalog/orders/{code}',      [OrderController::class, 'trackPublic']);
@@ -144,6 +146,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Reports Aggregate
         Route::get('/reports/farmer-profit-loss-aggregate', [SuperAdminController::class, 'farmerProfitLossAggregate']);
+
+        // Farmer Groups (Poktan) Management
+        Route::get('/farmer-groups',              [FarmerGroupController::class, 'adminIndex']);
+        Route::get('/farmer-groups/{id}',         [FarmerGroupController::class, 'show']);
+        Route::post('/farmer-groups',             [FarmerGroupController::class, 'store']);
+        Route::put('/farmer-groups/{id}',         [FarmerGroupController::class, 'update']);
+        Route::delete('/farmer-groups/{id}',      [FarmerGroupController::class, 'destroy']);
+        Route::post('/users/{id}/assign-poktan',  [FarmerGroupController::class, 'assignMember']);
 
         // Chatbot AI Operational Assistant
         Route::post('/chat', [ChatbotController::class, 'chat']);

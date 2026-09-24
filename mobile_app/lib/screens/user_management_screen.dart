@@ -510,6 +510,27 @@ class _UserManagementScreenState extends State<UserManagementScreen>
                               ],
                             ),
                           ],
+                          if (u['farmer_group'] != null) ...[
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.groups_rounded,
+                                  size: 12,
+                                  color: Color(0xFF1A7A4A),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  u['farmer_group']['name'] ?? '',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF1A7A4A),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -597,6 +618,12 @@ class _UserManagementScreenState extends State<UserManagementScreen>
                       ),
                       DataColumn(
                         label: Text(
+                          'Kelompok Tani',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      DataColumn(
+                        label: Text(
                           'Nomor Telepon',
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
@@ -653,6 +680,21 @@ class _UserManagementScreenState extends State<UserManagementScreen>
                             ),
                           ),
                           DataCell(Text(u['farm_name'] ?? '-')),
+                          DataCell(
+                            Text(
+                              u['farmer_group'] != null
+                                  ? (u['farmer_group']['name'] ?? '-')
+                                  : '-',
+                              style: TextStyle(
+                                fontWeight: u['farmer_group'] != null
+                                    ? FontWeight.w600
+                                    : FontWeight.normal,
+                                color: u['farmer_group'] != null
+                                    ? const Color(0xFF1A7A4A)
+                                    : Colors.grey.shade600,
+                              ),
+                            ),
+                          ),
                           DataCell(Text(u['phone'] ?? '-')),
                           DataCell(
                             Container(

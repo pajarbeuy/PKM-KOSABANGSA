@@ -6,6 +6,7 @@ class ProcessedProduct {
   final String name;
   final double price;
   final int stock;
+  final String unit;
   final String? description;
   final String? photo;
   final String? photoUrl;
@@ -21,6 +22,7 @@ class ProcessedProduct {
     required this.name,
     required this.price,
     required this.stock,
+    this.unit = 'pcs',
     this.description,
     this.photo,
     this.photoUrl,
@@ -48,6 +50,7 @@ class ProcessedProduct {
       name: json['name']?.toString() ?? '',
       price: double.tryParse(json['price']?.toString() ?? '') ?? 0.0,
       stock: parsedStock,
+      unit: json['unit']?.toString() ?? 'pcs',
       description: json['description']?.toString(),
       photo: json['photo']?.toString(),
       photoUrl: json['photo_url']?.toString(),
@@ -64,6 +67,7 @@ class ProcessedProduct {
       'name': name,
       'price': price,
       'stock': stock,
+      'unit': unit,
       'description': description,
       'photo': photo,
       'status': status,

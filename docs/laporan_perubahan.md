@@ -910,6 +910,99 @@ Sebelumnya, grafik di dashboard petani menggabungkan pencatatan panen (kg) dan p
 - **Flutter Widget Tests**: `flutter test` ➔ ✅ **All 5 tests passed**.
 - **Flutter Static Analysis**: `flutter analyze` ➔ ✅ **No issues found! (0 errors, 0 warnings)**.
 
+---
+
+## 15. Pembaruan 24 September 2026: Resolusi Overflow Bulan Chart Dashboard, Opsi Satuan Produk Olahan (pcs / kg), & Satuan Transaksi Stok
+
+### A. Latar Belakang Masalah
+1. **Grafik Produk Olahan Kosong Padahal Ada Transaksi**:
+   - Di database terdapat transaksi penjualan produk olahan pada bulan September (misal tanggal 21 & 23 September 2026).
+   - Namun, terdapat juga data panen di masa depan pada tanggal `2026-10-31` (tanggal 31).
+   - Saat logika `getMonthlyStats` melakukan `$referenceDate->subMonths($i)` dari tanggal 31 Oktober, Carbon mengalami *month date overflow* saat mengurangi 1 bulan ke September (karena September hanya memiliki 30 hari). Tanggal 31 September otomatis meluap kembali menjadi tanggal 1 Oktober!
+   - Akibatnya, iterasi bulan melewati September sama sekali dan melompat dari Oktober ke Agustus, sehingga transaksi produk olahan bulan September tidak pernah masuk ke chart.
+2. **Keterangan Satuan Stok Keluar Tercampur**:
+   - Transaksi stok keluar yang berasal dari penjualan produk olahan tertulis `40 kg`, `4 kg`, dan `3 kg`, padahal produk olahan tersebut dijual dalam satuan unit/pcs.
+   - Angka ringkasan `Total Keluar` di halaman Data Stok gudang raw harvest ikut menjumlahkan unit pcs produk olahan ke dalam total kilogram bahan mentah.
+3. **Ketiadaan Opsi Satuan pada Produk Olahan**:
+   - Produk olahan petani tidak selalu berupa kemasan pcs (misal olahan tepung singkong atau pakan ternak dapat dijual dalam kg). Form input produk olahan belum menyediakan pemilihan satuan.
+
+### B. Solusi & Perubahan Backend (Laravel)
+1. **Resolusi Date Subtraction Overflow (`app/Services/DashboardService.php`)**:
+   - Mengubah komputasi iterasi bulan menjadi `$date = $referenceDate->copy()->startOfMonth()->subMonths($i);`.
+   - Hal ini menjamin setiap bulan selalu dihitung dari hari pertama bulan tersebut (`01`), mengeliminasi bug date overflow. Bulan September kini selalu tercakup dengan tepat.
+2. **Database Migration & Backfill (`database/migrations/2026_09_23_235000_add_unit_to_processed_products_and_stock_transactions.php`)**:
+   - Menambahkan kolom `unit` (varchar, default `'pcs'`) pada tabel `processed_products`.
+   - Menambahkan kolom `unit` (varchar, default `'kg'`) pada tabel `stock_transactions`.
+   - Menjalankan migrasi database dan melakukan *backfill* otomatis pada transaksi historis produk olahan ke unit `'pcs'`.
+3. **Pembaruan Model & Service**:
+   - [`app/Models/ProcessedProduct.php`](file:///d:/laragon/www/PKM/app/Models/ProcessedProduct.php): Menambahkan `unit` ke `$fillable`.
+   - [`app/Models/StockTransaction.php`](file:///d:/laragon/www/PKM/app/Models/StockTransaction.php): Menambahkan `unit` ke `$fillable`; method `recordProcessedProductTransaction` otomatis mengisi unit sesuai produk olahan (`$product->unit ?? 'pcs'`), dan `addTransaction` mengisi `'kg'`.
+   - [`app/Services/ProcessedProductService.php`](file:///d:/laragon/www/PKM/app/Services/ProcessedProductService.php): Memasukkan `unit` pada `createForOwner` dan `formatProduct`.
+   - [`app/Http/Controllers/ProcessedProductController.php`](file:///d:/laragon/www/PKM/app/Http/Controllers/ProcessedProductController.php): Validasi `store` dan `update` menerima `'unit' => 'nullable|string|in:pcs,kg'`.
+   - [`app/Http/Controllers/StockController.php`](file:///d:/laragon/www/PKM/app/Http/Controllers/StockController.php): `totalIncoming` dan `totalOutgoing` difilter dengan `whereNull('processed_product_id')` agar saldo stok gudang hasil panen mentah murni mencatat komoditas mentah (kg), serta menyertakan `unit` pada daftar riwayat transaksi.
+   - [`app/Services/DashboardService.php`](file:///d:/laragon/www/PKM/app/Services/DashboardService.php): `getRecentTransactions` memetakan atribut `unit` transaksi.
+
+### C. Solusi & Perubahan Frontend Flutter (`mobile_app/lib`)
+1. **Model Deserialization**:
+   - [`mobile_app/lib/models/processed_product.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/models/processed_product.dart): Ditambahkan field `unit` (default `'pcs'`).
+   - [`mobile_app/lib/models/stock.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/models/stock.dart): Ditambahkan field `unit` pada `StockTransaction` (default `'kg'`).
+   - [`mobile_app/lib/models/dashboard.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/models/dashboard.dart): Ditambahkan field `unit` pada `TransactionSummary` (default `'kg'`).
+2. **Form Tambah & Edit Produk Olahan (`mobile_app/lib/screens/processed_products_screen.dart`)**:
+   - Ditambahkan field pilihan satuan (Dropdown dengan 2 opsi: `pcs` atau `kg`) berdampingan dengan form kuantitas Stok.
+   - Pengiriman parameter `unit` pada fungsi create dan update produk olahan via API service.
+   - Kartu katalog produk kini menampilkan satuan dinamis: `Tersedia (X pcs/kg)`, `Harga (Rp) / unit`, dan sisa stok.
+3. **Dashboard (`mobile_app/lib/screens/home_screen.dart`)**:
+   - Kartu Transaksi Stok Terbaru menampilkan satuan dinamis: `${txn.quantity} ${txn.unit}` (menghasilkan `1000 kg` untuk panen masuk dan `40 pcs`, `4 pcs`, `3 pcs` untuk penjualan produk olahan).
+4. **Data Stok Gudang (`mobile_app/lib/screens/stock_screen.dart`)**:
+   - Label kolom tabel diubah dari `Jumlah (Kg)` menjadi `Jumlah`.
+   - Kuantitas baris transaksi menampilkan `${transaction.quantity} ${transaction.unit}`.
+5. **Super Admin Marketing Screen (`mobile_app/lib/screens/super_admin_marketing_screen.dart`)**:
+   - Menampilkan sisa stok dinamis sesuai satuan produk: `Sisa Stok: ${p.stock} ${p.unit}`.
+
+### D. Hasil Pengujian & Status Verifikasi
+- **Backend API Tests**: `php artisan test tests/Feature/API/FarmerDashboardChartsTest.php` ➔ ✅ **3/3 Passed (67 assertions)** (mencakup verifikasi overflow bulan dan CRUD satuan unit).
+- **Processed Product Tests**: `php artisan test tests/Feature/API/ProcessedProductApiTest.php` ➔ ✅ **14/14 Passed (31 assertions)**.
+- **Flutter Static Analysis**: `flutter analyze` ➔ ✅ **No issues found! (0 errors, 0 warnings)**.
+- **UAT Checklist**: Skenario 9 ditambahkan dan berstatus ✅ **[x] PASSED**.
+
+---
+
+## 13. Implementasi V2: Phase 1 & Phase 2 (Domain Kelompok Tani / Poktan 1–10)
+
+### A. Phase 1: Domain & Business Rule Audit
+- **Audit File & Rule Inventory**:
+  - Diterbitkan [`docs/V2_DOMAIN_AUDIT.md`](file:///d:/laragon/www/PKM/docs/V2_DOMAIN_AUDIT.md) yang menginventarisasi 10 entitas domain, data contract, serta titik kritis integrasi.
+  - Diterbitkan [`docs/V2_BUSINESS_RULES.md`](file:///d:/laragon/www/PKM/docs/V2_BUSINESS_RULES.md) yang mengunci 12 aturan bisnis absolut (Komisi 10% Gross, Dual Market Price, Invarian Anti Double-Counting, Tenant Poktan Guard, dll).
+
+### B. Phase 2: Domain Kelompok Tani (Poktan 1–10)
+1. **Database Schema & Migrations**:
+   - Migration [`database/migrations/2026_09_24_000001_create_farmer_groups_table.php`](file:///d:/laragon/www/PKM/database/migrations/2026_09_24_000001_create_farmer_groups_table.php): Membuat tabel `farmer_groups` (`id`, `name`, `code` unique, `village`, `district`, `regency`, `province`, `leader_name`, `is_active`, timestamps).
+   - Migration [`database/migrations/2026_09_24_000002_add_farmer_group_id_to_users_table.php`](file:///d:/laragon/www/PKM/database/migrations/2026_09_24_000002_add_farmer_group_id_to_users_table.php): Menambahkan relasi foreign key `farmer_group_id` pada tabel `users`.
+   - Seeder [`database/seeders/FarmerGroupSeeder.php`](file:///d:/laragon/www/PKM/database/seeders/FarmerGroupSeeder.php): Mendaftarkan 10 Kelompok Tani resmi (`POKTAN-01` s/d `POKTAN-10`) di Desa Sumber Brantas, Bumiaji, Kota Batu.
+2. **Backend Domain Logic & Services**:
+   - Model [`app/Models/FarmerGroup.php`](file:///d:/laragon/www/PKM/app/Models/FarmerGroup.php) & Update [`app/Models/User.php`](file:///d:/laragon/www/PKM/app/Models/User.php).
+   - Service [`app/Services/FarmerGroupService.php`](file:///d:/laragon/www/PKM/app/Services/FarmerGroupService.php): Mengelola listing aktif, agregasi statistik keanggotaan Super Admin, detail anggota Poktan, dan pemindahan anggota.
+   - Controller [`app/Http/Controllers/Api/FarmerGroupController.php`](file:///d:/laragon/www/PKM/app/Http/Controllers/Api/FarmerGroupController.php): Endpoint publik `GET /api/farmer-groups`, dan guard admin `GET /api/super-admin/farmer-groups`, `POST /api/super-admin/farmer-groups` (Create), `GET /api/super-admin/farmer-groups/{id}` (Detail), `PUT /api/super-admin/farmer-groups/{id}` (Update), `DELETE /api/super-admin/farmer-groups/{id}` (Delete with member guard), `POST /api/super-admin/users/{id}/assign-poktan`.
+   - Update [`app/Services/AuthService.php`](file:///d:/laragon/www/PKM/app/Services/AuthService.php) & [`app/Http/Controllers/AuthController.php`](file:///d:/laragon/www/PKM/app/Http/Controllers/AuthController.php): Registrasi petani wajib memilih Poktan (`farmer_group_id` required).
+   - Update [`app/Services/SuperAdminService.php`](file:///d:/laragon/www/PKM/app/Services/SuperAdminService.php): Eager load relasi `farmerGroup` untuk daftar pengguna.
+3. **Frontend Flutter Mobile & Desktop Client**:
+   - Model [`mobile_app/lib/models/farmer_group.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/models/farmer_group.dart) & Update [`mobile_app/lib/models/user.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/models/user.dart).
+   - Service [`mobile_app/lib/services/api/farmer_group_api_service.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/services/api/farmer_group_api_service.dart) & Facade [`mobile_app/lib/services/api_service.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/services/api_service.dart): Lengkap dengan method `createFarmerGroup`, `updateFarmerGroup`, dan `deleteFarmerGroup`.
+   - Registrasi Petani [`mobile_app/lib/screens/register_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/register_screen.dart): Dropdown pilihan 10 Poktan wajib dipilih saat mendaftar.
+   - Manajemen Pengguna Super Admin:
+     - [`mobile_app/lib/widgets/users/user_form_bottom_sheet.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/widgets/users/user_form_bottom_sheet.dart): Pilihan Poktan saat admin membuat/mengubah user petani.
+     - [`mobile_app/lib/screens/user_management_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/user_management_screen.dart): Menampilkan badge/teks Kelompok Tani pada Card Mobile dan Kolom Data Table Desktop.
+   - **Layar Dedicated CRUD Kelompok Tani Super Admin**:
+     - [`mobile_app/lib/screens/farmer_group_management_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/farmer_group_management_screen.dart): Panel manajemen Poktan lengkap dengan stat card, live search, filter status, dialog form tambah/edit Poktan, dialog list detail anggota petani terdaftar, serta penghapusan aman dengan peringatan jika Poktan masih beranggotakan petani.
+     - Terintegrasi langsung pada Navigasi Sidebar, Drawer, Quick Navigation Card, dan IndexedStack [`mobile_app/lib/screens/super_admin_dashboard_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/super_admin_dashboard_screen.dart).
+4. **Hasil Pengujian & Verifikasi**:
+   - **Farmer Group API Tests**: `php vendor/bin/phpunit tests/Feature/API/FarmerGroupTest.php` ➔ ✅ **11/11 Passed (86 assertions)** (mencakup Create, Update, Delete kosong, Delete guard beranggota, Reassign, Otorisasi 403).
+   - **Comprehensive API Tests**: `php vendor/bin/phpunit tests/Feature/API/ComprehensiveApiTest.php` ➔ ✅ **12/12 Passed (53 assertions)**.
+   - **Full API Suite**: `php vendor/bin/phpunit tests/Feature/API/` ➔ ✅ **123/123 Passed (531 assertions)**.
+   - **Flutter Static Analysis**: `flutter analyze` ➔ ✅ **No issues found! (0 errors, 0 warnings)**.
+
+
+
 
 
 

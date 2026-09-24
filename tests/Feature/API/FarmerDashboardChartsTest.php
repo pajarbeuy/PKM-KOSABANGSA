@@ -115,4 +115,98 @@ class FarmerDashboardChartsTest extends TestCase
         $this->assertEquals(20, $latestMonth['processed_sales_pcs']);
         $this->assertEquals(500000, $latestMonth['processed_sales_rp']);
     }
+
+    public function test_farmer_dashboard_handles_month_subtraction_overflow_without_skipping_months(): void
+    {
+        $farmer = User::factory()->create([
+            'role'   => 'user',
+            'status' => 'active',
+        ]);
+
+        $season = Season::factory()->create([
+            'user_id'    => $farmer->id,
+            'start_date' => '2026-05-01',
+            'end_date'   => '2026-11-30',
+            'status'     => 'active',
+        ]);
+
+        // Harvest on 31 October 2026 (day 31)
+        Harvest::create([
+            'user_id'   => $farmer->id,
+            'season_id' => $season->id,
+            'weight_kg' => 500,
+            'date'      => '2026-10-31',
+            'status'    => 'approved',
+        ]);
+
+        // Processed Product
+        $product = ProcessedProduct::create([
+            'owner_id' => $farmer->id,
+            'name'     => 'Keripik Pisang Sale',
+            'price'    => 15000,
+            'stock'    => 100,
+            'unit'     => 'pcs',
+            'status'   => 'active',
+        ]);
+
+        // Sale in September 2026 (30 days month)
+        Sale::create([
+            'user_id'              => $farmer->id,
+            'season_id'            => $season->id,
+            'product_type'         => 'processed',
+            'processed_product_id' => $product->id,
+            'date'                 => '2026-09-23',
+            'buyer_name'           => 'Pembeli September',
+            'weight_kg'            => 10,
+            'price_per_kg'         => 15000,
+            'total'                => 150000,
+            'payment_status'       => 'paid',
+        ]);
+
+        $response = $this->actingAs($farmer)->getJson('/api/dashboard');
+        $response->assertStatus(200);
+
+        $monthlyStats = $response->json('data.monthlyStats');
+        $labels = array_column($monthlyStats, 'label');
+
+        // Verify September is present and has the processed sales
+        $septemberIndex = array_search('Sep', $labels);
+        $this->assertNotFalse($septemberIndex, 'Bulan Sep harus ada di monthlyStats');
+        $this->assertEquals(10, $monthlyStats[$septemberIndex]['processed_sales_pcs']);
+        $this->assertEquals(150000, $monthlyStats[$septemberIndex]['processed_sales_rp']);
+    }
+
+    public function test_processed_product_supports_custom_unit(): void
+    {
+        $farmer = User::factory()->create([
+            'role'   => 'user',
+            'status' => 'active',
+        ]);
+
+        // Create with kg unit
+        $response = $this->actingAs($farmer)->postJson('/api/processed-products', [
+            'name'        => 'Tepung Singkong Murni',
+            'price'       => 20000,
+            'stock'       => 50,
+            'unit'        => 'kg',
+            'description' => 'Tepung singkong organik dalam kemasan 1 kg',
+            'status'      => 'active',
+        ]);
+
+        $response->assertStatus(201);
+        $this->assertEquals('kg', $response->json('data.unit'));
+
+        $productId = $response->json('data.id');
+
+        // Update to pcs unit
+        $updateResponse = $this->actingAs($farmer)->putJson("/api/processed-products/{$productId}", [
+            'name'  => 'Tepung Singkong Kemasan',
+            'price' => 22000,
+            'stock' => 45,
+            'unit'  => 'pcs',
+        ]);
+
+        $updateResponse->assertStatus(200);
+        $this->assertEquals('pcs', $updateResponse->json('data.unit'));
+    }
 }

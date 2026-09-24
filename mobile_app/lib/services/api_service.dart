@@ -19,8 +19,10 @@ import 'api/super_admin_api_service.dart';
 import 'api/misc_api_service.dart';
 import 'api/processed_product_api_service.dart';
 import 'api/order_api_service.dart';
+import 'api/farmer_group_api_service.dart';
 import '../models/processed_product.dart';
 import '../models/order_model.dart';
+import '../models/farmer_group.dart';
 
 /// Facade Singleton providing a unified API interface across all domain services.
 class ApiService {
@@ -44,6 +46,7 @@ class ApiService {
   final MiscApiService _miscService = MiscApiService();
   final ProcessedProductApiService _processedProductService = ProcessedProductApiService();
   final OrderApiService _orderService = OrderApiService();
+  final FarmerGroupApiService _farmerGroupService = FarmerGroupApiService();
 
   // ─── Client / Token Management ─────────────────────────────────────────────
   void setAuthToken(String token) => _client.setAuthToken(token);
@@ -59,6 +62,7 @@ class ApiService {
     required String name,
     required String email,
     required String phone,
+    required int farmerGroupId,
     required String password,
     required String passwordConfirmation,
   }) =>
@@ -67,6 +71,7 @@ class ApiService {
         name: name,
         email: email,
         phone: phone,
+        farmerGroupId: farmerGroupId,
         password: password,
         passwordConfirmation: passwordConfirmation,
       );
@@ -466,6 +471,7 @@ class ApiService {
     required String name,
     required double price,
     int stock = 0,
+    String? unit = 'pcs',
     String? description,
     String? status,
     XFile? photoFile,
@@ -474,6 +480,7 @@ class ApiService {
         name: name,
         price: price,
         stock: stock,
+        unit: unit,
         description: description,
         status: status,
         photoFile: photoFile,
@@ -484,6 +491,7 @@ class ApiService {
     String? name,
     double? price,
     int? stock,
+    String? unit,
     String? description,
     String? status,
     XFile? photoFile,
@@ -493,6 +501,7 @@ class ApiService {
         name: name,
         price: price,
         stock: stock,
+        unit: unit,
         description: description,
         status: status,
         photoFile: photoFile,
@@ -537,4 +546,26 @@ class ApiService {
 
   Future<Map<String, dynamic>> cancelOrder(int id) =>
       _orderService.cancelOrder(id);
+
+  // ─── Farmer Groups (Poktan) ────────────────────────────────────────────────
+  Future<List<FarmerGroup>> getActiveFarmerGroups() =>
+      _farmerGroupService.getActiveFarmerGroups();
+
+  Future<List<FarmerGroup>> getSuperAdminFarmerGroups() =>
+      _farmerGroupService.getSuperAdminFarmerGroups();
+
+  Future<Map<String, dynamic>?> getFarmerGroupDetail(int id) =>
+      _farmerGroupService.getFarmerGroupDetail(id);
+
+  Future<Map<String, dynamic>> createFarmerGroup(Map<String, dynamic> payload) =>
+      _farmerGroupService.createFarmerGroup(payload);
+
+  Future<Map<String, dynamic>> updateFarmerGroup(int id, Map<String, dynamic> payload) =>
+      _farmerGroupService.updateFarmerGroup(id, payload);
+
+  Future<Map<String, dynamic>> deleteFarmerGroup(int id) =>
+      _farmerGroupService.deleteFarmerGroup(id);
+
+  Future<Map<String, dynamic>> assignFarmerToPoktan(int userId, int farmerGroupId) =>
+      _farmerGroupService.assignMember(userId, farmerGroupId);
 }

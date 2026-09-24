@@ -15,6 +15,7 @@ class ProcessedProduct extends Model
         'name',
         'price',
         'stock',
+        'unit',
         'description',
         'photo',
         'status',

@@ -193,7 +193,7 @@ class _StockScreenState extends State<StockScreen> {
                             ),
                             DataColumn(
                               label: Text(
-                                'Jumlah (Kg)',
+                                'Jumlah',
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
                             ),
@@ -262,7 +262,7 @@ class _StockScreenState extends State<StockScreen> {
                                 ),
                                 DataCell(
                                   Text(
-                                    '${transaction.quantity} kg',
+                                    '${transaction.quantity} ${transaction.unit}',
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -547,7 +547,7 @@ class _StockScreenState extends State<StockScreen> {
         ],
       ),
       trailing: Text(
-        '${transaction.quantity} kg',
+        '${transaction.quantity} ${transaction.unit}',
         style: TextStyle(
           color: color,
           fontWeight: FontWeight.bold,

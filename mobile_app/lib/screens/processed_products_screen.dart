@@ -66,6 +66,7 @@ class _ProcessedProductsScreenState extends State<ProcessedProductsScreen> {
     final stockController = TextEditingController(text: product?.stock.toString() ?? '0');
     final descController = TextEditingController(text: product?.description ?? '');
     String status = product?.status ?? 'active';
+    String unit = product?.unit ?? 'pcs';
 
     XFile? selectedPhotoFile;
     Uint8List? selectedPhotoBytes;
@@ -273,34 +274,36 @@ class _ProcessedProductsScreenState extends State<ProcessedProductsScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Harga & Stok
+                    // Harga
+                    TextFormField(
+                      controller: priceController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: 'Harga (Rp) *',
+                        hintText: '25000',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        prefixIcon: const Icon(Icons.attach_money),
+                      ),
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) return 'Harga wajib diisi';
+                        final val = double.tryParse(v);
+                        if (val == null || val < 0) return 'Harga tidak valid';
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Stok & Satuan
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
-                          child: TextFormField(
-                            controller: priceController,
-                            keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
-                              labelText: 'Harga (Rp) *',
-                              hintText: '25000',
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                              prefixIcon: const Icon(Icons.attach_money),
-                            ),
-                            validator: (v) {
-                              if (v == null || v.trim().isEmpty) return 'Harga wajib diisi';
-                              final val = double.tryParse(v);
-                              if (val == null || val < 0) return 'Harga tidak valid';
-                              return null;
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
+                          flex: 3,
                           child: TextFormField(
                             controller: stockController,
                             keyboardType: TextInputType.number,
                             decoration: InputDecoration(
-                              labelText: 'Stok Unit *',
+                              labelText: 'Stok *',
                               hintText: '50',
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                               prefixIcon: const Icon(Icons.inventory_2_outlined),
@@ -310,6 +313,25 @@ class _ProcessedProductsScreenState extends State<ProcessedProductsScreen> {
                               final val = int.tryParse(v);
                               if (val == null || val < 0) return 'Stok tidak valid';
                               return null;
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 2,
+                          child: DropdownButtonFormField<String>(
+                            initialValue: unit,
+                            decoration: InputDecoration(
+                              labelText: 'Satuan *',
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                            ),
+                            items: const [
+                              DropdownMenuItem(value: 'pcs', child: Text('pcs')),
+                              DropdownMenuItem(value: 'kg', child: Text('kg')),
+                            ],
+                            onChanged: (val) {
+                              if (val != null) setModalState(() => unit = val);
                             },
                           ),
                         ),
@@ -384,6 +406,7 @@ class _ProcessedProductsScreenState extends State<ProcessedProductsScreen> {
                                         name: nameController.text.trim(),
                                         price: price,
                                         stock: stock,
+                                        unit: unit,
                                         description: descController.text.trim(),
                                         status: status,
                                         photoFile: selectedPhotoFile,
@@ -393,6 +416,7 @@ class _ProcessedProductsScreenState extends State<ProcessedProductsScreen> {
                                         name: nameController.text.trim(),
                                         price: price,
                                         stock: stock,
+                                        unit: unit,
                                         description: descController.text.trim(),
                                         status: status,
                                         photoFile: selectedPhotoFile,
@@ -780,7 +804,7 @@ class _ProcessedProductsScreenState extends State<ProcessedProductsScreen> {
     if (product.isActive) {
       badgeBg = const Color(0xFFE8F5E9);
       badgeTextColor = const Color(0xFF2E7D32);
-      badgeText = 'Tersedia (${product.stock})';
+      badgeText = 'Tersedia (${product.stock} ${product.unit})';
     } else if (product.isOutOfStock) {
       badgeBg = const Color(0xFFFFF3E0);
       badgeTextColor = const Color(0xFFE65100);
@@ -904,7 +928,7 @@ class _ProcessedProductsScreenState extends State<ProcessedProductsScreen> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        _currencyFormat.format(product.price),
+                        '${_currencyFormat.format(product.price)} / ${product.unit}',
                         style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
                       ),
                     ),
@@ -958,7 +982,7 @@ class _ProcessedProductsScreenState extends State<ProcessedProductsScreen> {
                         Icon(Icons.inventory_2_outlined, size: 14, color: Colors.grey[600]),
                         const SizedBox(width: 4),
                         Text(
-                          '${product.stock} unit',
+                          '${product.stock} ${product.unit}',
                           style: TextStyle(fontSize: 12, color: Colors.grey[700], fontWeight: FontWeight.w600),
                         ),
                       ],

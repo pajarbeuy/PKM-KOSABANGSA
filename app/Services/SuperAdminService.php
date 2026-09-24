@@ -19,7 +19,7 @@ class SuperAdminService
      */
     public function getAllUsers()
     {
-        return User::latest()->get();
+        return User::with('farmerGroup')->latest()->get();
     }
 
     /**
@@ -43,7 +43,7 @@ class SuperAdminService
         }
 
         $user->update($data);
-        return $user;
+        return $user->fresh(['farmerGroup']);
     }
 
     /**
@@ -78,14 +78,22 @@ class SuperAdminService
      */
     public function formatUser(User $user): array
     {
+        $user->loadMissing('farmerGroup');
+
         return [
-            'id'        => $user->id,
-            'name'      => $user->name,
-            'email'     => $user->email,
-            'phone'     => $user->phone,
-            'farm_name' => $user->farm_name,
-            'role'      => $user->role,
-            'status'    => $user->status,
+            'id'              => $user->id,
+            'name'            => $user->name,
+            'email'           => $user->email,
+            'phone'           => $user->phone,
+            'farm_name'       => $user->farm_name,
+            'farmer_group_id' => $user->farmer_group_id,
+            'farmer_group'    => $user->farmerGroup ? [
+                'id'          => $user->farmerGroup->id,
+                'name'        => $user->farmerGroup->name,
+                'code'        => $user->farmerGroup->code,
+            ] : null,
+            'role'            => $user->role,
+            'status'          => $user->status,
         ];
     }
 

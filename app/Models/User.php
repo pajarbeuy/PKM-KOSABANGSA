@@ -11,7 +11,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['name', 'email', 'password', 'phone', 'farm_name', 'role', 'status', 'approval'])]
+#[Fillable(['name', 'email', 'password', 'phone', 'farm_name', 'farmer_group_id', 'role', 'status', 'approval'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -29,5 +29,13 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * The farmer group this user belongs to.
+     */
+    public function farmerGroup()
+    {
+        return $this->belongsTo(FarmerGroup::class, 'farmer_group_id');
     }
 }
