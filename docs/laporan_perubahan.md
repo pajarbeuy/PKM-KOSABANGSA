@@ -982,20 +982,23 @@ Sebelumnya, grafik di dashboard petani menggabungkan pencatatan panen (kg) dan p
 2. **Backend Domain Logic & Services**:
    - Model [`app/Models/FarmerGroup.php`](file:///d:/laragon/www/PKM/app/Models/FarmerGroup.php) & Update [`app/Models/User.php`](file:///d:/laragon/www/PKM/app/Models/User.php).
    - Service [`app/Services/FarmerGroupService.php`](file:///d:/laragon/www/PKM/app/Services/FarmerGroupService.php): Mengelola listing aktif, agregasi statistik keanggotaan Super Admin, detail anggota Poktan, dan pemindahan anggota.
-   - Controller [`app/Http/Controllers/Api/FarmerGroupController.php`](file:///d:/laragon/www/PKM/app/Http/Controllers/Api/FarmerGroupController.php): Endpoint publik `GET /api/farmer-groups`, dan guard admin `GET /api/super-admin/farmer-groups`, `GET /api/super-admin/farmer-groups/{id}`, `POST /api/super-admin/users/{id}/assign-poktan`.
+   - Controller [`app/Http/Controllers/Api/FarmerGroupController.php`](file:///d:/laragon/www/PKM/app/Http/Controllers/Api/FarmerGroupController.php): Endpoint publik `GET /api/farmer-groups`, dan guard admin `GET /api/super-admin/farmer-groups`, `POST /api/super-admin/farmer-groups` (Create), `GET /api/super-admin/farmer-groups/{id}` (Detail), `PUT /api/super-admin/farmer-groups/{id}` (Update), `DELETE /api/super-admin/farmer-groups/{id}` (Delete with member guard), `POST /api/super-admin/users/{id}/assign-poktan`.
    - Update [`app/Services/AuthService.php`](file:///d:/laragon/www/PKM/app/Services/AuthService.php) & [`app/Http/Controllers/AuthController.php`](file:///d:/laragon/www/PKM/app/Http/Controllers/AuthController.php): Registrasi petani wajib memilih Poktan (`farmer_group_id` required).
    - Update [`app/Services/SuperAdminService.php`](file:///d:/laragon/www/PKM/app/Services/SuperAdminService.php): Eager load relasi `farmerGroup` untuk daftar pengguna.
 3. **Frontend Flutter Mobile & Desktop Client**:
    - Model [`mobile_app/lib/models/farmer_group.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/models/farmer_group.dart) & Update [`mobile_app/lib/models/user.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/models/user.dart).
-   - Service [`mobile_app/lib/services/api/farmer_group_api_service.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/services/api/farmer_group_api_service.dart) & Facade [`mobile_app/lib/services/api_service.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/services/api_service.dart).
+   - Service [`mobile_app/lib/services/api/farmer_group_api_service.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/services/api/farmer_group_api_service.dart) & Facade [`mobile_app/lib/services/api_service.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/services/api_service.dart): Lengkap dengan method `createFarmerGroup`, `updateFarmerGroup`, dan `deleteFarmerGroup`.
    - Registrasi Petani [`mobile_app/lib/screens/register_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/register_screen.dart): Dropdown pilihan 10 Poktan wajib dipilih saat mendaftar.
    - Manajemen Pengguna Super Admin:
      - [`mobile_app/lib/widgets/users/user_form_bottom_sheet.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/widgets/users/user_form_bottom_sheet.dart): Pilihan Poktan saat admin membuat/mengubah user petani.
      - [`mobile_app/lib/screens/user_management_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/user_management_screen.dart): Menampilkan badge/teks Kelompok Tani pada Card Mobile dan Kolom Data Table Desktop.
+   - **Layar Dedicated CRUD Kelompok Tani Super Admin**:
+     - [`mobile_app/lib/screens/farmer_group_management_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/farmer_group_management_screen.dart): Panel manajemen Poktan lengkap dengan stat card, live search, filter status, dialog form tambah/edit Poktan, dialog list detail anggota petani terdaftar, serta penghapusan aman dengan peringatan jika Poktan masih beranggotakan petani.
+     - Terintegrasi langsung pada Navigasi Sidebar, Drawer, Quick Navigation Card, dan IndexedStack [`mobile_app/lib/screens/super_admin_dashboard_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/super_admin_dashboard_screen.dart).
 4. **Hasil Pengujian & Verifikasi**:
-   - **Farmer Group API Tests**: `php vendor/bin/phpunit tests/Feature/API/FarmerGroupTest.php` ➔ ✅ **7/7 Passed (74 assertions)**.
+   - **Farmer Group API Tests**: `php vendor/bin/phpunit tests/Feature/API/FarmerGroupTest.php` ➔ ✅ **11/11 Passed (86 assertions)** (mencakup Create, Update, Delete kosong, Delete guard beranggota, Reassign, Otorisasi 403).
    - **Comprehensive API Tests**: `php vendor/bin/phpunit tests/Feature/API/ComprehensiveApiTest.php` ➔ ✅ **12/12 Passed (53 assertions)**.
-   - **Full API Suite**: `php vendor/bin/phpunit tests/Feature/API/` ➔ ✅ **119/119 Passed (519 assertions)**.
+   - **Full API Suite**: `php vendor/bin/phpunit tests/Feature/API/` ➔ ✅ **123/123 Passed (531 assertions)**.
    - **Flutter Static Analysis**: `flutter analyze` ➔ ✅ **No issues found! (0 errors, 0 warnings)**.
 
 

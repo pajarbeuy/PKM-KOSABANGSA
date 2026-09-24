@@ -557,6 +557,15 @@ class ApiService {
   Future<Map<String, dynamic>?> getFarmerGroupDetail(int id) =>
       _farmerGroupService.getFarmerGroupDetail(id);
 
+  Future<Map<String, dynamic>> createFarmerGroup(Map<String, dynamic> payload) =>
+      _farmerGroupService.createFarmerGroup(payload);
+
+  Future<Map<String, dynamic>> updateFarmerGroup(int id, Map<String, dynamic> payload) =>
+      _farmerGroupService.updateFarmerGroup(id, payload);
+
+  Future<Map<String, dynamic>> deleteFarmerGroup(int id) =>
+      _farmerGroupService.deleteFarmerGroup(id);
+
   Future<Map<String, dynamic>> assignFarmerToPoktan(int userId, int farmerGroupId) =>
       _farmerGroupService.assignMember(userId, farmerGroupId);
 }

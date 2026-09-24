@@ -68,6 +68,20 @@ class FarmerGroupService
     }
 
     /**
+     * Delete a farmer group (Super Admin only).
+     * Prevents deletion if there are registered members.
+     */
+    public function deleteGroup(FarmerGroup $group): bool
+    {
+        $memberCount = $group->members()->count();
+        if ($memberCount > 0) {
+            throw new \InvalidArgumentException("Kelompok Tani tidak dapat dihapus karena masih memiliki {$memberCount} anggota petani terdaftar. Silakan pindahkan anggota terlebih dahulu.");
+        }
+
+        return (bool) $group->delete();
+    }
+
+    /**
      * Assign or move a farmer to a specific Poktan (Super Admin only).
      */
     public function assignFarmerToGroup(User $farmer, int $farmerGroupId): User

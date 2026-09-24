@@ -87,4 +87,72 @@ class FarmerGroupApiService {
       };
     }
   }
+
+  /// Super Admin: Create a new farmer group
+  Future<Map<String, dynamic>> createFarmerGroup(Map<String, dynamic> payload) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/super-admin/farmer-groups'),
+        headers: _client.getHeaders(),
+        body: jsonEncode(payload),
+      );
+
+      final data = _client.decodeApiResponse(response);
+      return {
+        'success': data['success'] ?? false,
+        'message': data['message'] ?? 'Kelompok Tani berhasil ditambahkan.',
+        'data': data['data'] != null ? FarmerGroup.fromJson(data['data']) : null,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': e.toString().replaceAll('Exception: ', ''),
+      };
+    }
+  }
+
+  /// Super Admin: Update an existing farmer group
+  Future<Map<String, dynamic>> updateFarmerGroup(int id, Map<String, dynamic> payload) async {
+    try {
+      final response = await http.put(
+        Uri.parse('${ApiConfig.baseUrl}/super-admin/farmer-groups/$id'),
+        headers: _client.getHeaders(),
+        body: jsonEncode(payload),
+      );
+
+      final data = _client.decodeApiResponse(response);
+      return {
+        'success': data['success'] ?? false,
+        'message': data['message'] ?? 'Kelompok Tani berhasil diperbarui.',
+        'data': data['data'] != null ? FarmerGroup.fromJson(data['data']) : null,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': e.toString().replaceAll('Exception: ', ''),
+      };
+    }
+  }
+
+  /// Super Admin: Delete a farmer group
+  Future<Map<String, dynamic>> deleteFarmerGroup(int id) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('${ApiConfig.baseUrl}/super-admin/farmer-groups/$id'),
+        headers: _client.getHeaders(),
+      );
+
+      final data = _client.decodeApiResponse(response);
+      return {
+        'success': data['success'] ?? false,
+        'message': data['message'] ?? 'Kelompok Tani berhasil dihapus.',
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': e.toString().replaceAll('Exception: ', ''),
+      };
+    }
+  }
 }
+

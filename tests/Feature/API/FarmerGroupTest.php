@@ -218,4 +218,131 @@ class FarmerGroupTest extends TestCase
         ]);
         $responseAssign->assertStatus(403);
     }
+
+    public function test_super_admin_can_create_farmer_group(): void
+    {
+        $superAdmin = User::factory()->create([
+            'role'   => 'super_admin',
+            'status' => 'active',
+        ]);
+
+        $payload = [
+            'name'        => 'Poktan 11 - Makmur Jaya',
+            'code'        => 'POKTAN-11',
+            'village'     => 'Desa Sumber Sari',
+            'leader_name' => 'Bapak Slamet',
+            'description' => 'Poktan baru perintis agrowisata kentang.',
+            'status'      => 'active',
+        ];
+
+        $response = $this->actingAs($superAdmin)->postJson('/api/super-admin/farmer-groups', $payload);
+
+        $response->assertStatus(201)
+            ->assertJson([
+                'success' => true,
+                'message' => 'Kelompok Tani berhasil ditambahkan.',
+                'data'    => [
+                    'name'        => 'Poktan 11 - Makmur Jaya',
+                    'code'        => 'POKTAN-11',
+                    'village'     => 'Desa Sumber Sari',
+                    'leader_name' => 'Bapak Slamet',
+                ],
+            ]);
+
+        $this->assertDatabaseHas('farmer_groups', [
+            'code' => 'POKTAN-11',
+        ]);
+    }
+
+    public function test_super_admin_can_update_farmer_group(): void
+    {
+        $superAdmin = User::factory()->create([
+            'role'   => 'super_admin',
+            'status' => 'active',
+        ]);
+
+        $poktan = FarmerGroup::first();
+
+        $updatePayload = [
+            'name'        => 'Poktan 1 - Sumber Rezeki Updated',
+            'code'        => $poktan->code,
+            'leader_name' => 'Bapak Joko Baru',
+            'village'     => 'Desa Brantas Baru',
+            'status'      => 'active',
+        ];
+
+        $response = $this->actingAs($superAdmin)->putJson("/api/super-admin/farmer-groups/{$poktan->id}", $updatePayload);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'message' => 'Kelompok Tani berhasil diperbarui.',
+                'data'    => [
+                    'id'          => $poktan->id,
+                    'name'        => 'Poktan 1 - Sumber Rezeki Updated',
+                    'leader_name' => 'Bapak Joko Baru',
+                    'village'     => 'Desa Brantas Baru',
+                ],
+            ]);
+
+        $this->assertDatabaseHas('farmer_groups', [
+            'id'          => $poktan->id,
+            'name'        => 'Poktan 1 - Sumber Rezeki Updated',
+            'leader_name' => 'Bapak Joko Baru',
+        ]);
+    }
+
+    public function test_super_admin_can_delete_empty_farmer_group(): void
+    {
+        $superAdmin = User::factory()->create([
+            'role'   => 'super_admin',
+            'status' => 'active',
+        ]);
+
+        $newGroup = FarmerGroup::create([
+            'name'   => 'Poktan Sementara',
+            'code'   => 'POKTAN-TEMP',
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($superAdmin)->deleteJson("/api/super-admin/farmer-groups/{$newGroup->id}");
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'message' => 'Kelompok Tani berhasil dihapus.',
+            ]);
+
+        $this->assertSoftDeleted('farmer_groups', [
+            'id' => $newGroup->id,
+        ]);
+    }
+
+    public function test_super_admin_cannot_delete_farmer_group_with_members(): void
+    {
+        $superAdmin = User::factory()->create([
+            'role'   => 'super_admin',
+            'status' => 'active',
+        ]);
+
+        $group = FarmerGroup::first();
+
+        // Assign a member
+        User::factory()->create([
+            'role'            => 'user',
+            'farmer_group_id' => $group->id,
+        ]);
+
+        $response = $this->actingAs($superAdmin)->deleteJson("/api/super-admin/farmer-groups/{$group->id}");
+
+        $response->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+            ]);
+
+        $this->assertDatabaseHas('farmer_groups', [
+            'id' => $group->id,
+        ]);
+    }
 }
+

@@ -110,6 +110,27 @@ class FarmerGroupController extends Controller
     }
 
     /**
+     * Super Admin: Delete a farmer group.
+     */
+    public function destroy(int $id): JsonResponse
+    {
+        $group = FarmerGroup::find($id);
+
+        if (!$group) {
+            return $this->errorResponse('Kelompok Tani tidak ditemukan.', 404);
+        }
+
+        try {
+            $this->farmerGroupService->deleteGroup($group);
+            return $this->successResponse(null, 'Kelompok Tani berhasil dihapus.');
+        } catch (\InvalidArgumentException $e) {
+            return $this->errorResponse($e->getMessage(), 422);
+        } catch (\Throwable $e) {
+            return $this->errorResponse('Gagal menghapus Kelompok Tani: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
      * Super Admin: Assign or move a farmer to a Poktan.
      */
     public function assignMember(Request $request, int $userId): JsonResponse

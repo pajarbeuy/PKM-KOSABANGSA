@@ -19,6 +19,8 @@ class FarmerGroup {
     this.membersCount = 0,
   });
 
+  bool get isActive => status == 'active';
+
   factory FarmerGroup.fromJson(Map<String, dynamic> json) {
     return FarmerGroup(
       id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,

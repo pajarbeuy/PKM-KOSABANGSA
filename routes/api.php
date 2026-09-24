@@ -152,6 +152,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/farmer-groups/{id}',         [FarmerGroupController::class, 'show']);
         Route::post('/farmer-groups',             [FarmerGroupController::class, 'store']);
         Route::put('/farmer-groups/{id}',         [FarmerGroupController::class, 'update']);
+        Route::delete('/farmer-groups/{id}',      [FarmerGroupController::class, 'destroy']);
         Route::post('/users/{id}/assign-poktan',  [FarmerGroupController::class, 'assignMember']);
 
         // Chatbot AI Operational Assistant
