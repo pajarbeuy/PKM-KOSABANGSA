@@ -17,6 +17,7 @@ use App\Http\Controllers\ProcessedProductController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\Api\ChatbotController;
 use App\Http\Controllers\Api\FarmerGroupController;
+use App\Http\Controllers\Api\FarmerCommodityController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -76,6 +77,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('sales',              SaleController::class)->names('api.sales');
     Route::apiResource('costs',              CostController::class)->names('api.costs');
     Route::apiResource('processed-products', ProcessedProductController::class)->names('api.processed-products');
+    Route::apiResource('commodities',        FarmerCommodityController::class)->names('api.commodities');
 
     // Stock (custom routes — not a standard CRUD resource)
     Route::get('/stock',                      [StockController::class, 'index']);
@@ -154,6 +156,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/farmer-groups/{id}',         [FarmerGroupController::class, 'update']);
         Route::delete('/farmer-groups/{id}',      [FarmerGroupController::class, 'destroy']);
         Route::post('/users/{id}/assign-poktan',  [FarmerGroupController::class, 'assignMember']);
+
+        // Commodities Management & Monitoring
+        Route::get('/commodities',                [FarmerCommodityController::class, 'adminIndex']);
+        Route::put('/commodities/{id}',           [FarmerCommodityController::class, 'adminUpdate']);
 
         // Chatbot AI Operational Assistant
         Route::post('/chat', [ChatbotController::class, 'chat']);

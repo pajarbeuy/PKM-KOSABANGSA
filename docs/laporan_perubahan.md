@@ -1001,6 +1001,46 @@ Sebelumnya, grafik di dashboard petani menggabungkan pencatatan panen (kg) dan p
    - **Full API Suite**: `php vendor/bin/phpunit tests/Feature/API/` ➔ ✅ **123/123 Passed (531 assertions)**.
    - **Flutter Static Analysis**: `flutter analyze` ➔ ✅ **No issues found! (0 errors, 0 warnings)**.
 
+---
+
+## 14. Implementasi V2: Phase 3 (Domain Hasil Tani / Farmer Commodity)
+
+### A. Prinsip Bisnis & Backward Compatibility
+- **Tanpa Backfill Asumtif**: Data historis panen dan musim tanam lama tidak dimanipulasi atau diisi komoditas secara tebakan. Kolom `commodity_id` pada tabel `harvests` dan `seasons` dibuat `nullable` demi integritas data historis.
+- **Pemisahan Kuantitas & Satuan (`unit`)**: Data baru wajib menentukan kuantitas dan satuan (`kg`, `kuintal`, `ton`, `ikat`, `pcs`) dengan default form UI `kg`.
+- **Dinamis & Bebas Enum Global**: Setiap petani bebas mendaftarkan komoditas hasil tani sendiri tanpa dibatasi enum kaku. Petani A dapat memiliki "Jeruk", "Mangga", "Pisang", dan Petani B dapat memiliki "Padi" serta "Jeruk" tanpa konflik.
+
+### B. Database Schema & Migrations
+1. Migration [`database/migrations/2026_09_24_000003_create_farmer_commodities_table.php`](file:///d:/laragon/www/PKM/database/migrations/2026_09_24_000003_create_farmer_commodities_table.php):
+   - Kolom: `id`, `user_id` (FK cascade ke users), `name`, `code` nullable, `unit` (default `kg`), `description`, `status` (`active`/`inactive`), timestamps, soft deletes.
+   - Index komposit: `['user_id', 'status']` dan `['user_id', 'name']`.
+2. Migration [`database/migrations/2026_09_24_000004_add_commodity_id_to_harvests_and_seasons_tables.php`](file:///d:/laragon/www/PKM/database/migrations/2026_09_24_000004_add_commodity_id_to_harvests_and_seasons_tables.php):
+   - Menambahkan foreign key `commodity_id` (nullable, `nullOnDelete`) ke tabel `harvests` dan `seasons`.
+
+### C. Backend Domain Logic, Controller & Routes
+- Model [`app/Models/FarmerCommodity.php`](file:///d:/laragon/www/PKM/app/Models/FarmerCommodity.php) dan relasi `commodities()` pada [`app/Models/User.php`](file:///d:/laragon/www/PKM/app/Models/User.php).
+- Service [`app/Services/FarmerCommodityService.php`](file:///d:/laragon/www/PKM/app/Services/FarmerCommodityService.php): Mengelola validasi keunikan nama per petani, isolasi tenant data petani, guard proteksi penghapusan komoditas berpanen, dan agregasi data untuk Super Admin.
+- Controller [`app/Http/Controllers/Api/FarmerCommodityController.php`](file:///d:/laragon/www/PKM/app/Http/Controllers/Api/FarmerCommodityController.php):
+  - Endpoints Petani: `GET /api/commodities`, `POST /api/commodities`, `GET /api/commodities/{id}`, `PUT /api/commodities/{id}`, `DELETE /api/commodities/{id}`.
+  - Endpoints Super Admin: `GET /api/super-admin/commodities` (monitoring per petani) dan `PUT /api/super-admin/commodities/{id}` (penyesuaian data).
+- Routes [`routes/api.php`](file:///d:/laragon/www/PKM/routes/api.php): Didaftarkan di bawah auth guard `auth:sanctum`.
+
+### D. Frontend Flutter Mobile & Desktop Client
+- Model [`mobile_app/lib/models/farmer_commodity.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/models/farmer_commodity.dart).
+- Service [`mobile_app/lib/services/api/farmer_commodity_api_service.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/services/api/farmer_commodity_api_service.dart) & Facade [`mobile_app/lib/services/api_service.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/services/api_service.dart).
+- Screen [`mobile_app/lib/screens/farmer_commodity_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/farmer_commodity_screen.dart):
+  - Kartu Modern (Mobile) & Data Table (Desktop).
+  - Dialog Tambah & Edit Hasil Tani (Pilihan satuan fleksibel: `kg`, `kuintal`, `ton`, `ikat`, `pcs`).
+  - Search bar dan Filter Status Aktif/Nonaktif.
+  - Konfirmasi penghapusan aman.
+- Integrasi Navigasi: Menu "Hasil Tani" (icon `Icons.grass_rounded`) di [`mobile_app/lib/utils/navigation_helper.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/utils/navigation_helper.dart).
+
+### E. Hasil Pengujian & Status Verifikasi
+- **Farmer Commodity Tests**: `php vendor/bin/phpunit tests/Feature/API/FarmerCommodityTest.php` ➔ ✅ **9/9 Passed (32 assertions)**.
+- **Full Backend API Suite**: `php vendor/bin/phpunit tests/Feature/API/` ➔ ✅ **132/132 Passed (563 assertions)**.
+- **Flutter Static Analysis**: `flutter analyze` ➔ ✅ **No issues found! (0 errors, 0 warnings)**.
+
+
 
 
 
