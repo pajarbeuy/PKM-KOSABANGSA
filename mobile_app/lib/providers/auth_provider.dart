@@ -99,6 +99,7 @@ class AuthProvider extends ChangeNotifier {
     required String name,
     required String email,
     required String phone,
+    required int farmerGroupId,
     required String password,
     required String passwordConfirmation,
   }) async {
@@ -112,6 +113,7 @@ class AuthProvider extends ChangeNotifier {
         name: name,
         email: email,
         phone: phone,
+        farmerGroupId: farmerGroupId,
         password: password,
         passwordConfirmation: passwordConfirmation,
       );

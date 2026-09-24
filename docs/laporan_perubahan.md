@@ -965,6 +965,40 @@ Sebelumnya, grafik di dashboard petani menggabungkan pencatatan panen (kg) dan p
 - **Flutter Static Analysis**: `flutter analyze` ➔ ✅ **No issues found! (0 errors, 0 warnings)**.
 - **UAT Checklist**: Skenario 9 ditambahkan dan berstatus ✅ **[x] PASSED**.
 
+---
+
+## 13. Implementasi V2: Phase 1 & Phase 2 (Domain Kelompok Tani / Poktan 1–10)
+
+### A. Phase 1: Domain & Business Rule Audit
+- **Audit File & Rule Inventory**:
+  - Diterbitkan [`docs/V2_DOMAIN_AUDIT.md`](file:///d:/laragon/www/PKM/docs/V2_DOMAIN_AUDIT.md) yang menginventarisasi 10 entitas domain, data contract, serta titik kritis integrasi.
+  - Diterbitkan [`docs/V2_BUSINESS_RULES.md`](file:///d:/laragon/www/PKM/docs/V2_BUSINESS_RULES.md) yang mengunci 12 aturan bisnis absolut (Komisi 10% Gross, Dual Market Price, Invarian Anti Double-Counting, Tenant Poktan Guard, dll).
+
+### B. Phase 2: Domain Kelompok Tani (Poktan 1–10)
+1. **Database Schema & Migrations**:
+   - Migration [`database/migrations/2026_09_24_000001_create_farmer_groups_table.php`](file:///d:/laragon/www/PKM/database/migrations/2026_09_24_000001_create_farmer_groups_table.php): Membuat tabel `farmer_groups` (`id`, `name`, `code` unique, `village`, `district`, `regency`, `province`, `leader_name`, `is_active`, timestamps).
+   - Migration [`database/migrations/2026_09_24_000002_add_farmer_group_id_to_users_table.php`](file:///d:/laragon/www/PKM/database/migrations/2026_09_24_000002_add_farmer_group_id_to_users_table.php): Menambahkan relasi foreign key `farmer_group_id` pada tabel `users`.
+   - Seeder [`database/seeders/FarmerGroupSeeder.php`](file:///d:/laragon/www/PKM/database/seeders/FarmerGroupSeeder.php): Mendaftarkan 10 Kelompok Tani resmi (`POKTAN-01` s/d `POKTAN-10`) di Desa Sumber Brantas, Bumiaji, Kota Batu.
+2. **Backend Domain Logic & Services**:
+   - Model [`app/Models/FarmerGroup.php`](file:///d:/laragon/www/PKM/app/Models/FarmerGroup.php) & Update [`app/Models/User.php`](file:///d:/laragon/www/PKM/app/Models/User.php).
+   - Service [`app/Services/FarmerGroupService.php`](file:///d:/laragon/www/PKM/app/Services/FarmerGroupService.php): Mengelola listing aktif, agregasi statistik keanggotaan Super Admin, detail anggota Poktan, dan pemindahan anggota.
+   - Controller [`app/Http/Controllers/Api/FarmerGroupController.php`](file:///d:/laragon/www/PKM/app/Http/Controllers/Api/FarmerGroupController.php): Endpoint publik `GET /api/farmer-groups`, dan guard admin `GET /api/super-admin/farmer-groups`, `GET /api/super-admin/farmer-groups/{id}`, `POST /api/super-admin/users/{id}/assign-poktan`.
+   - Update [`app/Services/AuthService.php`](file:///d:/laragon/www/PKM/app/Services/AuthService.php) & [`app/Http/Controllers/AuthController.php`](file:///d:/laragon/www/PKM/app/Http/Controllers/AuthController.php): Registrasi petani wajib memilih Poktan (`farmer_group_id` required).
+   - Update [`app/Services/SuperAdminService.php`](file:///d:/laragon/www/PKM/app/Services/SuperAdminService.php): Eager load relasi `farmerGroup` untuk daftar pengguna.
+3. **Frontend Flutter Mobile & Desktop Client**:
+   - Model [`mobile_app/lib/models/farmer_group.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/models/farmer_group.dart) & Update [`mobile_app/lib/models/user.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/models/user.dart).
+   - Service [`mobile_app/lib/services/api/farmer_group_api_service.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/services/api/farmer_group_api_service.dart) & Facade [`mobile_app/lib/services/api_service.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/services/api_service.dart).
+   - Registrasi Petani [`mobile_app/lib/screens/register_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/register_screen.dart): Dropdown pilihan 10 Poktan wajib dipilih saat mendaftar.
+   - Manajemen Pengguna Super Admin:
+     - [`mobile_app/lib/widgets/users/user_form_bottom_sheet.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/widgets/users/user_form_bottom_sheet.dart): Pilihan Poktan saat admin membuat/mengubah user petani.
+     - [`mobile_app/lib/screens/user_management_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/user_management_screen.dart): Menampilkan badge/teks Kelompok Tani pada Card Mobile dan Kolom Data Table Desktop.
+4. **Hasil Pengujian & Verifikasi**:
+   - **Farmer Group API Tests**: `php vendor/bin/phpunit tests/Feature/API/FarmerGroupTest.php` ➔ ✅ **7/7 Passed (74 assertions)**.
+   - **Comprehensive API Tests**: `php vendor/bin/phpunit tests/Feature/API/ComprehensiveApiTest.php` ➔ ✅ **12/12 Passed (53 assertions)**.
+   - **Full API Suite**: `php vendor/bin/phpunit tests/Feature/API/` ➔ ✅ **119/119 Passed (519 assertions)**.
+   - **Flutter Static Analysis**: `flutter analyze` ➔ ✅ **No issues found! (0 errors, 0 warnings)**.
+
+
 
 
 

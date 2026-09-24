@@ -24,11 +24,18 @@ class ComprehensiveApiTest extends TestCase
     /** @test */
     public function test_user_can_register(): void
     {
+        $poktan = \App\Models\FarmerGroup::create([
+            'name' => 'Poktan Uji',
+            'code' => 'POKTAN-UJI',
+            'status' => 'active',
+        ]);
+
         $response = $this->postJson('/api/auth/register', [
             'farm_name'             => 'Kebun Kentang Subur',
             'name'                  => 'Budi Santoso',
             'email'                 => 'budi@example.com',
             'phone'                 => '081234567890',
+            'farmer_group_id'       => $poktan->id,
             'password'              => 'password123',
             'password_confirmation' => 'password123',
         ]);

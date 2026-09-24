@@ -17,21 +17,23 @@ class AuthController extends Controller
     {
         try {
             $validated = $request->validate([
-                'farm_name' => 'required|string|max:255',
-                'name'      => 'required|string|max:255',
-                'email'     => 'required|email|unique:users',
-                'phone'     => 'required|string|max:20',
-                'password'  => 'required|string|min:8|confirmed',
+                'farm_name'       => 'required|string|max:255',
+                'name'            => 'required|string|max:255',
+                'email'           => 'required|email|unique:users',
+                'phone'           => 'required|string|max:20',
+                'farmer_group_id' => 'required|integer|exists:farmer_groups,id',
+                'password'        => 'required|string|min:8|confirmed',
             ]);
 
             $user = $this->authService->createUser($validated);
 
             return $this->successResponse([
-                'id'        => $user->id,
-                'email'     => $user->email,
-                'name'      => $user->name,
-                'farm_name' => $user->farm_name,
-                'status'    => 'active',
+                'id'              => $user->id,
+                'email'           => $user->email,
+                'name'            => $user->name,
+                'farm_name'       => $user->farm_name,
+                'farmer_group_id' => $user->farmer_group_id,
+                'status'          => 'active',
             ], 'Pendaftaran berhasil! Silakan masuk.', 201);
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e->errors());

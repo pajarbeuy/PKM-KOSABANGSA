@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../login_screen.dart';
+import '../models/farmer_group.dart';
+import '../services/api_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -22,6 +24,35 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
+  List<FarmerGroup> _farmerGroups = [];
+  int? _selectedFarmerGroupId;
+  bool _isLoadingPoktan = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFarmerGroups();
+  }
+
+  Future<void> _loadFarmerGroups() async {
+    try {
+      final groups = await ApiService().getActiveFarmerGroups();
+      if (mounted) {
+        setState(() {
+          _farmerGroups = groups;
+          if (_farmerGroups.isNotEmpty) {
+            _selectedFarmerGroupId = _farmerGroups.first.id;
+          }
+          _isLoadingPoktan = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingPoktan = false);
+      }
+    }
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -35,6 +66,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_selectedFarmerGroupId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Silakan pilih Kelompok Tani'), backgroundColor: Colors.orange),
+      );
+      return;
+    }
 
     final authProvider = context.read<AuthProvider>();
     final success = await authProvider.register(
@@ -42,6 +79,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       name: _nameController.text.trim(),
       email: _emailController.text.trim(),
       phone: _phoneController.text.trim(),
+      farmerGroupId: _selectedFarmerGroupId!,
       password: _passwordController.text,
       passwordConfirmation: _confirmPasswordController.text,
     );
@@ -171,13 +209,56 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                           const SizedBox(height: 16),
 
-                          // Nama Lahan/Kelompok Tani
+                          // Kelompok Tani (Poktan) Dropdown
+                          _isLoadingPoktan
+                              ? const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 12),
+                                  child: Center(
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF27AE60))),
+                                        SizedBox(width: 10),
+                                        Text('Memuat Kelompok Tani...', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                                      ],
+                                    ),
+                                  ),
+                                )
+                              : DropdownButtonFormField<int>(
+                                  initialValue: _selectedFarmerGroupId,
+                                  decoration: InputDecoration(
+                                    labelText: 'Pilih Kelompok Tani (Poktan) *',
+                                    prefixIcon: const Icon(Icons.groups_outlined, color: Color(0xFF27AE60)),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                  ),
+                                  items: _farmerGroups.map((group) {
+                                    return DropdownMenuItem<int>(
+                                      value: group.id,
+                                      child: Text(
+                                        '${group.code} - ${group.name}',
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(fontSize: 13),
+                                      ),
+                                    );
+                                  }).toList(),
+                                  onChanged: authProvider.isLoading
+                                      ? null
+                                      : (val) {
+                                          if (val != null) {
+                                            setState(() => _selectedFarmerGroupId = val);
+                                          }
+                                        },
+                                  validator: (val) => val == null ? 'Wajib memilih Kelompok Tani' : null,
+                                ),
+                          const SizedBox(height: 16),
+
+                          // Nama Lahan / Kebun Tani
                           TextFormField(
                             controller: _farmNameController,
                             keyboardType: TextInputType.text,
                             enabled: !authProvider.isLoading,
                             decoration: InputDecoration(
-                              labelText: 'Nama Kelompok Tani / Lahan',
+                              labelText: 'Nama Lahan / Kebun Tani *',
                               prefixIcon: const Icon(Icons.landscape_outlined, color: Color(0xFF27AE60)),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
@@ -185,7 +266,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) {
-                                return 'Nama lahan/kelompok tidak boleh kosong';
+                                return 'Nama lahan/kebun tidak boleh kosong';
                               }
                               return null;
                             },

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../models/farmer_group.dart';
 import '../../services/api_service.dart';
 import '../app_theme.dart';
 
@@ -32,6 +33,9 @@ class _UserFormBottomSheetState extends State<UserFormBottomSheet> {
 
   late String _role;
   late String _status;
+  int? _selectedFarmerGroupId;
+  List<FarmerGroup> _farmerGroups = [];
+  bool _isLoadingPoktan = true;
   bool _isSubmitting = false;
 
   @override
@@ -46,6 +50,28 @@ class _UserFormBottomSheetState extends State<UserFormBottomSheet> {
     _confirmPasswordController = TextEditingController();
     _role = u?['role'] ?? 'user';
     _status = u?['status'] ?? 'active';
+    _selectedFarmerGroupId = u?['farmer_group_id'] is int
+        ? u!['farmer_group_id']
+        : int.tryParse(u?['farmer_group_id']?.toString() ?? '');
+
+    _loadFarmerGroups();
+  }
+
+  Future<void> _loadFarmerGroups() async {
+    try {
+      final groups = await widget.apiService.getActiveFarmerGroups();
+      if (mounted) {
+        setState(() {
+          _farmerGroups = groups;
+          if (_selectedFarmerGroupId == null && _farmerGroups.isNotEmpty) {
+            _selectedFarmerGroupId = _farmerGroups.first.id;
+          }
+          _isLoadingPoktan = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingPoktan = false);
+    }
   }
 
   @override
@@ -69,6 +95,7 @@ class _UserFormBottomSheetState extends State<UserFormBottomSheet> {
       'email': _emailController.text.trim(),
       'phone': _phoneController.text.trim(),
       'farm_name': _farmNameController.text.trim(),
+      'farmer_group_id': _role == 'user' ? _selectedFarmerGroupId : null,
       'role': _role,
       'status': _status,
     };
@@ -263,6 +290,38 @@ class _UserFormBottomSheetState extends State<UserFormBottomSheet> {
                   ),
                 ],
               ),
+              if (_role == 'user') ...[
+                const SizedBox(height: 16),
+                _isLoadingPoktan
+                    ? const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8),
+                        child: Center(
+                          child: Text('Memuat Kelompok Tani...', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        ),
+                      )
+                    : DropdownButtonFormField<int>(
+                        initialValue: _selectedFarmerGroupId,
+                        decoration: const InputDecoration(
+                          labelText: 'Kelompok Tani (Poktan) *',
+                          prefixIcon: Icon(Icons.groups_outlined, color: AppTheme.green700),
+                        ),
+                        items: _farmerGroups.map((g) {
+                          return DropdownMenuItem<int>(
+                            value: g.id,
+                            child: Text('${g.code} - ${g.name}', overflow: TextOverflow.ellipsis),
+                          );
+                        }).toList(),
+                        onChanged: (val) {
+                          if (val != null) setState(() => _selectedFarmerGroupId = val);
+                        },
+                        validator: (val) {
+                          if (_role == 'user' && val == null) {
+                            return 'Kelompok Tani wajib dipilih untuk akun Petani';
+                          }
+                          return null;
+                        },
+                      ),
+              ],
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,

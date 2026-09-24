@@ -62,6 +62,7 @@ class AuthApiService {
     required String name,
     required String email,
     required String phone,
+    required int farmerGroupId,
     required String password,
     required String passwordConfirmation,
   }) async {
@@ -75,6 +76,7 @@ class AuthApiService {
               'name': name,
               'email': email,
               'phone': phone,
+              'farmer_group_id': farmerGroupId,
               'password': password,
               'password_confirmation': passwordConfirmation,
             }),
