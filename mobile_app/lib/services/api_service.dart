@@ -22,11 +22,13 @@ import 'api/order_api_service.dart';
 import 'api/farmer_group_api_service.dart';
 import 'api/farmer_commodity_api_service.dart';
 import 'api/market_price_api_service.dart';
+import 'api/farmer_economic_result_api_service.dart';
 import '../models/processed_product.dart';
 import '../models/order_model.dart';
 import '../models/farmer_group.dart';
 import '../models/farmer_commodity.dart';
 import '../models/market_price.dart';
+import '../models/economic_result.dart';
 
 /// Facade Singleton providing a unified API interface across all domain services.
 class ApiService {
@@ -53,6 +55,7 @@ class ApiService {
   final FarmerGroupApiService _farmerGroupService = FarmerGroupApiService();
   final FarmerCommodityApiService _farmerCommodityService = FarmerCommodityApiService();
   final MarketPriceApiService _marketPriceService = MarketPriceApiService();
+  final FarmerEconomicResultApiService _economicResultService = FarmerEconomicResultApiService();
 
   // ─── Client / Token Management ─────────────────────────────────────────────
   void setAuthToken(String token) => _client.setAuthToken(token);
@@ -647,4 +650,17 @@ class ApiService {
 
   Future<Map<String, dynamic>> triggerMarketPriceIngest({String? date}) =>
       _marketPriceService.triggerIngest(date: date);
+
+  // ─── Farmer Economic Result (Phase 6) ────────────────────────────────────
+  Future<HarvestEconomicResult?> getHarvestEconomicResult(int harvestId) =>
+      _economicResultService.getHarvestEconomicResult(harvestId);
+
+  Future<SeasonEconomicSummary?> getSeasonEconomicSummary(int seasonId) =>
+      _economicResultService.getSeasonEconomicSummary(seasonId);
+
+  Future<FarmerEconomicSummary?> getFarmerEconomicSummary() =>
+      _economicResultService.getFarmerEconomicSummary();
+
+  Future<Map<String, dynamic>?> getSuperAdminEconomicAggregate() =>
+      _economicResultService.getSuperAdminEconomicAggregate();
 }

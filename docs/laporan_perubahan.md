@@ -1129,12 +1129,75 @@ Sebelumnya, grafik di dashboard petani menggabungkan pencatatan panen (kg) dan p
   - [`mobile_app/lib/screens/harvest_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/harvest_screen.dart): Menampilkan badge harga acuan pasar dan taksiran pendapatan kotor panen (*Gross Harvest Value*).
   - [`mobile_app/lib/utils/navigation_helper.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/utils/navigation_helper.dart): Pendaftaran menu sidebar untuk Petani dan Super Admin.
 
+---
 
+## 17. Implementasi V2: Phase 6 (Farmer Economic Result)
 
+**Tanggal:** 25 September 2026  
+**Status:** ✅ **100% Selesai & Terverifikasi (Production Ready)**  
+**Hasil Pengujian:**
+- **Feature Tests Phase 6**: `php vendor/phpunit/phpunit/phpunit tests/Feature/API/FarmerEconomicResultTest.php` ➔ ✅ **11/11 Passed (70 assertions)**
+- **Full Backend API Suite**: `php vendor/phpunit/phpunit/phpunit tests/Feature/API/` ➔ ✅ **164/164 Passed (743 assertions)**
+- **Flutter Static Analysis**: `flutter analyze` ➔ ✅ **No issues found! (0 errors, 0 warnings)**
 
+### A. Prinsip Bisnis & Formula Perhitungan
+1. **Formula Perhitungan Panen (Harvest)**:
+   $$\text{Revenue} = \text{weight\_kg} \times \text{Historical Market Price Snapshot}$$
+   $$\text{Harvest Allocated Cost} = \left(\frac{\text{harvest.weight\_kg}}{\text{total\_season\_harvest\_weight\_kg}}\right) \times \text{season\_total\_cost}$$
+   $$\text{Harvest Profit/Loss} = \text{Harvest Revenue} - \text{Harvest Allocated Cost}$$
+2. **Aturan Khusus Nilai NULL (Anti Asumsi 0)**:
+   - Jika `market_price_snapshot = NULL`:
+     - $\text{Revenue} = \text{NULL}$
+     - $\text{Profit/Loss} = \text{NULL}$
+     - *(Sistem tidak menganggap Revenue = 0)*.
+3. **Formula Perhitungan Musim (Season Summary)**:
+   $$\text{Season Revenue} = \sum \text{harvest revenue yang valid}$$
+   $$\text{Season Production Cost} = \text{total biaya produksi musim}$$
+   $$\text{Season Profit/Loss} = \text{Season Revenue} - \text{Season Production Cost}$$
+4. **Preservasi Snapshot Historis (Phase 5)**:
+   - Mekanisme Phase 5 tetap dipertahankan utuh: harga yang digunakan adalah harga pada snapshot panen, bukan harga pasar terkini.
+5. **Agregasi Multi-Tingkat**:
+   - Per-Harvest: Analisis ekonomi per catatan panen.
+   - Per-Season: Agregasi per musim tanam (`has_complete_price_data` flag menandai apakah seluruh panen telah memiliki snapshot harga pasar).
+   - Farmer Overall: Ringkasan seluruh musim milik petani aktif.
+   - Super Admin Aggregate: Monitoring performa ekonomi makro seluruh petani di platform.
+6. **Isolasi Tenant & Keamanan Otorisasi**:
+   - Petani hanya dapat mengakses panen dan musim milik dirinya sendiri (HTTP 403 jika cross-tenant).
+   - Endpoint agregat platform dilindungi middleware `auth:sanctum` & `role:super_admin` (HTTP 403 jika diakses petani).
 
+### B. Backend Services, Controller & Routes
+- Service: [`app/Services/FarmerEconomicResultService.php`](file:///d:/laragon/www/PKM/app/Services/FarmerEconomicResultService.php)
+- Controller: [`app/Http/Controllers/Api/FarmerEconomicResultController.php`](file:///d:/laragon/www/PKM/app/Http/Controllers/Api/FarmerEconomicResultController.php)
+- Routes [`routes/api.php`](file:///d:/laragon/www/PKM/routes/api.php):
+  - `GET /api/harvests/{harvest}/economic-result`
+  - `GET /api/seasons/{season}/economic-summary`
+  - `GET /api/farmer/economic-summary`
+  - `GET /api/super-admin/economic-aggregate`
+- Feature Tests: [`tests/Feature/API/FarmerEconomicResultTest.php`](file:///d:/laragon/www/PKM/tests/Feature/API/FarmerEconomicResultTest.php)
 
+### C. Frontend Flutter Mobile & Desktop Client
+- Models: [`mobile_app/lib/models/economic_result.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/models/economic_result.dart) (`HarvestEconomicResult`, `SeasonEconomicSummary`, `FarmerEconomicSummary`)
+- Services: [`mobile_app/lib/services/api/farmer_economic_result_api_service.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/services/api/farmer_economic_result_api_service.dart) & Facade [`mobile_app/lib/services/api_service.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/services/api_service.dart)
+- UI Presentation:
+  - [`mobile_app/lib/screens/harvest_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/harvest_screen.dart): Ditambahkan aksi **Hasil Ekonomi** (icon `analytics_outlined`) pada kartu mobile & tabel desktop.
+  - Dialog Bottom Sheet `_EconomicResultSheet` menyajikan 5 komponen rapi:
+    1. **Hasil Panen** (`weight_kg` dasar kalkulasi)
+    2. **Harga Pasar** (Snapshot harga acuan pasar / NULL)
+    3. **Revenue** (`weight_kg * snapshot` / NULL)
+    4. **Allocated Production Cost** (Alokasi biaya proporsional musim)
+    5. **Profit/Loss** (`Revenue - Allocated Cost` / NULL)
 
-
+### D. Optimasi Responsivitas UI (Mobile & Desktop)
+- [`mobile_app/lib/screens/harvest_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/harvest_screen.dart):
+  - **Tabel Desktop**: Menghilangkan RenderFlex overflow stripe 5.1px dengan `FittedBox` scaleDown pada tombol aksi dan `SingleChildScrollView` horizontal dengan batasan `minWidth: 920`.
+  - **Desktop Summary Stat Cards**: Menggunakan `LayoutBuilder` untuk mengonversi baris 3 kartu menjadi kolom saat lebar layar < 900px, mencegah penyusutan elemen angka/teks.
+  - **Mobile Harvest Cards**: Header kartu memisahkan tanggal dan nama komoditas secara rapi, serta menggunakan `Wrap` pada baris gross snapshot untuk mencegah teks terpotong di layar HP berdimensi sempit.
+  - **Modal Rincian Ekonomi**: `_DetailRow` menggunakan `Flexible` dengan perataan teks kanan untuk angka/nilai besar agar tidak overflow di layar sempit.
+- [`mobile_app/lib/screens/add_edit_harvest_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/add_edit_harvest_screen.dart):
+  - Mengadopsi `LayoutBuilder`: saat lebar dialog < 380px, bidang form yang berdampingan (Tanggal & Musim, Jumlah & Satuan) otomatis berubah menjadi susunan vertikal (stack) yang ergonomis dan mudah disentuh.
+  - Ditambahkan `isExpanded: true` dan `overflow: TextOverflow.ellipsis` pada seluruh dropdown menu item agar nama komoditas dan musim yang panjang tidak menyebabkan RenderFlex overflow.
+- [`mobile_app/lib/screens/market_price_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/market_price_screen.dart):
+  - Mengubah baris komoditas & harga pada kartu menjadi `Wrap`, memastikan harga per satuan turun rapi di bawah nama komoditas saat layar sempit tanpa memicu overflow.
+  - Dialog tambah/ubah harga acuan diberi `isExpanded: true` dan pemotongan teks ellipsis pada opsi dropdown komoditas.
 
 
