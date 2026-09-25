@@ -1274,5 +1274,50 @@ Sebelumnya, grafik di dashboard petani menggabungkan pencatatan panen (kg) dan p
   - `test_unauthenticated_user_cannot_access_commissions`: Proteksi otentikasi Sanctum (401 Unauthorized).
 - **Hasil:** **7/7 Passed (28 Assertions)**, serta seluruh 171 test suite sistem lulus 100%. Flutter analyze **0 Issues**.
 
+---
+
+## 19. Phase 9: Pemisahan Platform Landing Page & Katalog Publik (/ vs /katalog)
+
+### A. Rasional & Arsitektur Pemisahan Halaman
+Sesuai rancangan arsitektur PKM-Kosabangsa v2, halaman utama web direfaktor untuk memisahkan fokus audiens antara edukasi platform pertanian dan transaksi hilirisasi produk:
+1. **`/` (Platform Landing Page)**:
+   - Berfokus penuh pada **Edukasi, Value Proposition, Fitur Lengkap, Ekosistem, AI Pertanian, Poktan, Petani, dan Call to Action (CTA)**.
+   - Menggantikan katalog monolitik inline dengan **Etalase & Hilirisasi Showcase**: penjelasan edukatif manfaat peningkatan nilai tambah komoditas olahan (margin 2.5×–4× lebih tinggi), perlindungan harga panen raya, serta teaser produk olahan pilihan.
+   - Menyediakan high-conversion banner yang mengarahkan pengunjung langsung ke halaman katalog publik (`/katalog`).
+   - Menyediakan fitur pelacakan pesanan publik terintegrasi.
+2. **`/katalog` (Dedicated Product Catalog Page)**:
+   - Halaman etalase e-commerce publik yang bersih, fokus, dan responsif.
+   - Pencarian instan dan filter status ketersediaan (`Tersedia`, `Stok Habis`).
+   - Grid produk dengan thumbnail foto, badge stok, nama kelompok tani/pemilik, dan harga rupiah.
+   - Modal Rincian Produk & Modal Checkout Pesanan langsung terhubung ke WhatsApp resmi Super Admin.
+   - Pelacakan pesanan publik secara real-time.
+   - Alias route `/catalog` otomatis me-redirect ke `/katalog`.
+3. **Preservasi Pipeline Pesanan & Keamanan**:
+   - Seluruh pipeline pesanan katalog publik (`POST /api/catalog/orders` dan `GET /api/catalog/orders/{code}`) dipertahankan 100% tanpa perubahan breaking change.
+   - Produk dengan status `inactive` terfilter aman dan tidak pernah bocor ke katalog publik.
+
+### B. Controller & Routing
+- **Controller:** [`app/Http/Controllers/WebController.php`](file:///d:/laragon/www/PKM/app/Http/Controllers/WebController.php)
+  - `landing()`: Menyiapkan data edukasi, nomor resmi Super Admin, dan produk unggulan.
+  - `catalog(Request $request)`: Mengelola listing produk publik, paginasi, pencarian (`search`), dan filter status.
+- **Routing:** [`routes/web.php`](file:///d:/laragon/www/PKM/routes/web.php)
+  - `GET /` -> `WebController@landing` (`name: landing`)
+  - `GET /katalog` -> `WebController@catalog` (`name: catalog`)
+  - `GET /catalog` -> Redirect ke `catalog`
+- **Views:**
+  - [`resources/views/landing.blade.php`](file:///d:/laragon/www/PKM/resources/views/landing.blade.php) (Platform Landing Page)
+  - [`resources/views/catalog.blade.php`](file:///d:/laragon/www/PKM/resources/views/catalog.blade.php) (Product Catalog)
+
+### C. Pengujian Otomatis
+- **Test Suite:** [`tests/Feature/Web/CatalogSeparationTest.php`](file:///d:/laragon/www/PKM/tests/Feature/Web/CatalogSeparationTest.php) & [`tests/Feature/LandingPageCatalogTest.php`](file:///d:/laragon/www/PKM/tests/Feature/LandingPageCatalogTest.php)
+  - `test_landing_page_renders_platform_landing_view_with_ecosystem_and_catalog_cta`: Verifikasi konten edukasi, ekosistem, dan CTA `/katalog` pada `/`.
+  - `test_katalog_route_renders_dedicated_catalog_view_with_active_products`: Verifikasi tampilan etalase mandiri di `/katalog`.
+  - `test_catalog_alias_redirects_to_katalog`: Verifikasi HTTP 302 redirect dari `/catalog` ke `/katalog`.
+  - `test_inactive_products_are_hidden_from_public_catalog`: Memastikan produk nonaktif disembunyikan.
+  - `test_catalog_search_filters_matching_products`: Memverifikasi filter pencarian nama produk.
+  - `test_existing_order_pipeline_remains_fully_functional`: Memastikan pipeline order `POST /api/catalog/orders` & pelacakan pesanan publik tetap berfungsi normal.
+- **Hasil:** **10/10 Passed (62 Assertions)**, serta seluruh 171 API test suite lulus 100%.
+
+
 
 
