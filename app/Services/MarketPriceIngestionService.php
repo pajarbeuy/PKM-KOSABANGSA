@@ -48,7 +48,8 @@ class MarketPriceIngestionService
                 $effectiveDate = (string) $item['effective_date'];
                 $incomingPrice = (float) $item['price'];
 
-                $existing = MarketPrice::where('commodity_id', $commodityId)
+                $existing = MarketPrice::withTrashed()
+                    ->where('commodity_id', $commodityId)
                     ->whereDate('effective_date', $effectiveDate)
                     ->first();
 
@@ -67,6 +68,22 @@ class MarketPriceIngestionService
                         'commodity_id'   => $commodityId,
                         'effective_date' => $effectiveDate,
                         'status'         => 'created',
+                        'price'          => $incomingPrice,
+                    ];
+                } elseif ($existing->trashed()) {
+                    $existing->restore();
+                    $existing->update([
+                        'price'      => $incomingPrice,
+                        'unit'       => $item['unit'] ?? $existing->unit,
+                        'source'     => $item['source'] ?? 'mock_feed',
+                        'notes'      => $item['notes'] ?? $existing->notes,
+                        'created_by' => $userId ?? $existing->created_by,
+                    ]);
+                    $stats['created']++;
+                    $stats['details'][] = [
+                        'commodity_id'   => $commodityId,
+                        'effective_date' => $effectiveDate,
+                        'status'         => 'restored',
                         'price'          => $incomingPrice,
                     ];
                 } else {

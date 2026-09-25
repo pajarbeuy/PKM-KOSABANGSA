@@ -22,6 +22,26 @@ class MarketPriceService
      */
     public function createMarketPrice(array $data, int $userId): MarketPrice
     {
+        $existing = MarketPrice::withTrashed()
+            ->where('commodity_id', $data['commodity_id'])
+            ->whereDate('effective_date', $data['effective_date'])
+            ->first();
+
+        if ($existing) {
+            if ($existing->trashed()) {
+                $existing->restore();
+                $existing->update([
+                    'price'      => $data['price'],
+                    'unit'       => $data['unit'] ?? $existing->unit ?? 'kg',
+                    'source'     => $data['source'] ?? 'manual',
+                    'notes'      => $data['notes'] ?? null,
+                    'created_by' => $userId,
+                ]);
+                return $existing->fresh()->load('commodity');
+            }
+            throw new DomainException('Harga pasar acuan untuk komoditas dan tanggal efektif tersebut sudah ada.');
+        }
+
         return MarketPrice::create([
             'commodity_id'   => $data['commodity_id'],
             'price'          => $data['price'],
@@ -54,6 +74,19 @@ class MarketPriceService
             $marketPrice->save();
 
             return $marketPrice->load('commodity');
+        }
+
+        if (isset($data['effective_date']) || isset($data['commodity_id'])) {
+            $targetCommId = $data['commodity_id'] ?? $marketPrice->commodity_id;
+            $targetDate   = $data['effective_date'] ?? $marketPrice->effective_date?->toDateString();
+            $duplicate = MarketPrice::withTrashed()
+                ->where('commodity_id', $targetCommId)
+                ->whereDate('effective_date', $targetDate)
+                ->where('id', '!=', $marketPrice->id)
+                ->exists();
+            if ($duplicate) {
+                throw new DomainException('Harga pasar untuk komoditas dan tanggal efektif tersebut sudah ada.');
+            }
         }
 
         $marketPrice->update($data);

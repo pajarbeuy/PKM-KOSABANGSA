@@ -294,188 +294,271 @@ class _AddEditHarvestScreenState extends State<AddEditHarvestScreen> {
     return Dialog(
       backgroundColor: Colors.transparent,
       elevation: 0,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       child: _isLoading
           ? const Center(child: CircularProgressIndicator(color: AppTheme.green700))
-          : SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 480),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Colors.black12,
-                        blurRadius: 20,
-                        offset: Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  padding: const EdgeInsets.all(28.0),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Header
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              isEdit ? 'Ubah Hasil Panen' : 'Catat Hasil Panen',
-                              style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xFF1B4332),
-                              ),
-                            ),
-                            Container(
-                              width: 36,
-                              height: 36,
-                              decoration: BoxDecoration(
-                                border: Border.all(color: Colors.grey.shade300),
-                                shape: BoxShape.circle,
-                              ),
-                              child: IconButton(
-                                icon: const Icon(Icons.close, size: 18, color: Colors.black54),
-                                onPressed: () => Navigator.pop(context),
-                                padding: EdgeInsets.zero,
-                              ),
-                            ),
-                          ],
+          : SafeArea(
+              child: SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 500),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 20,
+                          offset: Offset(0, 10),
                         ),
-                        const SizedBox(height: 24),
-
-                        // Row 1: Tanggal & Musim Tanam
-                        Row(
+                      ],
+                    ),
+                    padding: const EdgeInsets.all(22.0),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final isCompact = constraints.maxWidth < 380;
+                      return Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _buildLabel('Tanggal'),
-                                  TextFormField(
-                                    controller: _dateController,
-                                    readOnly: true,
-                                    onTap: () => _selectDate(context),
-                                    style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary),
-                                    decoration: _inputDecoration(
-                                      hintText: 'dd/mm/yyyy',
-                                      suffixIcon: const Icon(Icons.calendar_today_outlined, size: 16, color: Color(0xFFCBD5E1)),
+                            // Header
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    isEdit ? 'Ubah Hasil Panen' : 'Catat Hasil Panen',
+                                    style: TextStyle(
+                                      fontSize: isCompact ? 19 : 22,
+                                      fontWeight: FontWeight.w800,
+                                      color: const Color(0xFF1B4332),
                                     ),
-                                    validator: (value) => value?.isEmpty ?? true ? 'Wajib diisi' : null,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _buildLabel('Musim Tanam'),
-                                  DropdownButtonFormField<Season>(
-                                    initialValue: _selectedSeason,
-                                    icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFFCBD5E1)),
-                                    style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary),
-                                    decoration: _inputDecoration(hintText: 'Pilih Musim'),
-                                    items: _seasons.map((season) => DropdownMenuItem(
-                                      value: season,
-                                      child: Text(season.name, style: const TextStyle(fontSize: 14), overflow: TextOverflow.ellipsis),
-                                    )).toList(),
-                                    onChanged: (Season? value) {
-                                      setState(() {
-                                        _selectedSeason = value;
-                                        if (value?.commodityId != null && _selectedCommodityId == null) {
-                                          _selectedCommodityId = value!.commodityId;
-                                        }
-                                      });
-                                    },
-                                    validator: (value) => value == null ? 'Wajib dipilih' : null,
+                                ),
+                                Container(
+                                  width: 36,
+                                  height: 36,
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: Colors.grey.shade300),
+                                    shape: BoxShape.circle,
                                   ),
-                                ],
-                              ),
+                                  child: IconButton(
+                                    icon: const Icon(Icons.close, size: 18, color: Colors.black54),
+                                    onPressed: () => Navigator.pop(context),
+                                    padding: EdgeInsets.zero,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 18),
+                            const SizedBox(height: 20),
 
-                        // Row 2: Hasil Tani (Komoditas)
-                        _buildLabel('Komoditas Hasil Tani (Opsional)'),
-                        DropdownButtonFormField<int?>(
-                          initialValue: _selectedCommodityId,
-                          icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFFCBD5E1)),
-                          style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary),
-                          decoration: _inputDecoration(hintText: 'Pilih Komoditas'),
-                          items: [
-                            const DropdownMenuItem<int?>(
-                              value: null,
-                              child: Text('-- Warisi Dari Musim Tanam / Umum --', style: TextStyle(color: Colors.grey)),
-                            ),
-                            ..._commodities.map((c) => DropdownMenuItem<int?>(
-                              value: c.id,
-                              child: Text('${c.name} (${c.unit})'),
-                            )),
-                          ],
-                          onChanged: (int? value) {
-                            setState(() => _selectedCommodityId = value);
-                          },
-                        ),
-                        const SizedBox(height: 18),
+                            // Row 1: Tanggal & Musim Tanam
+                            if (isCompact) ...[
+                              _buildLabel('Tanggal'),
+                              TextFormField(
+                                controller: _dateController,
+                                readOnly: true,
+                                onTap: () => _selectDate(context),
+                                style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary),
+                                decoration: _inputDecoration(
+                                  hintText: 'dd/mm/yyyy',
+                                  suffixIcon: const Icon(Icons.calendar_today_outlined, size: 16, color: Color(0xFFCBD5E1)),
+                                ),
+                                validator: (value) => value?.isEmpty ?? true ? 'Wajib diisi' : null,
+                              ),
+                              const SizedBox(height: 16),
+                              _buildLabel('Musim Tanam'),
+                              DropdownButtonFormField<Season>(
+                                isExpanded: true,
+                                initialValue: _selectedSeason,
+                                icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFFCBD5E1)),
+                                style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary),
+                                decoration: _inputDecoration(hintText: 'Pilih Musim'),
+                                items: _seasons.map((season) => DropdownMenuItem(
+                                  value: season,
+                                  child: Text(season.name, style: const TextStyle(fontSize: 14), overflow: TextOverflow.ellipsis),
+                                )).toList(),
+                                onChanged: (Season? value) {
+                                  setState(() {
+                                    _selectedSeason = value;
+                                    if (value?.commodityId != null && _selectedCommodityId == null) {
+                                      _selectedCommodityId = value!.commodityId;
+                                    }
+                                  });
+                                },
+                                validator: (value) => value == null ? 'Wajib dipilih' : null,
+                              ),
+                            ] else ...[
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        _buildLabel('Tanggal'),
+                                        TextFormField(
+                                          controller: _dateController,
+                                          readOnly: true,
+                                          onTap: () => _selectDate(context),
+                                          style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary),
+                                          decoration: _inputDecoration(
+                                            hintText: 'dd/mm/yyyy',
+                                            suffixIcon: const Icon(Icons.calendar_today_outlined, size: 16, color: Color(0xFFCBD5E1)),
+                                          ),
+                                          validator: (value) => value?.isEmpty ?? true ? 'Wajib diisi' : null,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        _buildLabel('Musim Tanam'),
+                                        DropdownButtonFormField<Season>(
+                                          isExpanded: true,
+                                          initialValue: _selectedSeason,
+                                          icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFFCBD5E1)),
+                                          style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary),
+                                          decoration: _inputDecoration(hintText: 'Pilih Musim'),
+                                          items: _seasons.map((season) => DropdownMenuItem(
+                                            value: season,
+                                            child: Text(season.name, style: const TextStyle(fontSize: 14), overflow: TextOverflow.ellipsis),
+                                          )).toList(),
+                                          onChanged: (Season? value) {
+                                            setState(() {
+                                              _selectedSeason = value;
+                                              if (value?.commodityId != null && _selectedCommodityId == null) {
+                                                _selectedCommodityId = value!.commodityId;
+                                              }
+                                            });
+                                          },
+                                          validator: (value) => value == null ? 'Wajib dipilih' : null,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                            const SizedBox(height: 18),
 
-                        // Row 3: Jumlah & Satuan Panen
-                        Row(
-                          children: [
-                            Expanded(
-                              flex: 3,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                            // Row 2: Hasil Tani (Komoditas)
+                            _buildLabel('Komoditas Hasil Tani (Opsional)'),
+                            DropdownButtonFormField<int?>(
+                              isExpanded: true,
+                              initialValue: _selectedCommodityId,
+                              icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFFCBD5E1)),
+                              style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary),
+                              decoration: _inputDecoration(hintText: 'Pilih Komoditas'),
+                              items: [
+                                const DropdownMenuItem<int?>(
+                                  value: null,
+                                  child: Text('-- Warisi Dari Musim Tanam / Umum --', style: TextStyle(color: Colors.grey), overflow: TextOverflow.ellipsis),
+                                ),
+                                ..._commodities.map((c) => DropdownMenuItem<int?>(
+                                  value: c.id,
+                                  child: Text('${c.name} (${c.unit})', overflow: TextOverflow.ellipsis),
+                                )),
+                              ],
+                              onChanged: (int? value) {
+                                setState(() => _selectedCommodityId = value);
+                              },
+                            ),
+                            const SizedBox(height: 18),
+
+                            // Row 3: Jumlah & Satuan Panen
+                            if (isCompact) ...[
+                              _buildLabel('Jumlah Panen'),
+                              TextFormField(
+                                controller: _quantityController,
+                                keyboardType: TextInputType.number,
+                                style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary),
+                                decoration: _inputDecoration(hintText: '1'),
+                                validator: (value) {
+                                  if (value?.isEmpty ?? true) return 'Wajib diisi';
+                                  if (int.tryParse(value!) == null || int.parse(value) < 0) {
+                                    return 'Jumlah tidak valid';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 16),
+                              _buildLabel('Satuan Unit'),
+                              DropdownButtonFormField<String>(
+                                isExpanded: true,
+                                initialValue: _selectedUnit,
+                                icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFFCBD5E1)),
+                                style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary),
+                                decoration: _inputDecoration(hintText: 'Satuan'),
+                                items: _unitOptions.map((u) => DropdownMenuItem(
+                                  value: u,
+                                  child: Text(u, style: const TextStyle(fontSize: 14)),
+                                )).toList(),
+                                onChanged: (String? value) {
+                                  if (value != null) {
+                                    setState(() => _selectedUnit = value);
+                                  }
+                                },
+                              ),
+                            ] else ...[
+                              Row(
                                 children: [
-                                  _buildLabel('Jumlah Panen'),
-                                  TextFormField(
-                                    controller: _quantityController,
-                                    keyboardType: TextInputType.number,
-                                    style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary),
-                                    decoration: _inputDecoration(hintText: '1'),
-                                    validator: (value) {
-                                      if (value?.isEmpty ?? true) return 'Wajib diisi';
-                                      if (int.tryParse(value!) == null || int.parse(value) < 0) {
-                                        return 'Jumlah tidak valid';
-                                      }
-                                      return null;
-                                    },
+                                  Expanded(
+                                    flex: 3,
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        _buildLabel('Jumlah Panen'),
+                                        TextFormField(
+                                          controller: _quantityController,
+                                          keyboardType: TextInputType.number,
+                                          style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary),
+                                          decoration: _inputDecoration(hintText: '1'),
+                                          validator: (value) {
+                                            if (value?.isEmpty ?? true) return 'Wajib diisi';
+                                            if (int.tryParse(value!) == null || int.parse(value) < 0) {
+                                              return 'Jumlah tidak valid';
+                                            }
+                                            return null;
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    flex: 2,
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        _buildLabel('Satuan Unit'),
+                                        DropdownButtonFormField<String>(
+                                          isExpanded: true,
+                                          initialValue: _selectedUnit,
+                                          icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFFCBD5E1)),
+                                          style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary),
+                                          decoration: _inputDecoration(hintText: 'Satuan'),
+                                          items: _unitOptions.map((u) => DropdownMenuItem(
+                                            value: u,
+                                            child: Text(u, style: const TextStyle(fontSize: 14)),
+                                          )).toList(),
+                                          onChanged: (String? value) {
+                                            if (value != null) {
+                                              setState(() => _selectedUnit = value);
+                                            }
+                                          },
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ],
                               ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              flex: 2,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _buildLabel('Satuan Unit'),
-                                  DropdownButtonFormField<String>(
-                                    initialValue: _selectedUnit,
-                                    icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFFCBD5E1)),
-                                    style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary),
-                                    decoration: _inputDecoration(hintText: 'Satuan'),
-                                    items: _unitOptions.map((u) => DropdownMenuItem(
-                                      value: u,
-                                      child: Text(u, style: const TextStyle(fontSize: 14)),
-                                    )).toList(),
-                                    onChanged: (String? value) {
-                                      if (value != null) {
-                                        setState(() => _selectedUnit = value);
-                                      }
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
+                            ],
                         const SizedBox(height: 18),
 
                         // Row 4: Total Berat Bersih (kg)
@@ -528,10 +611,13 @@ class _AddEditHarvestScreenState extends State<AddEditHarvestScreen> {
                         ),
                       ],
                     ),
-                  ),
-                ),
+                  );
+                },
               ),
             ),
+          ),
+        ),
+      ),
     );
   }
 }

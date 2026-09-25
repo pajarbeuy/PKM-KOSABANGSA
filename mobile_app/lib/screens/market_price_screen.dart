@@ -34,7 +34,11 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
-      final comms = await _apiService.getFarmerCommodities();
+      final isSuperAdmin = Provider.of<AuthProvider>(context, listen: false).user?.role == 'super_admin';
+      final comms = isSuperAdmin
+          ? await _apiService.getSuperAdminCommodities(status: 'active')
+          : await _apiService.getFarmerCommodities(activeOnly: true);
+
       final priceRes = await _apiService.getMarketPrices(
         commodityId: _selectedCommodityId,
       );
@@ -185,10 +189,14 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 14,
+            runSpacing: 14,
             children: [
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
                     padding: const EdgeInsets.all(10),
@@ -279,38 +287,73 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
     final distinctCommodities = _prices.map((p) => p.commodityId).toSet().length;
     final referencedCount = _prices.where((p) => p.isReferenced).length;
 
-    return Row(
-      children: [
-        Expanded(
-          child: _buildStatCard(
-            'Komoditas Terpantau',
-            '$distinctCommodities Komoditas',
-            Icons.eco,
-            AppTheme.green700,
-            AppTheme.green100,
-          ),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: _buildStatCard(
-            'Terkunci Panen',
-            '$referencedCount Record',
-            Icons.lock_clock,
-            AppTheme.amber600,
-            AppTheme.amber100,
-          ),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: _buildStatCard(
-            'Total Acuan Efektif',
-            '${_prices.length} Record',
-            Icons.analytics_outlined,
-            AppTheme.blue600,
-            AppTheme.blue100,
-          ),
-        ),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isNarrow = constraints.maxWidth < 650;
+        if (isNarrow) {
+          return Column(
+            children: [
+              _buildStatCard(
+                'Komoditas Terpantau',
+                '$distinctCommodities Komoditas',
+                Icons.eco,
+                AppTheme.green700,
+                AppTheme.green100,
+              ),
+              const SizedBox(height: 10),
+              _buildStatCard(
+                'Terkunci Panen',
+                '$referencedCount Record',
+                Icons.lock_clock,
+                AppTheme.amber600,
+                AppTheme.amber100,
+              ),
+              const SizedBox(height: 10),
+              _buildStatCard(
+                'Total Acuan Efektif',
+                '${_prices.length} Record',
+                Icons.analytics_outlined,
+                AppTheme.blue600,
+                AppTheme.blue100,
+              ),
+            ],
+          );
+        }
+
+        return Row(
+          children: [
+            Expanded(
+              child: _buildStatCard(
+                'Komoditas Terpantau',
+                '$distinctCommodities Komoditas',
+                Icons.eco,
+                AppTheme.green700,
+                AppTheme.green100,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: _buildStatCard(
+                'Terkunci Panen',
+                '$referencedCount Record',
+                Icons.lock_clock,
+                AppTheme.amber600,
+                AppTheme.amber100,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: _buildStatCard(
+                'Total Acuan Efektif',
+                '${_prices.length} Record',
+                Icons.analytics_outlined,
+                AppTheme.blue600,
+                AppTheme.blue100,
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -357,65 +400,82 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
   }
 
   Widget _buildFilterBar() {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppTheme.cardBg,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.cardBorder),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Cari komoditas atau tanggal...',
-                hintStyle: AppTheme.caption,
-                prefixIcon: const Icon(Icons.search, size: 20, color: AppTheme.textMuted),
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: AppTheme.cardBorder),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: AppTheme.cardBorder),
-                ),
-              ),
-              onChanged: (val) => setState(() => _searchQuery = val),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isNarrow = constraints.maxWidth < 600;
+
+        final searchField = TextField(
+          decoration: InputDecoration(
+            hintText: 'Cari komoditas atau tanggal...',
+            hintStyle: AppTheme.caption,
+            prefixIcon: const Icon(Icons.search, size: 20, color: AppTheme.textMuted),
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: AppTheme.cardBorder),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: AppTheme.cardBorder),
             ),
           ),
-          const SizedBox(width: 14),
-          DropdownButtonHideUnderline(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                border: Border.all(color: AppTheme.cardBorder),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: DropdownButton<int?>(
-                value: _selectedCommodityId,
-                hint: const Text('Semua Komoditas', style: TextStyle(fontSize: 13)),
-                items: [
-                  const DropdownMenuItem<int?>(
-                    value: null,
-                    child: Text('Semua Komoditas', style: TextStyle(fontSize: 13)),
-                  ),
-                  ..._commodities.map((c) => DropdownMenuItem<int?>(
-                        value: c.id,
-                        child: Text(c.name, style: const TextStyle(fontSize: 13)),
-                      )),
-                ],
-                onChanged: (val) {
-                  setState(() => _selectedCommodityId = val);
-                  _loadData();
-                },
-              ),
+          onChanged: (val) => setState(() => _searchQuery = val),
+        );
+
+        final dropdownField = DropdownButtonHideUnderline(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              border: Border.all(color: AppTheme.cardBorder),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: DropdownButton<int?>(
+              isExpanded: isNarrow,
+              value: _selectedCommodityId,
+              hint: const Text('Semua Komoditas', style: TextStyle(fontSize: 13)),
+              items: [
+                const DropdownMenuItem<int?>(
+                  value: null,
+                  child: Text('Semua Komoditas', style: TextStyle(fontSize: 13)),
+                ),
+                ..._commodities.map((c) => DropdownMenuItem<int?>(
+                      value: c.id,
+                      child: Text(c.name, style: const TextStyle(fontSize: 13)),
+                    )),
+              ],
+              onChanged: (val) {
+                setState(() => _selectedCommodityId = val);
+                _loadData();
+              },
             ),
           ),
-        ],
-      ),
+        );
+
+        return Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: AppTheme.cardBg,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppTheme.cardBorder),
+          ),
+          child: isNarrow
+              ? Column(
+                  children: [
+                    searchField,
+                    const SizedBox(height: 10),
+                    dropdownField,
+                  ],
+                )
+              : Row(
+                  children: [
+                    Expanded(child: searchField),
+                    const SizedBox(width: 14),
+                    dropdownField,
+                  ],
+                ),
+        );
+      },
     );
   }
 
@@ -468,10 +528,12 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
   }
 
   Widget _buildPriceCard(MarketPrice price, bool isSuperAdmin) {
-    final formattedPrice = 'Rp ${price.price.toStringAsFixed(0).replaceAllMapped(
-          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-          (Match m) => '${m[1]}.',
-        )}';
+    final rawNumber = price.price.toStringAsFixed(0);
+    final formattedNumber = rawNumber.replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]}.',
+    );
+    final formattedPrice = 'Rp $formattedNumber';
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -497,8 +559,11 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 4,
                   children: [
                     Text(
                       price.commodityName,
@@ -511,7 +576,7 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
                     Text(
                       '$formattedPrice / ${price.unit}',
                       style: const TextStyle(
-                        fontSize: 16,
+                        fontSize: 15,
                         fontWeight: FontWeight.w800,
                         color: AppTheme.green700,
                       ),
@@ -519,7 +584,9 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
                   ],
                 ),
                 const SizedBox(height: 6),
-                Row(
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -528,6 +595,7 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           const Icon(Icons.calendar_today, size: 12, color: AppTheme.textSecondary),
                           const SizedBox(width: 4),
@@ -538,7 +606,6 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
@@ -550,7 +617,6 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
                         style: const TextStyle(fontSize: 11, color: AppTheme.blue600, fontWeight: FontWeight.w600),
                       ),
                     ),
-                    const SizedBox(width: 8),
                     if (price.isReferenced)
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -559,6 +625,7 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: const Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(Icons.lock, size: 12, color: AppTheme.amber600),
                             SizedBox(width: 4),
@@ -623,6 +690,16 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
   }
 
   void _showAddEditPriceDialog(MarketPrice? existing) {
+    if (_commodities.isEmpty && existing == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Belum ada data komoditas yang terdaftar. Tambahkan komoditas terlebih dahulu.'),
+          backgroundColor: AppTheme.amber600,
+        ),
+      );
+      return;
+    }
+
     int? selectedCommId = existing?.commodityId ?? (_commodities.isNotEmpty ? _commodities.first.id : null);
     final priceCtrl = TextEditingController(text: existing != null ? existing.price.toStringAsFixed(0) : '');
     final dateCtrl = TextEditingController(text: existing?.effectiveDate ?? DateTime.now().toIso8601String().split('T')[0]);
@@ -633,45 +710,57 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
     showDialog(
       context: context,
       builder: (ctx) {
-        return AlertDialog(
-          title: Text(existing == null ? 'Tambah Harga Acuan' : 'Ubah Harga Acuan'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (isLocked) ...[
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    margin: const EdgeInsets.only(bottom: 12),
-                    decoration: BoxDecoration(
-                      color: AppTheme.amber100,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.warning_amber_rounded, color: AppTheme.amber600, size: 18),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Record ini telah menjadi rujukan panen. Nilai harga & tanggal tidak dapat diubah.',
-                            style: TextStyle(fontSize: 11, color: AppTheme.amber600, fontWeight: FontWeight.bold),
-                          ),
+        return StatefulBuilder(
+          builder: (dialogCtx, setDialogState) {
+            return AlertDialog(
+              title: Text(existing == null ? 'Tambah Harga Acuan' : 'Ubah Harga Acuan'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (isLocked) ...[
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          color: AppTheme.amber100,
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                      ],
+                        child: const Row(
+                          children: [
+                            Icon(Icons.warning_amber_rounded, color: AppTheme.amber600, size: 18),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Record ini telah menjadi rujukan panen. Nilai harga & tanggal tidak dapat diubah.',
+                                style: TextStyle(fontSize: 11, color: AppTheme.amber600, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    const Text('Komoditas', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    const SizedBox(height: 6),
+                    DropdownButtonFormField<int>(
+                      isExpanded: true,
+                      initialValue: selectedCommId,
+                      decoration: const InputDecoration(border: OutlineInputBorder(), isDense: true),
+                      items: _commodities
+                          .map((c) {
+                            final farmerLabel = c.farmer?['name'] != null ? ' (${c.farmer!['name']})' : '';
+                            return DropdownMenuItem(
+                              value: c.id,
+                              child: Text(
+                                '${c.name}$farmerLabel - ${c.unit}',
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            );
+                          })
+                          .toList(),
+                      onChanged: isLocked ? null : (val) => setDialogState(() => selectedCommId = val),
                     ),
-                  ),
-                ],
-                const Text('Komoditas', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                const SizedBox(height: 6),
-                DropdownButtonFormField<int>(
-                  initialValue: selectedCommId,
-                  decoration: const InputDecoration(border: OutlineInputBorder(), isDense: true),
-                  items: _commodities
-                      .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name)))
-                      .toList(),
-                  onChanged: isLocked ? null : (val) => selectedCommId = val,
-                ),
                 const SizedBox(height: 12),
                 const Text('Harga per Satuan (Rp/kg)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                 const SizedBox(height: 6),
@@ -784,7 +873,9 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
         );
       },
     );
-  }
+  },
+);
+}
 
   void _confirmDelete(MarketPrice price) {
     showDialog(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
 import '../models/harvest.dart';
+import '../models/economic_result.dart';
 import 'package:intl/intl.dart';
 import '../widgets/app_theme.dart';
 import '../widgets/app_bottom_nav.dart';
@@ -80,12 +81,10 @@ class _HarvestScreenState extends State<HarvestScreen> {
             backgroundColor: AppTheme.green700,
             foregroundColor: Colors.white,
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      AddEditHarvestScreen(onSaved: _loadHarvests),
-                ),
+              showDialog(
+                context: context,
+                builder: (context) =>
+                    AddEditHarvestScreen(onSaved: _loadHarvests),
               ).then((_) => _loadHarvests());
             },
             icon: const Icon(Icons.add),
@@ -160,36 +159,43 @@ class _HarvestScreenState extends State<HarvestScreen> {
               children: [
                 // Header row: date + blok badge & commodity badge
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      child: Text(
-                        DateFormat('d MMM yyyy', 'id')
-                            .format(_safeParseDate(harvest.harvestDate)),
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 15,
-                            color: AppTheme.textPrimary),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            DateFormat('d MMM yyyy', 'id')
+                                .format(_safeParseDate(harvest.harvestDate)),
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                                color: AppTheme.textPrimary),
+                          ),
+                          if (harvest.commodityName != null && harvest.commodityName!.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE8F5E9),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: const Color(0xFFA5D6A7)),
+                              ),
+                              child: Text(
+                                harvest.commodityName!,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF2E7D32),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
-                    if (harvest.commodityName != null && harvest.commodityName!.isNotEmpty) ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        margin: const EdgeInsets.only(right: 6),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE8F5E9),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: const Color(0xFFA5D6A7)),
-                        ),
-                        child: Text(
-                          harvest.commodityName!,
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF2E7D32),
-                          ),
-                        ),
-                      ),
-                    ],
+                    const SizedBox(width: 8),
                     _HarvestBlokBadge(label: harvest.seasonName),
                   ],
                 ),
@@ -231,10 +237,14 @@ class _HarvestScreenState extends State<HarvestScreen> {
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: AppTheme.green300),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    child: Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      runSpacing: 4,
                       children: [
                         Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             const Icon(Icons.price_change_outlined, size: 14, color: AppTheme.green700),
                             const SizedBox(width: 4),
@@ -265,6 +275,14 @@ class _HarvestScreenState extends State<HarvestScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
+                    _ActionBtn(
+                      icon: Icons.analytics_outlined,
+                      color: AppTheme.green700,
+                      bgColor: AppTheme.green100,
+                      tooltip: 'Hasil Ekonomi',
+                      onTap: () => _showEconomicResultModal(context, harvest),
+                    ),
+                    const SizedBox(width: 8),
                     _ActionBtn(
                       icon: Icons.edit_outlined,
                       color: AppTheme.blue600,
@@ -306,45 +324,75 @@ class _HarvestScreenState extends State<HarvestScreen> {
         _harvests.fold<double>(0, (sum, h) => sum + h.weightKg);
     final rataRata = totalCatatan > 0 ? totalHasil / totalCatatan : 0.0;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(28, 28, 28, 28),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // ── Summary Stat Cards
-          Row(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(
-                child: _StatCard(
-                  icon: Icons.list_alt_outlined,
-                  label: 'Total Catatan',
-                  value: '$totalCatatan entri',
-                  iconColor: AppTheme.green700,
-                  iconBg: AppTheme.green100,
+          // ── Summary Stat Cards
+          constraints.maxWidth < 900
+              ? Column(
+                  children: [
+                    _StatCard(
+                      icon: Icons.list_alt_outlined,
+                      label: 'Total Catatan',
+                      value: '$totalCatatan entri',
+                      iconColor: AppTheme.green700,
+                      iconBg: AppTheme.green100,
+                    ),
+                    const SizedBox(height: 12),
+                    _StatCard(
+                      icon: Icons.scale_outlined,
+                      label: 'Total Hasil',
+                      value: '${_formatNumber(totalHasil)} kg',
+                      iconColor: AppTheme.green700,
+                      iconBg: AppTheme.green100,
+                    ),
+                    const SizedBox(height: 12),
+                    _StatCard(
+                      icon: Icons.bar_chart_outlined,
+                      label: 'Rata-rata',
+                      value: '${_formatNumber(rataRata)} kg',
+                      iconColor: AppTheme.green700,
+                      iconBg: AppTheme.green100,
+                    ),
+                  ],
+                )
+              : Row(
+                  children: [
+                    Expanded(
+                      child: _StatCard(
+                        icon: Icons.list_alt_outlined,
+                        label: 'Total Catatan',
+                        value: '$totalCatatan entri',
+                        iconColor: AppTheme.green700,
+                        iconBg: AppTheme.green100,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _StatCard(
+                        icon: Icons.scale_outlined,
+                        label: 'Total Hasil',
+                        value: '${_formatNumber(totalHasil)} kg',
+                        iconColor: AppTheme.green700,
+                        iconBg: AppTheme.green100,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _StatCard(
+                        icon: Icons.bar_chart_outlined,
+                        label: 'Rata-rata',
+                        value: '${_formatNumber(rataRata)} kg',
+                        iconColor: AppTheme.green700,
+                        iconBg: AppTheme.green100,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _StatCard(
-                  icon: Icons.scale_outlined,
-                  label: 'Total Hasil',
-                  value: '${_formatNumber(totalHasil)} kg',
-                  iconColor: AppTheme.green700,
-                  iconBg: AppTheme.green100,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _StatCard(
-                  icon: Icons.bar_chart_outlined,
-                  label: 'Rata-rata',
-                  value: '${_formatNumber(rataRata)} kg',
-                  iconColor: AppTheme.green700,
-                  iconBg: AppTheme.green100,
-                ),
-              ),
-            ],
-          ),
 
           const SizedBox(height: 24),
 
@@ -367,26 +415,32 @@ class _HarvestScreenState extends State<HarvestScreen> {
                 boxShadow: AppTheme.cardShadow,
               ),
               clipBehavior: Clip.antiAlias,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Table header
-                  Container(
-                    color: const Color(0xFFF9FAFB),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 14),
-                    child: const Row(
-                      children: [
-                        _ColHeader(text: 'TANGGAL', flex: 3),
-                        _ColHeader(text: 'HASIL TANI', flex: 3),
-                        _ColHeader(text: 'MUSIM TANAM', flex: 2),
-                        _ColHeader(text: 'BERAT & NILAI PASAR', flex: 4),
-                        _ColHeader(text: 'CATATAN', flex: 3),
-                        _ColHeader(text: 'AKSI', flex: 2),
-                      ],
-                    ),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minWidth: constraints.maxWidth > 920 ? constraints.maxWidth - 56 : 920,
                   ),
-                  const Divider(height: 1, color: Color(0xFFE5E7EB)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Table header
+                      Container(
+                        color: const Color(0xFFF9FAFB),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 14),
+                        child: const Row(
+                          children: [
+                            _ColHeader(text: 'TANGGAL', flex: 3),
+                            _ColHeader(text: 'HASIL TANI', flex: 3),
+                            _ColHeader(text: 'MUSIM TANAM', flex: 2),
+                            _ColHeader(text: 'BERAT & NILAI PASAR', flex: 4),
+                            _ColHeader(text: 'CATATAN', flex: 3),
+                            _ColHeader(text: 'AKSI', flex: 3),
+                          ],
+                        ),
+                      ),
+                      const Divider(height: 1, color: Color(0xFFE5E7EB)),
                   // Table rows
                   ...List.generate(_harvests.length, (index) {
                     final harvest = _harvests[index];
@@ -483,36 +537,50 @@ class _HarvestScreenState extends State<HarvestScreen> {
                               ),
                               // AKSI
                               Expanded(
-                                flex: 2,
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    _ActionBtn(
-                                      icon: Icons.edit_outlined,
-                                      color: AppTheme.blue600,
-                                      bgColor: AppTheme.blue100,
-                                      tooltip: 'Edit',
-                                      onTap: () {
-                                        showDialog(
-                                          context: context,
-                                          builder: (context) =>
-                                              AddEditHarvestScreen(
-                                            harvest: harvest,
-                                            onSaved: _loadHarvests,
-                                          ),
-                                        ).then((_) => _loadHarvests());
-                                      },
+                                flex: 3,
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        _ActionBtn(
+                                          icon: Icons.analytics_outlined,
+                                          color: AppTheme.green700,
+                                          bgColor: AppTheme.green100,
+                                          tooltip: 'Hasil Ekonomi',
+                                          onTap: () => _showEconomicResultModal(context, harvest),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        _ActionBtn(
+                                          icon: Icons.edit_outlined,
+                                          color: AppTheme.blue600,
+                                          bgColor: AppTheme.blue100,
+                                          tooltip: 'Edit',
+                                          onTap: () {
+                                            showDialog(
+                                              context: context,
+                                              builder: (context) =>
+                                                  AddEditHarvestScreen(
+                                                harvest: harvest,
+                                                onSaved: _loadHarvests,
+                                              ),
+                                            ).then((_) => _loadHarvests());
+                                          },
+                                        ),
+                                        const SizedBox(width: 8),
+                                        _ActionBtn(
+                                          icon: Icons.delete_outline,
+                                          color: AppTheme.red600,
+                                          bgColor: AppTheme.red100,
+                                          tooltip: 'Hapus',
+                                          onTap: () =>
+                                              _showDeleteDialog(context, harvest),
+                                        ),
+                                      ],
                                     ),
-                                    const SizedBox(width: 8),
-                                    _ActionBtn(
-                                      icon: Icons.delete_outline,
-                                      color: AppTheme.red600,
-                                      bgColor: AppTheme.red100,
-                                      tooltip: 'Hapus',
-                                      onTap: () =>
-                                          _showDeleteDialog(context, harvest),
-                                    ),
-                                  ],
+                                  ),
                                 ),
                               ),
                             ],
@@ -527,10 +595,14 @@ class _HarvestScreenState extends State<HarvestScreen> {
                 ],
               ),
             ),
-        ],
-      ),
-    );
-  }
+          ),
+        ),
+      ],
+    ),
+  );
+},
+);
+}
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -591,6 +663,35 @@ class _HarvestScreenState extends State<HarvestScreen> {
         ],
       ),
     );
+  }
+
+  void _showEconomicResultModal(BuildContext context, Harvest harvest) {
+    final isDesktop = MediaQuery.of(context).size.width > 700;
+    if (isDesktop) {
+      showDialog(
+        context: context,
+        builder: (ctx) => Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          child: _EconomicResultSheet(
+            harvestId: harvest.id,
+            harvestName: harvest.commodityName ?? 'Panen #${harvest.id}',
+            isDialog: true,
+          ),
+        ),
+      );
+    } else {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (ctx) => _EconomicResultSheet(
+          harvestId: harvest.id,
+          harvestName: harvest.commodityName ?? 'Panen #${harvest.id}',
+          isDialog: false,
+        ),
+      );
+    }
   }
 }
 
@@ -748,3 +849,410 @@ class _HarvestBlokBadge extends StatelessWidget {
     );
   }
 }
+
+/// Modal untuk Hasil Ekonomi Panen (Phase 6)
+class _EconomicResultSheet extends StatelessWidget {
+  final int harvestId;
+  final String harvestName;
+  final bool isDialog;
+
+  const _EconomicResultSheet({
+    required this.harvestId,
+    required this.harvestName,
+    this.isDialog = false,
+  });
+
+  String _formatCurrency(double? val) {
+    if (val == null) return '–';
+    final fmt = NumberFormat('#,##0', 'id');
+    return 'Rp ${fmt.format(val)}';
+  }
+
+  String _formatNumber(double? val) {
+    if (val == null) return '–';
+    final fmt = NumberFormat('#,##0', 'id');
+    return fmt.format(val);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final apiService = ApiService();
+
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+        maxWidth: 560,
+      ),
+      margin: isDialog
+          ? EdgeInsets.zero
+          : EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+              left: MediaQuery.of(context).size.width > 640 ? (MediaQuery.of(context).size.width - 560) / 2 : 0,
+              right: MediaQuery.of(context).size.width > 640 ? (MediaQuery.of(context).size.width - 560) / 2 : 0,
+            ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: isDialog
+            ? BorderRadius.circular(20)
+            : const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Drag handle (bottom sheet only)
+          if (!isDialog)
+            Center(
+              child: Container(
+                margin: const EdgeInsets.only(top: 12, bottom: 8),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+          // Header
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.green100,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.analytics_outlined, color: AppTheme.green700, size: 22),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Hasil Ekonomi Panen',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                      ),
+                      Text(
+                        harvestName,
+                        style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close, color: AppTheme.textSecondary),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          // Content
+          Flexible(
+            child: FutureBuilder<HarvestEconomicResult?>(
+              future: apiService.getHarvestEconomicResult(harvestId),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Padding(
+                    padding: EdgeInsets.all(40.0),
+                    child: Center(
+                      child: CircularProgressIndicator(color: AppTheme.green700),
+                    ),
+                  );
+                }
+
+                if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
+                  return Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.error_outline, color: Colors.orange, size: 48),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Gagal memuat rincian ekonomi panen',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          snapshot.error?.toString() ?? 'Data tidak ditemukan.',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                final res = snapshot.data!;
+
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Banner Laba / Rugi
+                      if (res.hasEconomicData)
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: res.isProfit ? const Color(0xFFECFDF5) : const Color(0xFFFEF2F2),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: res.isProfit ? const Color(0xFFA7F3D0) : const Color(0xFFFECACA),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: res.isProfit ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  res.isProfit ? Icons.trending_up : Icons.trending_down,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      res.isProfit ? 'PROFIT (LABA BERSIH)' : 'LOSS (RUGI BERSIH)',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                        color: res.isProfit ? const Color(0xFF065F46) : const Color(0xFF991B1B),
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      _formatCurrency(res.profitLoss),
+                                      style: TextStyle(
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.w800,
+                                        color: res.isProfit ? const Color(0xFF047857) : const Color(0xFFDC2626),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFFBEB),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFFDE68A)),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.info_outline, color: Color(0xFFD97706), size: 22),
+                              SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  'Harga pasar snapshot = NULL. Maka Revenue = NULL dan Profit/Loss = NULL (tidak dianggap 0).',
+                                  style: TextStyle(fontSize: 12, color: Color(0xFF92400E), fontWeight: FontWeight.w600),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                      const SizedBox(height: 20),
+
+                      // Rincian 5 Komponen Phase 6
+                      const Text(
+                        'Rincian Hasil Ekonomi',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // 1. Hasil Panen
+                      _DetailRow(
+                        icon: Icons.scale_outlined,
+                        label: 'Hasil Panen',
+                        value: res.quantity > 0 && res.unit != 'kg'
+                            ? '${_formatNumber(res.weightKg)} kg (${_formatNumber(res.quantity)} ${res.unit})'
+                            : '${_formatNumber(res.weightKg)} kg',
+                        subtitle: 'Bobot dasar kalkulasi: weight_kg',
+                        accentColor: AppTheme.green700,
+                      ),
+                      const SizedBox(height: 8),
+
+                      // 2. Harga Pasar
+                      _DetailRow(
+                        icon: Icons.storefront_outlined,
+                        label: 'Harga Pasar',
+                        value: res.marketPriceSnapshot != null
+                            ? '${_formatCurrency(res.marketPriceSnapshot)} / kg'
+                            : 'NULL',
+                        subtitle: res.marketPriceEffectiveDate != null
+                            ? 'Snapshot per: ${res.marketPriceEffectiveDate}'
+                            : 'Snapshot pasar belum tersedia',
+                        accentColor: AppTheme.blue600,
+                      ),
+                      const SizedBox(height: 8),
+
+                      // 3. Revenue
+                      _DetailRow(
+                        icon: Icons.payments_outlined,
+                        label: 'Revenue',
+                        value: res.revenue != null
+                            ? _formatCurrency(res.revenue)
+                            : 'NULL',
+                        subtitle: res.revenue != null
+                            ? 'weight_kg (${_formatNumber(res.weightKg)}) × Harga Pasar'
+                            : 'NULL (karena Harga Pasar = NULL)',
+                        accentColor: const Color(0xFF0D9488),
+                      ),
+                      const SizedBox(height: 8),
+
+                      // 4. Allocated Production Cost
+                      _DetailRow(
+                        icon: Icons.account_balance_wallet_outlined,
+                        label: 'Allocated Production Cost',
+                        value: res.allocatedProductionCost != null
+                            ? _formatCurrency(res.allocatedProductionCost)
+                            : 'Rp 0',
+                        subtitle: '(harvest.weight_kg / total_season_weight_kg) × season_total_cost',
+                        accentColor: Colors.orange[800]!,
+                      ),
+                      const SizedBox(height: 8),
+
+                      // 5. Profit/Loss
+                      _DetailRow(
+                        icon: Icons.calculate_outlined,
+                        label: 'Profit/Loss',
+                        value: res.profitLoss != null
+                            ? _formatCurrency(res.profitLoss)
+                            : 'NULL',
+                        subtitle: res.profitLoss != null
+                            ? 'Revenue - Allocated Production Cost'
+                            : 'NULL (karena Revenue = NULL)',
+                        accentColor: res.isProfit
+                            ? AppTheme.green700
+                            : (res.isLoss ? Colors.red[700]! : AppTheme.textSecondary),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Info box penjelasan formula
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF3F4F6),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.calculate_outlined, size: 18, color: AppTheme.textSecondary),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Formula Perhitungan Phase 6:',
+                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 6),
+                            Text(
+                              '• Revenue = weight_kg × Historical Market Price Snapshot\n'
+                              '• Allocated Production Cost = (harvest.weight_kg / total_season_weight_kg) × season_total_cost\n'
+                              '• Profit/Loss = Revenue - Allocated Production Cost\n'
+                              '• Jika market_price_snapshot = NULL: Revenue = NULL & Profit/Loss = NULL (tidak dianggap 0)',
+                              style: TextStyle(fontSize: 11, color: AppTheme.textSecondary, height: 1.4),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final String? subtitle;
+  final Color accentColor;
+
+  const _DetailRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.subtitle,
+    required this.accentColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Row(
+        crossAxisAlignment: subtitle != null ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: accentColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 18, color: accentColor),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 2),
+                  Text(subtitle!, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: accentColor,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+

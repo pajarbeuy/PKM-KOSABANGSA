@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\ChatbotController;
 use App\Http\Controllers\Api\FarmerGroupController;
 use App\Http\Controllers\Api\FarmerCommodityController;
 use App\Http\Controllers\Api\MarketPriceController;
+use App\Http\Controllers\Api\FarmerEconomicResultController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -90,6 +91,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/market-prices/ingest',  [MarketPriceController::class, 'ingest']);
     });
 
+    // Economic Result (Phase 6 - Farmer Economic Result)
+    Route::get('/harvests/{harvest}/economic-result',  [FarmerEconomicResultController::class, 'harvestEconomicResult']);
+    Route::get('/seasons/{season}/economic-summary',   [FarmerEconomicResultController::class, 'seasonEconomicSummary']);
+    Route::get('/farmer/economic-summary',             [FarmerEconomicResultController::class, 'farmerEconomicSummary']);
+
     // Stock (custom routes — not a standard CRUD resource)
     Route::get('/stock',                      [StockController::class, 'index']);
     Route::post('/stock/in',                  [StockController::class, 'storeIncoming']);
@@ -159,6 +165,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Reports Aggregate
         Route::get('/reports/farmer-profit-loss-aggregate', [SuperAdminController::class, 'farmerProfitLossAggregate']);
+
+        // Economic Aggregate (Phase 6)
+        Route::get('/economic-aggregate', [FarmerEconomicResultController::class, 'superAdminEconomicAggregate']);
 
         // Farmer Groups (Poktan) Management
         Route::get('/farmer-groups',              [FarmerGroupController::class, 'adminIndex']);
