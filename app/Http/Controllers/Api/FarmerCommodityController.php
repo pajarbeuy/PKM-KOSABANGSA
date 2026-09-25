@@ -19,13 +19,21 @@ class FarmerCommodityController extends Controller
     ) {}
 
     /**
-     * Get all commodities belonging to the authenticated farmer.
+     * Get all commodities belonging to the authenticated farmer, or all commodities if Super Admin.
      */
     public function index(Request $request): JsonResponse
     {
         $activeOnly = $request->boolean('active_only', false);
-        $commodities = $this->commodityService->getCommoditiesForFarmer($request->user()->id, $activeOnly);
-        $formatted = $commodities->map(fn($c) => $this->commodityService->formatCommodity($c));
+
+        if ($request->user()->role === 'super_admin') {
+            $commodities = $this->commodityService->getAllCommoditiesForAdmin([
+                'status' => $activeOnly ? 'active' : null,
+            ]);
+            $formatted = $commodities->map(fn($c) => $this->commodityService->formatCommodity($c, true));
+        } else {
+            $commodities = $this->commodityService->getCommoditiesForFarmer($request->user()->id, $activeOnly);
+            $formatted = $commodities->map(fn($c) => $this->commodityService->formatCommodity($c));
+        }
 
         return $this->successResponse($formatted, 'Daftar komoditas hasil tani.');
     }

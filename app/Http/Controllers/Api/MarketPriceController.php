@@ -195,9 +195,13 @@ class MarketPriceController extends Controller
         $dateParam = $request->input('date');
         $date = $dateParam ? Carbon::parse($dateParam) : null;
 
-        $provider = new \App\Services\MarketPrice\MockMarketPriceProvider();
-        $stats = $this->ingestionService->ingestFromProvider($provider, $date, $request->user()->id);
+        try {
+            $provider = new \App\Services\MarketPrice\MockMarketPriceProvider();
+            $stats = $this->ingestionService->ingestFromProvider($provider, $date, $request->user()->id);
 
-        return $this->successResponse($stats, 'Sinkronisasi harga pasar berhasil dijalankan.');
+            return $this->successResponse($stats, 'Sinkronisasi harga pasar berhasil dijalankan.');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal sinkronisasi harga pasar: ' . $e->getMessage(), 500);
+        }
     }
 }

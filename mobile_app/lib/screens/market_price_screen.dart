@@ -34,7 +34,11 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
-      final comms = await _apiService.getFarmerCommodities();
+      final isSuperAdmin = Provider.of<AuthProvider>(context, listen: false).user?.role == 'super_admin';
+      final comms = isSuperAdmin
+          ? await _apiService.getSuperAdminCommodities(status: 'active')
+          : await _apiService.getFarmerCommodities(activeOnly: true);
+
       final priceRes = await _apiService.getMarketPrices(
         commodityId: _selectedCommodityId,
       );
@@ -468,10 +472,12 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
   }
 
   Widget _buildPriceCard(MarketPrice price, bool isSuperAdmin) {
-    final formattedPrice = 'Rp ${price.price.toStringAsFixed(0).replaceAllMapped(
-          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-          (Match m) => '${m[1]}.',
-        )}';
+    final rawNumber = price.price.toStringAsFixed(0);
+    final formattedNumber = rawNumber.replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]}.',
+    );
+    final formattedPrice = 'Rp $formattedNumber';
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -623,6 +629,16 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
   }
 
   void _showAddEditPriceDialog(MarketPrice? existing) {
+    if (_commodities.isEmpty && existing == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Belum ada data komoditas yang terdaftar. Tambahkan komoditas terlebih dahulu.'),
+          backgroundColor: AppTheme.amber600,
+        ),
+      );
+      return;
+    }
+
     int? selectedCommId = existing?.commodityId ?? (_commodities.isNotEmpty ? _commodities.first.id : null);
     final priceCtrl = TextEditingController(text: existing != null ? existing.price.toStringAsFixed(0) : '');
     final dateCtrl = TextEditingController(text: existing?.effectiveDate ?? DateTime.now().toIso8601String().split('T')[0]);
@@ -633,45 +649,53 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
     showDialog(
       context: context,
       builder: (ctx) {
-        return AlertDialog(
-          title: Text(existing == null ? 'Tambah Harga Acuan' : 'Ubah Harga Acuan'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (isLocked) ...[
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    margin: const EdgeInsets.only(bottom: 12),
-                    decoration: BoxDecoration(
-                      color: AppTheme.amber100,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.warning_amber_rounded, color: AppTheme.amber600, size: 18),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Record ini telah menjadi rujukan panen. Nilai harga & tanggal tidak dapat diubah.',
-                            style: TextStyle(fontSize: 11, color: AppTheme.amber600, fontWeight: FontWeight.bold),
-                          ),
+        return StatefulBuilder(
+          builder: (dialogCtx, setDialogState) {
+            return AlertDialog(
+              title: Text(existing == null ? 'Tambah Harga Acuan' : 'Ubah Harga Acuan'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (isLocked) ...[
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          color: AppTheme.amber100,
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                      ],
+                        child: const Row(
+                          children: [
+                            Icon(Icons.warning_amber_rounded, color: AppTheme.amber600, size: 18),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Record ini telah menjadi rujukan panen. Nilai harga & tanggal tidak dapat diubah.',
+                                style: TextStyle(fontSize: 11, color: AppTheme.amber600, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    const Text('Komoditas', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    const SizedBox(height: 6),
+                    DropdownButtonFormField<int>(
+                      initialValue: selectedCommId,
+                      decoration: const InputDecoration(border: OutlineInputBorder(), isDense: true),
+                      items: _commodities
+                          .map((c) {
+                            final farmerLabel = c.farmer?['name'] != null ? ' (${c.farmer!['name']})' : '';
+                            return DropdownMenuItem(
+                              value: c.id,
+                              child: Text('${c.name}$farmerLabel - ${c.unit}'),
+                            );
+                          })
+                          .toList(),
+                      onChanged: isLocked ? null : (val) => setDialogState(() => selectedCommId = val),
                     ),
-                  ),
-                ],
-                const Text('Komoditas', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                const SizedBox(height: 6),
-                DropdownButtonFormField<int>(
-                  initialValue: selectedCommId,
-                  decoration: const InputDecoration(border: OutlineInputBorder(), isDense: true),
-                  items: _commodities
-                      .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name)))
-                      .toList(),
-                  onChanged: isLocked ? null : (val) => selectedCommId = val,
-                ),
                 const SizedBox(height: 12),
                 const Text('Harga per Satuan (Rp/kg)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                 const SizedBox(height: 6),
@@ -784,7 +808,9 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
         );
       },
     );
-  }
+  },
+);
+}
 
   void _confirmDelete(MarketPrice price) {
     showDialog(

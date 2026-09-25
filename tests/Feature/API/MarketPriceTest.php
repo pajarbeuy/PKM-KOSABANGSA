@@ -704,4 +704,87 @@ class MarketPriceTest extends TestCase
         $this->assertEquals(25000.0, (float) $orderItem->fresh()->price_snapshot);
         $this->assertEquals(50000.0, (float) $orderItem->fresh()->subtotal);
     }
+
+    /**
+     * Test 12: Ingestion & Create menangani record yang pernah di-soft-delete tanpa memicu duplicate entry 1062.
+     */
+    public function test_ingestion_and_create_safely_handles_soft_deleted_duplicate_record()
+    {
+        // 1. Buat record dan kemudian hapus (soft-delete)
+        $price = MarketPrice::create([
+            'commodity_id'   => $this->commodity->id,
+            'price'          => 20000,
+            'unit'           => 'kg',
+            'effective_date' => '2026-09-01',
+            'source'         => 'manual',
+            'created_by'     => $this->superAdmin->id,
+        ]);
+        $price->delete(); // Soft-deleted
+
+        $this->assertSoftDeleted('market_prices', ['id' => $price->id]);
+
+        // 2. Jalankan ingestion untuk tanggal dan komoditas yang sama
+        $mockProvider = new class implements \App\Contracts\MarketPriceProviderInterface {
+            private array $items = [];
+            public function setItems(array $items): void { $this->items = $items; }
+            public function getIdentifier(): string { return 'test_mock'; }
+            public function fetchLatestPrices(): array { return $this->items; }
+            public function fetchPricesForDate(\DateTimeInterface $date): array { return $this->items; }
+        };
+        $mockProvider->setItems([
+            [
+                'commodity_id'   => $this->commodity->id,
+                'price'          => 22500,
+                'unit'           => 'kg',
+                'effective_date' => '2026-09-01',
+                'source'         => 'mock_feed',
+                'notes'          => 'Restored by ingest',
+            ],
+        ]);
+
+        $ingestionService = app(MarketPriceIngestionService::class);
+        $stats = $ingestionService->ingestFromProvider($mockProvider, null, $this->superAdmin->id);
+
+        $this->assertEquals(1, $stats['created']);
+        $this->assertDatabaseHas('market_prices', [
+            'id'             => $price->id,
+            'commodity_id'   => $this->commodity->id,
+            'price'          => 22500.00,
+            'deleted_at'     => null,
+        ]);
+
+        // 3. Uji create manual saat soft-deleted
+        $price->delete();
+        $this->assertSoftDeleted('market_prices', ['id' => $price->id]);
+
+        $response = $this->actingAs($this->superAdmin)->postJson('/api/market-prices', [
+            'commodity_id'   => $this->commodity->id,
+            'price'          => 25000,
+            'unit'           => 'kg',
+            'effective_date' => '2026-09-01',
+            'source'         => 'manual',
+        ]);
+
+        $response->assertStatus(201);
+        $this->assertDatabaseHas('market_prices', [
+            'id'         => $price->id,
+            'price'      => 25000.00,
+            'deleted_at' => null,
+        ]);
+    }
+
+    /**
+     * Test 13: Super Admin dapat mengambil seluruh komoditas petani melalui endpoint /api/commodities.
+     */
+    public function test_super_admin_can_retrieve_all_commodities_from_farmer_commodities_api()
+    {
+        $response = $this->actingAs($this->superAdmin)->getJson('/api/commodities');
+
+        $response->assertStatus(200)
+            ->assertJsonPath('success', true);
+
+        $data = $response->json('data');
+        $this->assertNotEmpty($data, 'Super Admin harus melihat daftar komoditas meskipun bukan pemilik langsung');
+        $this->assertEquals($this->commodity->name, $data[0]['name']);
+    }
 }
