@@ -20,9 +20,11 @@ import 'api/misc_api_service.dart';
 import 'api/processed_product_api_service.dart';
 import 'api/order_api_service.dart';
 import 'api/farmer_group_api_service.dart';
+import 'api/farmer_commodity_api_service.dart';
 import '../models/processed_product.dart';
 import '../models/order_model.dart';
 import '../models/farmer_group.dart';
+import '../models/farmer_commodity.dart';
 
 /// Facade Singleton providing a unified API interface across all domain services.
 class ApiService {
@@ -47,6 +49,7 @@ class ApiService {
   final ProcessedProductApiService _processedProductService = ProcessedProductApiService();
   final OrderApiService _orderService = OrderApiService();
   final FarmerGroupApiService _farmerGroupService = FarmerGroupApiService();
+  final FarmerCommodityApiService _farmerCommodityService = FarmerCommodityApiService();
 
   // ─── Client / Token Management ─────────────────────────────────────────────
   void setAuthToken(String token) => _client.setAuthToken(token);
@@ -568,4 +571,34 @@ class ApiService {
 
   Future<Map<String, dynamic>> assignFarmerToPoktan(int userId, int farmerGroupId) =>
       _farmerGroupService.assignMember(userId, farmerGroupId);
+
+  // ─── Farmer Commodities (Hasil Tani) ───────────────────────────────────────
+  Future<List<FarmerCommodity>> getFarmerCommodities({bool activeOnly = false}) =>
+      _farmerCommodityService.getFarmerCommodities(activeOnly: activeOnly);
+
+  Future<FarmerCommodity?> getFarmerCommodityDetail(int id) =>
+      _farmerCommodityService.getCommodityDetail(id);
+
+  Future<Map<String, dynamic>> createFarmerCommodity(Map<String, dynamic> payload) =>
+      _farmerCommodityService.createCommodity(payload);
+
+  Future<Map<String, dynamic>> updateFarmerCommodity(int id, Map<String, dynamic> payload) =>
+      _farmerCommodityService.updateCommodity(id, payload);
+
+  Future<Map<String, dynamic>> deleteFarmerCommodity(int id) =>
+      _farmerCommodityService.deleteCommodity(id);
+
+  Future<List<FarmerCommodity>> getSuperAdminCommodities({
+    int? userId,
+    String? status,
+    String? search,
+  }) =>
+      _farmerCommodityService.getSuperAdminCommodities(
+        userId: userId,
+        status: status,
+        search: search,
+      );
+
+  Future<Map<String, dynamic>> updateSuperAdminCommodity(int id, Map<String, dynamic> payload) =>
+      _farmerCommodityService.updateSuperAdminCommodity(id, payload);
 }

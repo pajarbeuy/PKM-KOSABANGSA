@@ -1496,19 +1496,19 @@ Dokumentasi harus diperbarui setelah implementasi aktual, bukan ditulis seolah-o
 
 ## Poktan
 
-* [ ] Poktan 1–10 tersedia.
-* [ ] Poktan berasal dari database.
-* [ ] Petani dapat dikaitkan dengan Poktan.
-* [ ] Authorization assignment benar.
-* [ ] Super Admin dapat melihat anggota Poktan.
+* [x] Poktan 1–10 tersedia.
+* [x] Poktan berasal dari database.
+* [x] Petani dapat dikaitkan dengan Poktan.
+* [x] Authorization assignment benar.
+* [x] Super Admin dapat melihat anggota Poktan.
 
 ## Hasil Tani
 
-* [ ] Petani dapat membuat Hasil Tani.
-* [ ] Satu Petani dapat memiliki banyak Hasil Tani.
-* [ ] Hasil Tani tidak dibatasi enum global.
-* [ ] Petani hanya dapat mengelola miliknya sendiri.
-* [ ] Hasil Tani terpisah dari Produk Olahan.
+* [x] Petani dapat membuat Hasil Tani.
+* [x] Satu Petani dapat memiliki banyak Hasil Tani.
+* [x] Hasil Tani tidak dibatasi enum global.
+* [x] Petani hanya dapat mengelola miliknya sendiri.
+* [x] Hasil Tani terpisah dari Produk Olahan.
 
 ## Panen & Biaya
 

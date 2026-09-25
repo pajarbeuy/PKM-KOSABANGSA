@@ -38,4 +38,13 @@ class User extends Authenticatable
     {
         return $this->belongsTo(FarmerGroup::class, 'farmer_group_id');
     }
+
+    /**
+     * Commodities owned by this farmer.
+     */
+    public function commodities()
+    {
+        return $this->hasMany(FarmerCommodity::class, 'user_id');
+    }
 }
+

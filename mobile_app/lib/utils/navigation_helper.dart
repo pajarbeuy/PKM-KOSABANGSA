@@ -13,6 +13,7 @@ import '../screens/target_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/profile_screen.dart';
 import '../screens/feedback_screen.dart';
+import '../screens/farmer_commodity_screen.dart';
 import '../screens/super_admin_dashboard_screen.dart';
 
 class NavigationHelper {
@@ -93,6 +94,16 @@ class NavigationHelper {
         onTap: () {
           if (currentScreen != 'dashboard') {
             navigateTo(context, const HomeScreen());
+          }
+        },
+      ),
+      SidebarNavItem(
+        icon: Icons.grass_rounded,
+        label: 'Hasil Tani',
+        isActive: currentScreen == 'commodities',
+        onTap: () {
+          if (currentScreen != 'commodities') {
+            navigateTo(context, const FarmerCommodityScreen());
           }
         },
       ),
