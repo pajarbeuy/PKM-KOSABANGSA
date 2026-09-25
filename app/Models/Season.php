@@ -11,12 +11,14 @@ class Season extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $fillable = ['user_id', 'name', 'start_date', 'end_date', 'status', 'target_kg'];
+    protected $fillable = ['user_id', 'commodity_id', 'name', 'start_date', 'end_date', 'status', 'target_kg'];
 
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
     ];
+
+    protected $with = ['commodity'];
 
     protected $appends = ['computed_status'];
 
@@ -28,6 +30,11 @@ class Season extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function commodity()
+    {
+        return $this->belongsTo(FarmerCommodity::class, 'commodity_id');
     }
 
     public function harvests()

@@ -65,8 +65,10 @@ class HarvestApiService {
 
   Future<Map<String, dynamic>> createHarvest({
     required int seasonId,
+    int? commodityId,
     required String harvestDate,
     required int quantity,
+    String? unit,
     required double weightKg,
     String? notes,
     String? status,
@@ -77,8 +79,14 @@ class HarvestApiService {
       final request = http.MultipartRequest('POST', uri);
       request.headers.addAll(_client.getHeaders(forMultipart: true));
       request.fields['season_id'] = seasonId.toString();
+      if (commodityId != null) {
+        request.fields['commodity_id'] = commodityId.toString();
+      }
       request.fields['harvest_date'] = harvestDate;
       request.fields['quantity'] = quantity.toString();
+      if (unit != null && unit.isNotEmpty) {
+        request.fields['unit'] = unit;
+      }
       request.fields['weight_kg'] = weightKg.toString();
       if (notes != null) {
         request.fields['notes'] = notes;
@@ -117,8 +125,10 @@ class HarvestApiService {
   Future<Map<String, dynamic>> updateHarvest(
     int id, {
     int? seasonId,
+    int? commodityId,
     String? harvestDate,
     int? quantity,
+    String? unit,
     double? weightKg,
     String? notes,
     String? status,
@@ -132,8 +142,10 @@ class HarvestApiService {
       request.headers['X-HTTP-Method-Override'] = 'PUT';
 
       if (seasonId != null) request.fields['season_id'] = seasonId.toString();
+      if (commodityId != null) request.fields['commodity_id'] = commodityId.toString();
       if (harvestDate != null) request.fields['harvest_date'] = harvestDate;
       if (quantity != null) request.fields['quantity'] = quantity.toString();
+      if (unit != null && unit.isNotEmpty) request.fields['unit'] = unit;
       if (weightKg != null) request.fields['weight_kg'] = weightKg.toString();
       if (notes != null) request.fields['notes'] = notes;
       if (status != null) request.fields['status'] = status;

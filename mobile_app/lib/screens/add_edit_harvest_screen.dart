@@ -3,6 +3,7 @@ import '../services/api_service.dart';
 
 import '../models/harvest.dart';
 import '../models/season.dart';
+import '../models/farmer_commodity.dart';
 import '../widgets/app_theme.dart';
 import 'package:intl/intl.dart';
 
@@ -25,11 +26,17 @@ class _AddEditHarvestScreenState extends State<AddEditHarvestScreen> {
   final _formKey = GlobalKey<FormState>();
 
   late TextEditingController _dateController;
+  late TextEditingController _quantityController;
   late TextEditingController _weightController;
   late TextEditingController _notesController;
 
   List<Season> _seasons = [];
   Season? _selectedSeason;
+  List<FarmerCommodity> _commodities = [];
+  int? _selectedCommodityId;
+  String _selectedUnit = 'kg';
+  final List<String> _unitOptions = ['kg', 'kuintal', 'ton', 'ikat', 'pcs'];
+
   bool _isLoading = false;
   bool _isSaving = false;
 
@@ -48,10 +55,15 @@ class _AddEditHarvestScreenState extends State<AddEditHarvestScreen> {
         initialDate = widget.harvest!.harvestDate;
       }
     } else {
-       initialDate = DateFormat('dd/MM/yyyy').format(DateTime.now());
+      initialDate = DateFormat('dd/MM/yyyy').format(DateTime.now());
     }
 
     _dateController = TextEditingController(text: initialDate);
+    _quantityController = TextEditingController(
+      text: widget.harvest != null && widget.harvest!.quantity > 0
+          ? widget.harvest!.quantity.toString()
+          : '1',
+    );
     _weightController = TextEditingController(
       text: widget.harvest?.weightKg.toString() ?? '',
     );
@@ -59,17 +71,31 @@ class _AddEditHarvestScreenState extends State<AddEditHarvestScreen> {
       text: widget.harvest?.notes ?? '',
     );
 
-    _loadSeasons();
+    _selectedUnit = widget.harvest?.unit.isNotEmpty == true ? widget.harvest!.unit : 'kg';
+    if (!_unitOptions.contains(_selectedUnit)) {
+      _selectedUnit = 'kg';
+    }
+    _selectedCommodityId = widget.harvest?.commodityId;
+
+    _loadData();
   }
 
-  Future<void> _loadSeasons() async {
+  Future<void> _loadData() async {
     setState(() => _isLoading = true);
 
     try {
-      final seasons = await _apiService.getSeasons();
+      final seasonsFuture = _apiService.getSeasons();
+      final commoditiesFuture = _apiService.getFarmerCommodities(activeOnly: true);
+
+      final results = await Future.wait([seasonsFuture, commoditiesFuture]);
+      final seasons = results[0] as List<Season>;
+      final commodities = results[1] as List<FarmerCommodity>;
+
       if (mounted) {
         setState(() {
           _seasons = seasons;
+          _commodities = commodities;
+
           if (widget.harvest != null) {
             _selectedSeason = _seasons.firstWhere(
               (s) => s.id == widget.harvest!.seasonId,
@@ -83,6 +109,9 @@ class _AddEditHarvestScreenState extends State<AddEditHarvestScreen> {
             );
           } else if (_seasons.isNotEmpty) {
             _selectedSeason = _seasons.first;
+            if (_selectedCommodityId == null && _selectedSeason?.commodityId != null) {
+              _selectedCommodityId = _selectedSeason!.commodityId;
+            }
           }
           _isLoading = false;
         });
@@ -134,7 +163,7 @@ class _AddEditHarvestScreenState extends State<AddEditHarvestScreen> {
 
     if (_selectedSeason == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pilih blok kebun terlebih dahulu')),
+        const SnackBar(content: Text('Pilih musim tanam terlebih dahulu')),
       );
       return;
     }
@@ -153,25 +182,31 @@ class _AddEditHarvestScreenState extends State<AddEditHarvestScreen> {
       } catch (_) {}
 
       final Map<String, dynamic> result;
+      final int qty = int.tryParse(_quantityController.text) ?? 1;
+      final double weight = double.parse(_weightController.text);
 
       if (widget.harvest == null) {
         result = await _apiService.createHarvest(
           seasonId: _selectedSeason!.id,
+          commodityId: _selectedCommodityId,
           harvestDate: apiDate,
-          quantity: 1, // Defaulting as it's removed from UI
-          weightKg: double.parse(_weightController.text),
+          quantity: qty,
+          unit: _selectedUnit,
+          weightKg: weight,
           notes: _notesController.text.isEmpty ? null : _notesController.text,
-          status: 'recorded', // Default status
+          status: 'recorded',
         );
       } else {
         result = await _apiService.updateHarvest(
           widget.harvest!.id,
           seasonId: _selectedSeason!.id,
+          commodityId: _selectedCommodityId,
           harvestDate: apiDate,
-          quantity: widget.harvest!.quantity > 0 ? widget.harvest!.quantity : 1,
-          weightKg: double.parse(_weightController.text),
+          quantity: qty,
+          unit: _selectedUnit,
+          weightKg: weight,
           notes: _notesController.text.isEmpty ? null : _notesController.text,
-          status: widget.harvest!.status, // Keep existing status
+          status: widget.harvest!.status,
         );
       }
 
@@ -205,12 +240,11 @@ class _AddEditHarvestScreenState extends State<AddEditHarvestScreen> {
   @override
   void dispose() {
     _dateController.dispose();
+    _quantityController.dispose();
     _weightController.dispose();
     _notesController.dispose();
     super.dispose();
   }
-
-  // ─── UI HELPER METHODS ─────────────────────────────────────────────────────
 
   Widget _buildLabel(String text) {
     return Padding(
@@ -220,7 +254,7 @@ class _AddEditHarvestScreenState extends State<AddEditHarvestScreen> {
         style: const TextStyle(
           fontWeight: FontWeight.w700,
           fontSize: 14,
-          color: Color(0xFF1B4332), // Dark green text matching screenshot
+          color: Color(0xFF1B4332),
         ),
       ),
     );
@@ -231,7 +265,7 @@ class _AddEditHarvestScreenState extends State<AddEditHarvestScreen> {
       hintText: hintText,
       hintStyle: const TextStyle(color: Color(0xFFA0AEC0), fontSize: 14),
       filled: true,
-      fillColor: const Color(0xFFFAF9F6), // Slightly off-white background
+      fillColor: const Color(0xFFFAF9F6),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       suffixIcon: suffixIcon,
       enabledBorder: OutlineInputBorder(
@@ -268,161 +302,236 @@ class _AddEditHarvestScreenState extends State<AddEditHarvestScreen> {
                 child: Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 20,
-                          offset: Offset(0, 10),
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 20,
+                        offset: Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  padding: const EdgeInsets.all(28.0),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Header
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              isEdit ? 'Ubah Hasil Panen' : 'Catat Hasil Panen',
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF1B4332),
+                              ),
+                            ),
+                            Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey.shade300),
+                                shape: BoxShape.circle,
+                              ),
+                              child: IconButton(
+                                icon: const Icon(Icons.close, size: 18, color: Colors.black54),
+                                onPressed: () => Navigator.pop(context),
+                                padding: EdgeInsets.zero,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Row 1: Tanggal & Musim Tanam
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildLabel('Tanggal'),
+                                  TextFormField(
+                                    controller: _dateController,
+                                    readOnly: true,
+                                    onTap: () => _selectDate(context),
+                                    style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary),
+                                    decoration: _inputDecoration(
+                                      hintText: 'dd/mm/yyyy',
+                                      suffixIcon: const Icon(Icons.calendar_today_outlined, size: 16, color: Color(0xFFCBD5E1)),
+                                    ),
+                                    validator: (value) => value?.isEmpty ?? true ? 'Wajib diisi' : null,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildLabel('Musim Tanam'),
+                                  DropdownButtonFormField<Season>(
+                                    initialValue: _selectedSeason,
+                                    icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFFCBD5E1)),
+                                    style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary),
+                                    decoration: _inputDecoration(hintText: 'Pilih Musim'),
+                                    items: _seasons.map((season) => DropdownMenuItem(
+                                      value: season,
+                                      child: Text(season.name, style: const TextStyle(fontSize: 14), overflow: TextOverflow.ellipsis),
+                                    )).toList(),
+                                    onChanged: (Season? value) {
+                                      setState(() {
+                                        _selectedSeason = value;
+                                        if (value?.commodityId != null && _selectedCommodityId == null) {
+                                          _selectedCommodityId = value!.commodityId;
+                                        }
+                                      });
+                                    },
+                                    validator: (value) => value == null ? 'Wajib dipilih' : null,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 18),
+
+                        // Row 2: Hasil Tani (Komoditas)
+                        _buildLabel('Komoditas Hasil Tani (Opsional)'),
+                        DropdownButtonFormField<int?>(
+                          initialValue: _selectedCommodityId,
+                          icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFFCBD5E1)),
+                          style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary),
+                          decoration: _inputDecoration(hintText: 'Pilih Komoditas'),
+                          items: [
+                            const DropdownMenuItem<int?>(
+                              value: null,
+                              child: Text('-- Warisi Dari Musim Tanam / Umum --', style: TextStyle(color: Colors.grey)),
+                            ),
+                            ..._commodities.map((c) => DropdownMenuItem<int?>(
+                              value: c.id,
+                              child: Text('${c.name} (${c.unit})'),
+                            )),
+                          ],
+                          onChanged: (int? value) {
+                            setState(() => _selectedCommodityId = value);
+                          },
+                        ),
+                        const SizedBox(height: 18),
+
+                        // Row 3: Jumlah & Satuan Panen
+                        Row(
+                          children: [
+                            Expanded(
+                              flex: 3,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildLabel('Jumlah Panen'),
+                                  TextFormField(
+                                    controller: _quantityController,
+                                    keyboardType: TextInputType.number,
+                                    style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary),
+                                    decoration: _inputDecoration(hintText: '1'),
+                                    validator: (value) {
+                                      if (value?.isEmpty ?? true) return 'Wajib diisi';
+                                      if (int.tryParse(value!) == null || int.parse(value) < 0) {
+                                        return 'Jumlah tidak valid';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              flex: 2,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildLabel('Satuan Unit'),
+                                  DropdownButtonFormField<String>(
+                                    initialValue: _selectedUnit,
+                                    icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFFCBD5E1)),
+                                    style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary),
+                                    decoration: _inputDecoration(hintText: 'Satuan'),
+                                    items: _unitOptions.map((u) => DropdownMenuItem(
+                                      value: u,
+                                      child: Text(u, style: const TextStyle(fontSize: 14)),
+                                    )).toList(),
+                                    onChanged: (String? value) {
+                                      if (value != null) {
+                                        setState(() => _selectedUnit = value);
+                                      }
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 18),
+
+                        // Row 4: Total Berat Bersih (kg)
+                        _buildLabel('Total Berat Bersih (kg) - Baku Stok Gudang'),
+                        TextFormField(
+                          controller: _weightController,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary),
+                          decoration: _inputDecoration(hintText: 'Contoh: 125.50'),
+                          validator: (value) {
+                            if (value?.isEmpty ?? true) return 'Wajib diisi';
+                            final parsed = double.tryParse(value!);
+                            if (parsed == null || parsed <= 0) return 'Berat minimal 0.01 kg';
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 18),
+
+                        // Row 5: Catatan
+                        _buildLabel('Catatan'),
+                        TextFormField(
+                          controller: _notesController,
+                          style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary),
+                          decoration: _inputDecoration(hintText: 'Opsional — kondisi panen, grade, cuaca'),
+                        ),
+                        const SizedBox(height: 28),
+
+                        // Save Button
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.green700,
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size.fromHeight(52),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            elevation: 0,
+                          ),
+                          onPressed: _isSaving ? null : _saveharvest,
+                          child: _isSaving
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                                )
+                              : const Text(
+                                  'Simpan Data',
+                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                ),
                         ),
                       ],
-                    ),
-                    padding: const EdgeInsets.all(28.0),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Header
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                isEdit ? 'Ubah Hasil Panen' : 'Catat Hasil Panen',
-                                style: const TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w800,
-                                  color: Color(0xFF1B4332),
-                                ),
-                              ),
-                              Container(
-                                width: 36,
-                                height: 36,
-                                decoration: BoxDecoration(
-                                  border: Border.all(color: Colors.grey.shade300),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: IconButton(
-                                  icon: const Icon(Icons.close, size: 18, color: Colors.black54),
-                                  onPressed: () => Navigator.pop(context),
-                                  padding: EdgeInsets.zero,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 28),
-
-                          // Row 1: Tanggal & Musim Tanam
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    _buildLabel('Tanggal'),
-                                    TextFormField(
-                                      controller: _dateController,
-                                      readOnly: true,
-                                      onTap: () => _selectDate(context),
-                                      style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary),
-                                      decoration: _inputDecoration(
-                                        hintText: 'dd/mm/yyyy',
-                                        suffixIcon: const Icon(Icons.calendar_today_outlined, size: 16, color: Color(0xFFCBD5E1)),
-                                      ),
-                                      validator: (value) => value?.isEmpty ?? true ? 'Wajib diisi' : null,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    _buildLabel('Musim Tanam'),
-                                    DropdownButtonFormField<Season>(
-                                      initialValue: _selectedSeason,
-                                      icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFFCBD5E1)),
-
-                                      style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary),
-                                      decoration: _inputDecoration(hintText: 'Musim Tanam'),
-                                      items: _seasons.map((season) => DropdownMenuItem(
-                                        value: season,
-                                        child: Text(season.name, style: const TextStyle(fontSize: 14)),
-                                      )).toList(),
-                                      onChanged: (Season? value) {
-                                        setState(() => _selectedSeason = value);
-                                      },
-                                      validator: (value) => value == null ? 'Wajib dipilih' : null,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 20),
-
-                          // Row 2: Berat
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _buildLabel('Berat (kg)'),
-                              TextFormField(
-                                controller: _weightController,
-                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary),
-                                decoration: _inputDecoration(hintText: '1200'),
-                                validator: (value) {
-                                  if (value?.isEmpty ?? true) return 'Wajib diisi';
-                                  if (double.tryParse(value!) == null) return 'Angka tidak valid';
-                                  return null;
-                                },
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 20),
-
-                          // Row 3: Catatan
-                          _buildLabel('Catatan'),
-                          TextFormField(
-                            controller: _notesController,
-                            style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary),
-                            decoration: _inputDecoration(hintText: 'Opsional — kondisi hasil panen'),
-                          ),
-                          const SizedBox(height: 20),
-
-                          const SizedBox(height: 32),
-
-                          // Save Button
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.green700,
-                              foregroundColor: Colors.white,
-                              minimumSize: const Size.fromHeight(52),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              elevation: 0,
-                            ),
-                            onPressed: _isSaving ? null : _saveharvest,
-                            child: _isSaving
-                                ? const SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
-                                  )
-                                : const Text(
-                                    'Simpan Data',
-                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                                  ),
-                          ),
-                        ],
-                      ),
                     ),
                   ),
                 ),
               ),
+            ),
     );
   }
 }

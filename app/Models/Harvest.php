@@ -10,7 +10,7 @@ class Harvest extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $fillable = ['user_id', 'season_id', 'quantity', 'date', 'weight_kg', 'notes', 'photo', 'status'];
+    protected $fillable = ['user_id', 'season_id', 'commodity_id', 'quantity', 'date', 'weight_kg', 'unit', 'notes', 'photo', 'status'];
 
     protected $casts = [
         'date' => 'date',
@@ -38,7 +38,7 @@ class Harvest extends Model
         return asset(ltrim($this->photo, '/'));
     }
 
-    protected $with = ['season'];
+    protected $with = ['season', 'commodity'];
 
     public function user()
     {
@@ -48,5 +48,10 @@ class Harvest extends Model
     public function season()
     {
         return $this->belongsTo(Season::class);
+    }
+
+    public function commodity()
+    {
+        return $this->belongsTo(FarmerCommodity::class, 'commodity_id');
     }
 }

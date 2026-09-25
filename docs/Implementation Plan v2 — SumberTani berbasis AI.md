@@ -1512,11 +1512,11 @@ Dokumentasi harus diperbarui setelah implementasi aktual, bukan ditulis seolah-o
 
 ## Panen & Biaya
 
-* [ ] Panen dapat dikaitkan dengan Hasil Tani.
-* [ ] Biaya dapat diatribusikan secara benar.
-* [ ] Existing Season behavior tidak rusak.
-* [ ] Decimal quantity tetap akurat.
-* [ ] Existing stock behavior tidak rusak.
+* [x] Panen dapat dikaitkan dengan Hasil Tani.
+* [x] Biaya dapat diatribusikan secara benar.
+* [x] Existing Season behavior tidak rusak.
+* [x] Decimal quantity tetap akurat.
+* [x] Existing stock behavior tidak rusak.
 
 ## Historical Price
 

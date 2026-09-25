@@ -20,7 +20,7 @@ class HarvestController extends Controller
         $perPage  = $request->input('per_page', 15);
         $seasonId = $request->input('season_id');
 
-        $query = Harvest::where('user_id', $userId)->with('season')->latest('date');
+        $query = Harvest::where('user_id', $userId)->with(['season', 'commodity'])->latest('date');
         if ($seasonId) $query->where('season_id', $seasonId);
 
         $harvests     = $query->paginate($perPage);
@@ -49,23 +49,36 @@ class HarvestController extends Controller
     {
         $validated = $request->validate([
             'season_id'    => 'required|integer|exists:seasons,id',
+            'commodity_id' => 'nullable|integer|exists:farmer_commodities,id',
+            'unit'         => 'nullable|string|in:kg,kuintal,ton,ikat,pcs',
             'harvest_date' => 'nullable|date',
             'date'         => 'nullable|date',
-            'quantity'     => 'nullable|integer|min:0',
+            'quantity'     => 'nullable|numeric|min:0',
             'weight_kg'    => 'required|numeric|min:0.01',
             'notes'        => 'nullable|string|max:1000',
             'photo'        => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
             'status'       => 'nullable|in:recorded,verified,cancelled',
         ], [
-            'season_id.required' => 'Musim tanam harus dipilih.',
-            'season_id.exists'   => 'Musim tanam tidak ditemukan.',
-            'weight_kg.required' => 'Berat (kg) harus diisi.',
-            'weight_kg.min'      => 'Berat minimal 0.01 kg.',
+            'season_id.required'  => 'Musim tanam harus dipilih.',
+            'season_id.exists'    => 'Musim tanam tidak ditemukan.',
+            'commodity_id.exists' => 'Hasil tani tidak ditemukan.',
+            'unit.in'             => 'Satuan hasil tani tidak valid (pilihan: kg, kuintal, ton, ikat, pcs).',
+            'weight_kg.required'  => 'Berat (kg) harus diisi.',
+            'weight_kg.min'       => 'Berat minimal 0.01 kg.',
         ]);
 
         $season = $this->harvestService->verifySeasonOwnership($validated['season_id'], $request->user()->id);
         if (!$season) {
             return $this->forbiddenResponse('Musim tanam tidak ditemukan atau bukan milik Anda.');
+        }
+
+        if (!empty($validated['commodity_id'])) {
+            $ownsCommodity = \App\Models\FarmerCommodity::where('id', $validated['commodity_id'])
+                ->where('user_id', $request->user()->id)
+                ->exists();
+            if (!$ownsCommodity) {
+                return $this->forbiddenResponse('Hasil tani tidak ditemukan atau bukan milik Anda.');
+            }
         }
 
         $harvest = $this->harvestService->createHarvest(
@@ -101,24 +114,37 @@ class HarvestController extends Controller
 
         $validated = $request->validate([
             'season_id'    => 'sometimes|required|integer|exists:seasons,id',
+            'commodity_id' => 'nullable|integer|exists:farmer_commodities,id',
+            'unit'         => 'nullable|string|in:kg,kuintal,ton,ikat,pcs',
             'harvest_date' => 'nullable|date',
             'date'         => 'nullable|date',
-            'quantity'     => 'nullable|integer|min:0',
+            'quantity'     => 'nullable|numeric|min:0',
             'weight_kg'    => 'sometimes|required|numeric|min:0.01',
             'notes'        => 'nullable|string|max:1000',
             'photo'        => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
             'status'       => 'nullable|in:recorded,verified,cancelled',
         ], [
-            'season_id.required' => 'Musim tanam harus dipilih.',
-            'season_id.exists'   => 'Musim tanam tidak ditemukan.',
-            'weight_kg.required' => 'Berat (kg) harus diisi.',
-            'weight_kg.min'      => 'Berat minimal 0.01 kg.',
+            'season_id.required'  => 'Musim tanam harus dipilih.',
+            'season_id.exists'    => 'Musim tanam tidak ditemukan.',
+            'commodity_id.exists' => 'Hasil tani tidak ditemukan.',
+            'unit.in'             => 'Satuan hasil tani tidak valid (pilihan: kg, kuintal, ton, ikat, pcs).',
+            'weight_kg.required'  => 'Berat (kg) harus diisi.',
+            'weight_kg.min'       => 'Berat minimal 0.01 kg.',
         ]);
 
         if (isset($validated['season_id'])) {
             $season = $this->harvestService->verifySeasonOwnership($validated['season_id'], $request->user()->id);
             if (!$season) {
                 return $this->forbiddenResponse('Musim tanam tidak ditemukan atau bukan milik Anda.');
+            }
+        }
+
+        if (!empty($validated['commodity_id'])) {
+            $ownsCommodity = \App\Models\FarmerCommodity::where('id', $validated['commodity_id'])
+                ->where('user_id', $request->user()->id)
+                ->exists();
+            if (!$ownsCommodity) {
+                return $this->forbiddenResponse('Hasil tani tidak ditemukan atau bukan milik Anda.');
             }
         }
 

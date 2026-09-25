@@ -109,6 +109,7 @@ class ApiService {
 
   Future<Map<String, dynamic>> createSeason({
     required String name,
+    int? commodityId,
     required String startDate,
     required String endDate,
     required String status,
@@ -117,6 +118,7 @@ class ApiService {
   }) =>
       _seasonService.createSeason(
         name: name,
+        commodityId: commodityId,
         startDate: startDate,
         endDate: endDate,
         status: status,
@@ -127,6 +129,7 @@ class ApiService {
   Future<Map<String, dynamic>> updateSeason(
     int id, {
     required String name,
+    int? commodityId,
     required String startDate,
     required String endDate,
     required String status,
@@ -136,6 +139,7 @@ class ApiService {
       _seasonService.updateSeason(
         id,
         name: name,
+        commodityId: commodityId,
         startDate: startDate,
         endDate: endDate,
         status: status,
@@ -154,8 +158,10 @@ class ApiService {
 
   Future<Map<String, dynamic>> createHarvest({
     required int seasonId,
+    int? commodityId,
     required String harvestDate,
     required int quantity,
+    String? unit,
     required double weightKg,
     String? notes,
     String? status,
@@ -163,8 +169,10 @@ class ApiService {
   }) =>
       _harvestService.createHarvest(
         seasonId: seasonId,
+        commodityId: commodityId,
         harvestDate: harvestDate,
         quantity: quantity,
+        unit: unit,
         weightKg: weightKg,
         notes: notes,
         status: status,
@@ -174,8 +182,10 @@ class ApiService {
   Future<Map<String, dynamic>> updateHarvest(
     int id, {
     int? seasonId,
+    int? commodityId,
     String? harvestDate,
     int? quantity,
+    String? unit,
     double? weightKg,
     String? notes,
     String? status,
@@ -184,8 +194,10 @@ class ApiService {
       _harvestService.updateHarvest(
         id,
         seasonId: seasonId,
+        commodityId: commodityId,
         harvestDate: harvestDate,
         quantity: quantity,
+        unit: unit,
         weightKg: weightKg,
         notes: notes,
         status: status,

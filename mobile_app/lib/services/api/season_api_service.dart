@@ -62,6 +62,7 @@ class SeasonApiService {
 
   Future<Map<String, dynamic>> createSeason({
     required String name,
+    int? commodityId,
     required String startDate,
     required String endDate,
     required String status,
@@ -69,18 +70,23 @@ class SeasonApiService {
     String? notes,
   }) async {
     try {
+      final Map<String, dynamic> body = {
+        'name': name,
+        'start_date': startDate,
+        'end_date': endDate,
+        'status': status,
+        'target_kg': targetKg,
+        'notes': notes,
+      };
+      if (commodityId != null) {
+        body['commodity_id'] = commodityId;
+      }
+
       final response = await http
           .post(
             Uri.parse('${ApiConfig.baseUrl}/seasons'),
             headers: _client.getHeaders(),
-            body: jsonEncode({
-              'name': name,
-              'start_date': startDate,
-              'end_date': endDate,
-              'status': status,
-              'target_kg': targetKg,
-              'notes': notes,
-            }),
+            body: jsonEncode(body),
           )
           .timeout(const Duration(seconds: 30));
 
@@ -106,6 +112,7 @@ class SeasonApiService {
   Future<Map<String, dynamic>> updateSeason(
     int id, {
     required String name,
+    int? commodityId,
     required String startDate,
     required String endDate,
     required String status,
@@ -113,18 +120,23 @@ class SeasonApiService {
     String? notes,
   }) async {
     try {
+      final Map<String, dynamic> body = {
+        'name': name,
+        'start_date': startDate,
+        'end_date': endDate,
+        'status': status,
+        'target_kg': targetKg,
+        'notes': notes,
+      };
+      if (commodityId != null) {
+        body['commodity_id'] = commodityId;
+      }
+
       final response = await http
           .put(
             Uri.parse('${ApiConfig.baseUrl}/seasons/$id'),
             headers: _client.getHeaders(),
-            body: jsonEncode({
-              'name': name,
-              'start_date': startDate,
-              'end_date': endDate,
-              'status': status,
-              'target_kg': targetKg,
-              'notes': notes,
-            }),
+            body: jsonEncode(body),
           )
           .timeout(const Duration(seconds: 30));
 
