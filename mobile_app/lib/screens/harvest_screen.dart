@@ -50,65 +50,62 @@ class _HarvestScreenState extends State<HarvestScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return AppShell(
-      currentRoute: 'harvest',
-      title: 'Pencatatan Panen',
-      subtitle: 'Pantau hasil panen kelompok tani',
-      onRefresh: _loadHarvests,
-      headerActions: [
-        ElevatedButton.icon(
-          onPressed: () {
-            showDialog(
-              context: context,
-              builder: (context) => AddEditHarvestScreen(onSaved: _loadHarvests),
-            ).then((_) => _loadHarvests());
-          },
-          icon: const Icon(Icons.add, size: 16),
-          label: const Text('Catat Panen', style: TextStyle(fontWeight: FontWeight.bold)),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.green700,
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          ),
-        ),
-      ],
-      bottomNavigationBar: const AppBottomNav(currentIndex: 1),
-      floatingActionButton: LayoutBuilder(
-        builder: (context, constraints) {
-          if (constraints.maxWidth > 800) return const SizedBox.shrink();
-          return FloatingActionButton.extended(
-            backgroundColor: AppTheme.green700,
-            foregroundColor: Colors.white,
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) =>
-                    AddEditHarvestScreen(onSaved: _loadHarvests),
-              ).then((_) => _loadHarvests());
-            },
-            icon: const Icon(Icons.add),
-            label: const Text('Catat Panen',
-                style: TextStyle(fontWeight: FontWeight.bold)),
-          );
-        },
-      ),
-      child: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(
-                  color: AppTheme.green700))
-          : RefreshIndicator(
-              onRefresh: _loadHarvests,
-              color: AppTheme.green700,
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  if (constraints.maxWidth > 800) {
-                    return _buildDesktopLayout();
-                  }
-                  return _buildMobileLayout();
-                },
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isDesktop = constraints.maxWidth >= 900;
+        return AppShell(
+          currentRoute: 'harvest',
+          title: 'Pencatatan Panen',
+          subtitle: 'Pantau hasil panen kelompok tani',
+          onRefresh: _loadHarvests,
+          headerActions: [
+            ElevatedButton.icon(
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => AddEditHarvestScreen(onSaved: _loadHarvests),
+                ).then((_) => _loadHarvests());
+              },
+              icon: const Icon(Icons.add, size: 16),
+              label: const Text('Catat Panen', style: TextStyle(fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.green700,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               ),
             ),
+          ],
+          bottomNavigationBar: const AppBottomNav(currentIndex: 1),
+          floatingActionButton: isDesktop
+              ? null
+              : FloatingActionButton.extended(
+                  backgroundColor: AppTheme.green700,
+                  foregroundColor: Colors.white,
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) =>
+                          AddEditHarvestScreen(onSaved: _loadHarvests),
+                    ).then((_) => _loadHarvests());
+                  },
+                  icon: const Icon(Icons.add),
+                  label: const Text('Catat Panen',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+          child: _isLoading
+              ? const Center(
+                  child: CircularProgressIndicator(
+                      color: AppTheme.green700))
+              : RefreshIndicator(
+                  onRefresh: _loadHarvests,
+                  color: AppTheme.green700,
+                  child: isDesktop
+                      ? _buildDesktopLayout()
+                      : _buildMobileLayout(),
+                ),
+        );
+      },
     );
   }
 
@@ -326,7 +323,11 @@ class _HarvestScreenState extends State<HarvestScreen> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
+        final contentWidth = constraints.maxWidth - 56;
+        final tableWidth = contentWidth > 950 ? contentWidth : 950.0;
+
         return SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(28),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -417,10 +418,9 @@ class _HarvestScreenState extends State<HarvestScreen> {
               clipBehavior: Clip.antiAlias,
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minWidth: constraints.maxWidth > 920 ? constraints.maxWidth - 56 : 920,
-                  ),
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: SizedBox(
+                  width: tableWidth,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
