@@ -262,6 +262,154 @@ class FarmerEconomicResultService
         ];
     }
 
+    // ─── Processed Product Economic Summary ──────────────────────────────────
+
+    /**
+     * Hitung ringkasan modal dan laba/rugi untuk satu produk olahan (Hilir).
+     *
+     * Aturan:
+     * - Bahan baku dari panen sendiri bernilai tunai Rp 0 (karena sudah ditanggung biaya kebun)
+     * - Modal pengolahan = Σ biaya bahan penolong (tepung, minyak, packaging, utility, labor)
+     * - Laba Bersih Olahan = Penjualan Olahan - Modal Bahan Penolong
+     *
+     * @param  \App\Models\ProcessedProduct  $product
+     * @return array
+     */
+    public function getProcessedProductEconomicSummary(\App\Models\ProcessedProduct $product): array
+    {
+        $product->loadMissing(['costs', 'sales', 'owner', 'rawMaterialHarvest']);
+
+        $costs = $product->costs;
+        $totalProcessingCost = (float) $costs->sum('amount');
+
+        $paidSales = $product->sales->where('payment_status', 'paid');
+        $unitsSold = (int) $paidSales->sum('weight_kg'); // weight_kg stores quantity for processed sales
+        $realizedRevenue = (float) $paidSales->sum('total');
+        $realizedProfitLoss = round($realizedRevenue - $totalProcessingCost, 2);
+
+        $currentStock = (int) $product->stock;
+        $totalPotentialUnits = $unitsSold + $currentStock;
+        $unitPrice = (float) $product->price;
+        $potentialRevenue = round($totalPotentialUnits * $unitPrice, 2);
+        $potentialProfitLoss = round($potentialRevenue - $totalProcessingCost, 2);
+
+        $costPerUnit = $totalPotentialUnits > 0
+            ? round($totalProcessingCost / $totalPotentialUnits, 2)
+            : 0.0;
+
+        $costBreakdown = $costs->map(function ($c) {
+            return [
+                'id'             => $c->id,
+                'category'       => $c->category,
+                'item_name'      => $c->item_name,
+                'quantity'       => $c->quantity !== null ? (float) $c->quantity : null,
+                'unit'           => $c->unit,
+                'price_per_unit' => $c->price_per_unit !== null ? (float) $c->price_per_unit : null,
+                'amount'         => (float) $c->amount,
+                'date'           => $c->date?->toDateString(),
+                'notes'          => $c->notes,
+            ];
+        })->values();
+
+        return [
+            'product_id'             => $product->id,
+            'product_name'           => $product->name,
+            'owner_id'               => $product->owner_id,
+            'owner_name'             => $product->owner?->farm_name ?? $product->owner?->name,
+            'price_per_unit'         => $unitPrice,
+            'unit'                   => $product->unit ?? 'pcs',
+            'current_stock'          => $currentStock,
+            'units_sold'             => $unitsSold,
+            'raw_material_harvest_id'=> $product->harvest_id,
+            'raw_material_weight_kg' => (float) ($product->raw_material_weight_kg ?? 0),
+            'raw_material_cost'      => 0.0, // Bahan baku kebun bebas biaya tunai baru (mencegah double-counting)
+            'total_processing_cost'  => (float) $totalProcessingCost,
+            'cost_per_unit'          => (float) $costPerUnit,
+            'realized_revenue'       => (float) $realizedRevenue,
+            'realized_profit_loss'   => (float) $realizedProfitLoss,
+            'realized_status'        => $realizedProfitLoss >= 0 ? 'profit' : 'loss',
+            'potential_revenue'      => (float) $potentialRevenue,
+            'potential_profit_loss'  => (float) $potentialProfitLoss,
+            'potential_status'       => $potentialProfitLoss >= 0 ? 'profit' : 'loss',
+            'costs'                  => $costBreakdown,
+        ];
+    }
+
+    // ─── Integrated Agribusiness Profit & Loss (Hulu + Hilir) ────────────────
+
+    /**
+     * Hitung total laba/rugi terpadu agribisnis petani:
+     * Laba Bersih Terpadu = Laba Panen (Hulu) + Laba Produk Olahan (Hilir).
+     *
+     * @param  int  $farmerId
+     * @return array
+     */
+    public function getIntegratedEconomicSummary(int $farmerId): array
+    {
+        // 1. Sisi Hulu (Budidaya & Panen Mentah)
+        $farmSummary = $this->getFarmerEconomicSummary($farmerId);
+
+        // 2. Sisi Hilir (Produk Olahan)
+        $products = \App\Models\ProcessedProduct::where('owner_id', $farmerId)->get();
+
+        $processedSummaries          = [];
+        $totalRawMaterialAllocatedKg = 0.0;
+        $totalProcessingCost         = 0.0;
+        $totalProcessedRevenue       = 0.0;
+        $totalProcessedProfitLoss    = 0.0;
+
+        foreach ($products as $prod) {
+            $pSummary = $this->getProcessedProductEconomicSummary($prod);
+            $processedSummaries[] = $pSummary;
+
+            $totalRawMaterialAllocatedKg += $pSummary['raw_material_weight_kg'];
+            $totalProcessingCost         += $pSummary['total_processing_cost'];
+            $totalProcessedRevenue       += $pSummary['realized_revenue'];
+            $totalProcessedProfitLoss    += $pSummary['realized_profit_loss'];
+        }
+
+        // 3. Sisi Terpadu (Grand Total Agribisnis Terpadu Petani)
+        $farmRevenue    = $farmSummary['revenue'];
+        $farmCost       = (float) $farmSummary['total_production_cost'];
+        $farmProfitLoss = $farmSummary['total_profit_loss'];
+
+        $integratedRevenue = ($farmRevenue !== null ? (float) $farmRevenue : 0.0) + (float) $totalProcessedRevenue;
+        $integratedCost    = round($farmCost + $totalProcessingCost, 2);
+        
+        $integratedProfitLoss = null;
+        if ($farmProfitLoss !== null) {
+            $integratedProfitLoss = round($farmProfitLoss + $totalProcessedProfitLoss, 2);
+        } else {
+            $integratedProfitLoss = round($totalProcessedRevenue - $totalProcessingCost, 2);
+        }
+
+        return [
+            'farmer_id'                   => $farmerId,
+            // Hulu:
+            'farm_harvest_weight_kg'      => (float) $farmSummary['total_weight_kg'],
+            'raw_material_allocated_kg'   => (float) round($totalRawMaterialAllocatedKg, 2),
+            'net_harvest_market_weight_kg'=> (float) max(0, round($farmSummary['total_weight_kg'] - $totalRawMaterialAllocatedKg, 2)),
+            'farm_revenue'                => $farmRevenue,
+            'farm_production_cost'        => (float) $farmCost,
+            'farm_profit_loss'            => $farmProfitLoss,
+            'farm_profit_loss_status'     => $farmSummary['profit_loss_status'],
+
+            // Hilir:
+            'processed_product_count'     => $products->count(),
+            'processing_production_cost'  => (float) round($totalProcessingCost, 2),
+            'processed_revenue'           => (float) round($totalProcessedRevenue, 2),
+            'processed_profit_loss'       => (float) round($totalProcessedProfitLoss, 2),
+            'processed_profit_loss_status'=> $totalProcessedProfitLoss >= 0 ? 'profit' : 'loss',
+            'processed_products'          => $processedSummaries,
+
+            // Terpadu (Integrated Grand Total):
+            'total_integrated_revenue'    => (float) round($integratedRevenue, 2),
+            'total_integrated_cost'       => (float) round($integratedCost, 2),
+            'total_integrated_profit_loss'=> $integratedProfitLoss,
+            'integrated_profit_loss_status'=> $integratedProfitLoss === null ? null : ($integratedProfitLoss >= 0 ? 'profit' : 'loss'),
+        ];
+    }
+
     // ─── Private Helpers ──────────────────────────────────────────────────────
 
     /**

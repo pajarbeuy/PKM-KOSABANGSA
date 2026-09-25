@@ -177,3 +177,72 @@ class FarmerEconomicSummary {
     );
   }
 }
+
+/// Ringkasan Laba/Rugi Agribisnis Terpadu (Hulu Kebun + Hilir Olahan)
+class IntegratedAgribusinessEconomicSummary {
+  final int farmerId;
+  final double farmHarvestWeightKg;
+  final double rawMaterialAllocatedKg;
+  final double netHarvestMarketWeightKg;
+  final double? farmRevenue;
+  final double farmProductionCost;
+  final double? farmProfitLoss;
+  final String? farmProfitLossStatus;
+
+  final int processedProductCount;
+  final double processingProductionCost;
+  final double processedRevenue;
+  final double processedProfitLoss;
+  final String processedProfitLossStatus;
+
+  final double totalIntegratedRevenue;
+  final double totalIntegratedCost;
+  final double? totalIntegratedProfitLoss;
+  final String? integratedProfitLossStatus;
+
+  IntegratedAgribusinessEconomicSummary({
+    required this.farmerId,
+    required this.farmHarvestWeightKg,
+    required this.rawMaterialAllocatedKg,
+    required this.netHarvestMarketWeightKg,
+    this.farmRevenue,
+    required this.farmProductionCost,
+    this.farmProfitLoss,
+    this.farmProfitLossStatus,
+    required this.processedProductCount,
+    required this.processingProductionCost,
+    required this.processedRevenue,
+    required this.processedProfitLoss,
+    required this.processedProfitLossStatus,
+    required this.totalIntegratedRevenue,
+    required this.totalIntegratedCost,
+    this.totalIntegratedProfitLoss,
+    this.integratedProfitLossStatus,
+  });
+
+  bool get isOverallProfitable =>
+      integratedProfitLossStatus == 'profit' || (totalIntegratedProfitLoss != null && totalIntegratedProfitLoss! >= 0);
+
+  factory IntegratedAgribusinessEconomicSummary.fromJson(Map<String, dynamic> json) {
+    return IntegratedAgribusinessEconomicSummary(
+      farmerId:                     int.tryParse(json['farmer_id']?.toString() ?? '') ?? 0,
+      farmHarvestWeightKg:          double.tryParse(json['farm_harvest_weight_kg']?.toString() ?? '') ?? 0.0,
+      rawMaterialAllocatedKg:       double.tryParse(json['raw_material_allocated_kg']?.toString() ?? '') ?? 0.0,
+      netHarvestMarketWeightKg:     double.tryParse(json['net_harvest_market_weight_kg']?.toString() ?? '') ?? 0.0,
+      farmRevenue:                  double.tryParse(json['farm_revenue']?.toString() ?? ''),
+      farmProductionCost:           double.tryParse(json['farm_production_cost']?.toString() ?? '') ?? 0.0,
+      farmProfitLoss:               double.tryParse(json['farm_profit_loss']?.toString() ?? ''),
+      farmProfitLossStatus:         json['farm_profit_loss_status'] as String?,
+      processedProductCount:        int.tryParse(json['processed_product_count']?.toString() ?? '') ?? 0,
+      processingProductionCost:     double.tryParse(json['processing_production_cost']?.toString() ?? '') ?? 0.0,
+      processedRevenue:             double.tryParse(json['processed_revenue']?.toString() ?? '') ?? 0.0,
+      processedProfitLoss:          double.tryParse(json['processed_profit_loss']?.toString() ?? '') ?? 0.0,
+      processedProfitLossStatus:    json['processed_profit_loss_status'] as String? ?? 'profit',
+      totalIntegratedRevenue:       double.tryParse(json['total_integrated_revenue']?.toString() ?? '') ?? 0.0,
+      totalIntegratedCost:          double.tryParse(json['total_integrated_cost']?.toString() ?? '') ?? 0.0,
+      totalIntegratedProfitLoss:    double.tryParse(json['total_integrated_profit_loss']?.toString() ?? ''),
+      integratedProfitLossStatus:   json['integrated_profit_loss_status'] as String?,
+    );
+  }
+}
+

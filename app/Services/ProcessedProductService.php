@@ -166,25 +166,147 @@ class ProcessedProductService
     }
 
     /**
+     * Convert raw harvest weight into processed product raw material,
+     * decrement warehouse harvest stock, increment processed stock, and record processing costs.
+     */
+    public function convertHarvestToProcessedProduct(
+        ProcessedProduct $product,
+        \App\Models\Harvest $harvest,
+        float $rawWeightKg,
+        int $additionalStock = 0,
+        array $costItems = []
+    ): array {
+        if ($rawWeightKg <= 0) {
+            throw new \InvalidArgumentException('Bobot bahan baku panen harus lebih dari 0.');
+        }
+
+        if ($harvest->user_id !== $product->owner_id) {
+            throw new \DomainException('Data panen tidak sesuai dengan pemilik produk olahan.');
+        }
+
+        return DB::transaction(function () use ($product, $harvest, $rawWeightKg, $additionalStock, $costItems) {
+            // Check sufficiency of raw harvest stock in warehouse
+            $currentRawBalance = \App\Models\StockTransaction::getCurrentBalance($product->owner_id);
+            if ($currentRawBalance < $rawWeightKg) {
+                throw new \DomainException("Stok panen mentah di gudang tidak mencukupi ({$currentRawBalance} kg tersedia, dibutuhkan {$rawWeightKg} kg).");
+            }
+
+            // 1. Decrement raw harvest warehouse stock (Rp 0 raw material cash cost because it was already funded by farm cost)
+            \App\Models\StockTransaction::addTransaction(
+                'out',
+                $rawWeightKg,
+                "Bahan Baku Olahan: {$product->name} (dari Panen #{$harvest->id})",
+                'harvest_convert_' . $harvest->id,
+                $product->owner_id
+            );
+
+            // 2. Update processed product model
+            $product->harvest_id = $harvest->id;
+            $product->raw_material_weight_kg = (float) ($product->raw_material_weight_kg ?? 0) + $rawWeightKg;
+
+            if ($additionalStock > 0) {
+                $product->stock += $additionalStock;
+                \App\Models\StockTransaction::recordProcessedProductTransaction(
+                    $product,
+                    'in',
+                    $additionalStock,
+                    "Hasil Produksi Olahan ({$rawWeightKg} kg bahan baku)",
+                    'produce_stock_' . $harvest->id,
+                    $product->owner_id
+                );
+            }
+
+            $product->save();
+
+            // 3. Record processing costs (modal bahan penolong: tepung, minyak, bumbu, packaging)
+            $createdCosts = [];
+
+            // Record raw material harvest entry (Rp 0 to prevent double-counting)
+            $rawEntry = \App\Models\ProductionCost::create([
+                'user_id'                 => $product->owner_id,
+                'cost_type'               => 'processing',
+                'date'                    => now()->toDateString(),
+                'season_id'               => null,
+                'processed_product_id'    => $product->id,
+                'raw_material_harvest_id' => $harvest->id,
+                'raw_material_weight_kg'  => $rawWeightKg,
+                'category'                => 'raw_material_addon',
+                'item_name'               => 'Bahan Baku Panen: ' . ($harvest->commodity?->name ?? ('Panen #' . $harvest->id)),
+                'quantity'                => $rawWeightKg,
+                'unit'                    => $harvest->unit ?? 'kg',
+                'price_per_unit'          => 0.00,
+                'amount'                  => 0.00,
+                'notes'                   => "Pengalihan {$rawWeightKg} kg dari panen #{$harvest->id} ke produk olahan (bebas double-counting)",
+            ]);
+            $createdCosts[] = $rawEntry;
+
+            foreach ($costItems as $item) {
+                $qty = isset($item['quantity']) ? (float) $item['quantity'] : null;
+                $pricePerUnit = isset($item['price_per_unit']) ? (float) $item['price_per_unit'] : null;
+                $amount = isset($item['amount'])
+                    ? (float) $item['amount']
+                    : ($qty && $pricePerUnit ? round($qty * $pricePerUnit, 2) : 0.0);
+
+                if ($amount <= 0) {
+                    continue;
+                }
+
+                $cost = \App\Models\ProductionCost::create([
+                    'user_id'                 => $product->owner_id,
+                    'cost_type'               => 'processing',
+                    'date'                    => $item['date'] ?? now()->toDateString(),
+                    'season_id'               => null,
+                    'processed_product_id'    => $product->id,
+                    'raw_material_harvest_id' => $harvest->id,
+                    'raw_material_weight_kg'  => $rawWeightKg,
+                    'category'                => $item['category'] ?? 'raw_material_addon',
+                    'item_name'               => $item['item_name'] ?? null,
+                    'quantity'                => $qty,
+                    'unit'                    => $item['unit'] ?? null,
+                    'price_per_unit'          => $pricePerUnit,
+                    'amount'                  => $amount,
+                    'notes'                   => $item['notes'] ?? null,
+                ]);
+
+                $createdCosts[] = $cost;
+            }
+
+            return [
+                'product'                => $this->formatProduct($product->fresh()),
+                'converted_weight_kg'    => $rawWeightKg,
+                'additional_stock'       => $additionalStock,
+                'raw_harvest_remaining'  => \App\Models\StockTransaction::getCurrentBalance($product->owner_id),
+                'processing_costs_added' => count($createdCosts),
+                'total_processing_cost'  => (float) $product->fresh()->total_processing_cost,
+            ];
+        });
+    }
+
+    /**
      * Format a processed product for API responses.
      */
     public function formatProduct(ProcessedProduct $product): array
     {
         return [
-            'id'          => $product->id,
-            'owner_id'    => $product->owner_id,
-            'owner_name'  => $product->owner?->name ?? 'Petani',
-            'farm_name'   => $product->owner?->farm_name,
-            'name'        => $product->name,
-            'price'       => (float) $product->price,
-            'stock'       => (int) $product->stock,
-            'unit'        => $product->unit ?? 'pcs',
-            'description' => $product->description,
-            'photo'       => $product->photo,
-            'photo_url'   => $product->photo_url,
-            'status'      => $product->status,
-            'created_at'  => $product->created_at?->toIso8601String(),
-            'updated_at'  => $product->updated_at?->toIso8601String(),
+            'id'                     => $product->id,
+            'owner_id'               => $product->owner_id,
+            'owner_name'             => $product->owner?->name ?? 'Petani',
+            'farm_name'              => $product->owner?->farm_name,
+            'harvest_id'             => $product->harvest_id,
+            'name'                   => $product->name,
+            'price'                  => (float) $product->price,
+            'stock'                  => (int) $product->stock,
+            'unit'                   => $product->unit ?? 'pcs',
+            'raw_material_weight_kg' => (float) ($product->raw_material_weight_kg ?? 0),
+            'total_processing_cost'  => (float) $product->total_processing_cost,
+            'total_sales_revenue'    => (float) $product->total_sales_revenue,
+            'profit_loss'            => (float) $product->profit_loss,
+            'description'            => $product->description,
+            'photo'                  => $product->photo,
+            'photo_url'              => $product->photo_url,
+            'status'                 => $product->status,
+            'created_at'             => $product->created_at?->toIso8601String(),
+            'updated_at'             => $product->updated_at?->toIso8601String(),
         ];
     }
 }

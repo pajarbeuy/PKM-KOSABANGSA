@@ -39,6 +39,14 @@
    - [A. End-to-End Image Pipeline Produk Olahan](#a-end-to-end-image-pipeline-produk-olahan)
    - [B. Restrukturisasi Total Landing Page Web (`landing.blade.php`)](#b-restrukturisasi-total-landing-page-web-landingbladephp)
    - [C. Status Verifikasi Pengujian](#c-status-verifikasi-pengujian)
+13. [Phase 1: Multi-Commodity Extension (FarmerCommodity)](#13-phase-1-multi-commodity-extension-farmercommodity)
+14. [Phase 2: Farmer Group (Poktan) Governance](#14-phase-2-farmer-group-poktan-governance)
+15. [Phase 4: Processed Product Marketing & Catalog Orders](#15-phase-4-processed-product-marketing--catalog-orders)
+16. [Phase 5: Historical Market Price Ingestion & Snapshotting](#16-phase-5-historical-market-price-ingestion--snapshotting)
+17. [Phase 6: Farmer Economic Result & Cost Allocation](#17-phase-6-farmer-economic-result--cost-allocation)
+18. [Phase 8: Platform Commission (10%) Implementation](#18-phase-8-platform-commission-10-implementation)
+19. [Phase 9: Pemisahan Platform Landing Page & Katalog Publik (/ vs /katalog)](#19-phase-9-pemisahan-platform-landing-page--katalog-publik--vs-katalog)
+20. [Perhitungan Modal Produk Olahan & Analisis Laba/Rugi Agribisnis Terpadu](#20-perhitungan-modal-produk-olahan--analisis-labarugi-agribisnis-terpadu-hulu-kebun--hilir-olahan)
 
 ---
 
@@ -1317,6 +1325,75 @@ Sesuai rancangan arsitektur PKM-Kosabangsa v2, halaman utama web direfaktor untu
   - `test_catalog_search_filters_matching_products`: Memverifikasi filter pencarian nama produk.
   - `test_existing_order_pipeline_remains_fully_functional`: Memastikan pipeline order `POST /api/catalog/orders` & pelacakan pesanan publik tetap berfungsi normal.
 - **Hasil:** **10/10 Passed (62 Assertions)**, serta seluruh 171 API test suite lulus 100%.
+
+---
+
+## 20. Perhitungan Modal Produk Olahan & Analisis Laba/Rugi Agribisnis Terpadu (Hulu Kebun + Hilir Olahan)
+
+### A. Latar Belakang & Aturan Bisnis (Zero Double-Counting)
+Seringkali hasil panen petani (misalnya jamur tiram segar atau kentang segar) tidak seluruhnya dijual mentah ke pasar, melainkan sebagian dialihkan sebagai bahan baku untuk produk olahan (misalnya Jamur Crispy atau Keripik Kentang). 
+
+Sebelumnya, perhitungan modal panen dan produk olahan belum terintegrasi secara modular, sehingga berisiko terjadi **penghitungan ganda (double-counting)** jika biaya bibit/kebun dihitung dua kali saat membuat produk olahan.
+
+Sistem kini menerapkan **Arsitektur Agribisnis Terpadu**:
+1. **Sisi Hulu (Hasil Tani / Kebun)**:
+   - Petani mencatat modal kebun (bibit, pupuk, pestisida, sewa lahan) pada musim tanam tertentu (`farm_cost`).
+   - Contoh: Modal tanam kebun Rp 200.000, hasil panen 30 kg jamur tiram @ Rp 10.000/kg (Nilai Panen = Rp 300.000). Laba hulu = Rp 100.000.
+2. **Sisi Hilir (Pengalihan Bahan Baku & Produk Olahan)**:
+   - Petani mengalihkan sebagian hasil panen (misal 15 kg) untuk bahan baku produk olahan.
+   - **Prinsip Bebas Biaya Ganda (Zero Double-Counting):** Bahan baku panen tersebut bernilai kas **Rp 0** pada pos biaya olahan karena pembiayaannya sudah tercakup penuh di modal kebun.
+   - Stok gudang panen mentah otomatis berkurang secara atomik (`StockTransaction` tipe `out` dengan referensi panen).
+   - Petani hanya menginput biaya bahan penolong tambahan (*auxiliary processing costs*):
+     - Bahan penolong: Tepung terigu 2 kg @ Rp 10.000 = Rp 20.000, Minyak goreng 2 liter @ Rp 12.000 = Rp 24.000.
+     - Kemasan / Packaging, Utilitas (gas, listrik), dan Tenaga kerja olahan.
+     - Total modal olahan tambahan = Rp 44.000.
+3. **Analisis Finansial Terpadu (Integrated Agribusiness Summary)**:
+   - Jika 15 kg olahan menghasilkan 150 pcs Jamur Crispy @ Rp 5.000 = Rp 750.000:
+     - Laba Bersih Olahan (Hilir) = Rp 750.000 - Rp 44.000 = Rp 706.000.
+     - Penjualan Panen Mentah (Hulu) = 15 kg @ Rp 10.000 = Rp 150.000 (atau Nilai Panen Total Rp 300.000).
+     - **Total Laba Bersih Terpadu (Hulu + Hilir)** = Laba Panen Hulu (Rp 100.000) + Laba Olahan Hilir (Rp 706.000) = **Rp 806.000**.
+
+### B. Perubahan Skema Database
+- **Migration:** [`database/migrations/2026_09_25_000005_add_processing_cost_and_raw_material_to_production_costs_table.php`](file:///d:/laragon/www/PKM/database/migrations/2026_09_25_000005_add_processing_cost_and_raw_material_to_production_costs_table.php)
+  - Tabel `processed_products`: Menambahkan `harvest_id` (foreign key ke harvests) dan `raw_material_weight_kg` (decimal 10,2).
+  - Tabel `production_costs`:
+    - `cost_type`: enum `['farm', 'processing']` default `'farm'`.
+    - `processed_product_id`: foreign key ke `processed_products`.
+    - `raw_material_harvest_id`: foreign key ke `harvests`.
+    - `raw_material_weight_kg`: decimal 10,2.
+    - `item_name`: varchar 150 (misal: "Tepung Terigu", "Minyak Goreng", "Standing Pouch").
+    - `quantity`, `unit`, `price_per_unit`: decimal untuk rincian belanja bahan penolong.
+    - `category`: varchar 50 (fleksibel untuk kategori farm maupun processing).
+
+### C. Backend Services, Controllers, & Endpoints
+1. **Model & Relationship:**
+   - [`app/Models/ProductionCost.php`](file:///d:/laragon/www/PKM/app/Models/ProductionCost.php): Menambahkan relasi `processedProduct()`, `rawMaterialHarvest()`, scope `scopeFarm()`, `scopeProcessing()`, dan method `getTotalCost()`.
+   - [`app/Models/ProcessedProduct.php`](file:///d:/laragon/www/PKM/app/Models/ProcessedProduct.php): Menambahkan relasi `costs()`, computed attributes `total_processing_cost`, `total_sales_revenue`, dan `profit_loss`.
+2. **ProcessedProductService:**
+   - Method `convertHarvestToProcessedProduct(ProcessedProduct $product, Harvest $harvest, float $rawWeightKg, int $additionalStock, array $costItems)`: Memotong stok gudang bahan mentah panen secara atomik, mencatat entri bahan baku bebas biaya ganda (Rp 0), menambah stok produk olahan, dan mencatat rincian modal bahan penolong.
+3. **FarmerEconomicResultService:**
+   - Method `getProcessedProductEconomicSummary(ProcessedProduct $product)`: Menghitung modal per unit, rincian biaya penolong, pendapatan terwujud, dan laba/rugi produk olahan.
+   - Method `getIntegratedEconomicSummary(int $farmerId)`: Mengagregasikan metrik Hulu (kebun) dan Hilir (olahan) menjadi ringkasan finansial terpadu petani.
+4. **Endpoint API Baru:**
+   - `POST /api/processed-products/{processedProduct}/convert-harvest`: Konversi panen ke produk olahan & catat rincian modal bahan penolong.
+   - `GET /api/processed-products/{processedProduct}/economic-summary`: Ringkasan ekonomi satu produk olahan.
+   - `GET /api/farmer/integrated-economic-summary`: Ringkasan laba/rugi agribisnis terpadu (Hulu + Hilir).
+   - `POST /api/costs` & `GET /api/costs`: Mendukung filter `cost_type=processing` dan `processed_product_id`.
+
+### D. Frontend Flutter Models
+- [`mobile_app/lib/models/processed_product.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/models/processed_product.dart): Ditambahkan field `harvestId`, `rawMaterialWeightKg`, `totalProcessingCost`, `totalSalesRevenue`, dan `profitLoss`.
+- [`mobile_app/lib/models/economic_result.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/models/economic_result.dart): Ditambahkan class model `IntegratedAgribusinessEconomicSummary` dengan deserialisasi aman (`safe casting`).
+
+### E. Pengujian Otomatis
+- **Test Suite:** [`tests/Feature/API/ProcessedProductCostAndProfitLossTest.php`](file:///d:/laragon/www/PKM/tests/Feature/API/ProcessedProductCostAndProfitLossTest.php)
+  - `test_farmer_can_convert_harvest_to_processed_product_with_zero_double_counting`: Verifikasi konversi panen, pemotongan stok gudang mentah, dan pencatatan bahan baku Rp 0 bebas biaya ganda.
+  - `test_farmer_can_record_standalone_processing_cost_via_cost_api`: Verifikasi pencatatan rincian biaya kemasan/utilitas olahan via `POST /api/costs`.
+  - `test_processed_product_economic_summary_computes_correct_profit_and_margins`: Verifikasi perhitungan margin dan laba bersih olahan.
+  - `test_farmer_integrated_economic_summary_combines_hulu_and_hilir_cleanly`: Verifikasi agregasi laba hulu kebun + laba hilir olahan secara terpadu.
+  - `test_multi_tenancy_farmer_cannot_convert_another_farmers_harvest`: Proteksi keamanan multi-tenant (HTTP 403 Forbidden).
+  - `test_multi_tenancy_farmer_cannot_add_processing_cost_to_another_farmers_product`: Isolasi otorisasi produk olahan antar petani.
+- **Hasil:** **6/6 Passed (17 Assertions)**, seluruh 177 Feature API Tests lulus 100%, Flutter analyze **0 Issues**.
+
 
 
 
