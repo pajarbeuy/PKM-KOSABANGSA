@@ -63,6 +63,14 @@ class Order extends Model
     }
 
     /**
+     * Platform commissions generated upon completion of this order.
+     */
+    public function commissions(): HasMany
+    {
+        return $this->hasMany(Commission::class);
+    }
+
+    /**
      * Generate unique human-readable order code.
      * Format: ORD-YYYYMMDD-XXXX
      */

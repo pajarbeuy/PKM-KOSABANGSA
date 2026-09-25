@@ -11,6 +11,11 @@ class ProcessedProduct {
   final String? photo;
   final String? photoUrl;
   final String status;
+  final int? harvestId;
+  final double? rawMaterialWeightKg;
+  final double? totalProcessingCost;
+  final double? totalSalesRevenue;
+  final double? profitLoss;
   final String? createdAt;
   final String? updatedAt;
 
@@ -27,6 +32,11 @@ class ProcessedProduct {
     this.photo,
     this.photoUrl,
     required this.status,
+    this.harvestId,
+    this.rawMaterialWeightKg,
+    this.totalProcessingCost,
+    this.totalSalesRevenue,
+    this.profitLoss,
     this.createdAt,
     this.updatedAt,
   });
@@ -55,6 +65,11 @@ class ProcessedProduct {
       photo: json['photo']?.toString(),
       photoUrl: json['photo_url']?.toString(),
       status: statusVal,
+      harvestId: int.tryParse(json['harvest_id']?.toString() ?? ''),
+      rawMaterialWeightKg: double.tryParse(json['raw_material_weight_kg']?.toString() ?? ''),
+      totalProcessingCost: double.tryParse(json['total_processing_cost']?.toString() ?? ''),
+      totalSalesRevenue: double.tryParse(json['total_sales_revenue']?.toString() ?? ''),
+      profitLoss: double.tryParse(json['profit_loss']?.toString() ?? ''),
       createdAt: json['created_at']?.toString(),
       updatedAt: json['updated_at']?.toString(),
     );

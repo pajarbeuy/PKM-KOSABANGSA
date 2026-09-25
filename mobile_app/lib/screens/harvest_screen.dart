@@ -7,6 +7,8 @@ import 'package:intl/intl.dart';
 import '../widgets/app_theme.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/app_shell.dart';
+import '../widgets/convert_harvest_dialog.dart';
+import '../widgets/integrated_economic_dialog.dart';
 import 'add_edit_harvest_screen.dart';
 
 class HarvestScreen extends StatefulWidget {
@@ -50,65 +52,79 @@ class _HarvestScreenState extends State<HarvestScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return AppShell(
-      currentRoute: 'harvest',
-      title: 'Pencatatan Panen',
-      subtitle: 'Pantau hasil panen kelompok tani',
-      onRefresh: _loadHarvests,
-      headerActions: [
-        ElevatedButton.icon(
-          onPressed: () {
-            showDialog(
-              context: context,
-              builder: (context) => AddEditHarvestScreen(onSaved: _loadHarvests),
-            ).then((_) => _loadHarvests());
-          },
-          icon: const Icon(Icons.add, size: 16),
-          label: const Text('Catat Panen', style: TextStyle(fontWeight: FontWeight.bold)),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.green700,
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          ),
-        ),
-      ],
-      bottomNavigationBar: const AppBottomNav(currentIndex: 1),
-      floatingActionButton: LayoutBuilder(
-        builder: (context, constraints) {
-          if (constraints.maxWidth > 800) return const SizedBox.shrink();
-          return FloatingActionButton.extended(
-            backgroundColor: AppTheme.green700,
-            foregroundColor: Colors.white,
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) =>
-                    AddEditHarvestScreen(onSaved: _loadHarvests),
-              ).then((_) => _loadHarvests());
-            },
-            icon: const Icon(Icons.add),
-            label: const Text('Catat Panen',
-                style: TextStyle(fontWeight: FontWeight.bold)),
-          );
-        },
-      ),
-      child: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(
-                  color: AppTheme.green700))
-          : RefreshIndicator(
-              onRefresh: _loadHarvests,
-              color: AppTheme.green700,
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  if (constraints.maxWidth > 800) {
-                    return _buildDesktopLayout();
-                  }
-                  return _buildMobileLayout();
-                },
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isDesktop = constraints.maxWidth >= 900;
+        return AppShell(
+          currentRoute: 'harvest',
+          title: 'Pencatatan Panen',
+          subtitle: 'Pantau hasil panen kelompok tani',
+          onRefresh: _loadHarvests,
+          headerActions: [
+            OutlinedButton.icon(
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => const IntegratedEconomicDialog(),
+                );
+              },
+              icon: const Icon(Icons.account_balance_wallet_outlined, size: 16),
+              label: const Text('Laba/Rugi Terpadu', style: TextStyle(fontWeight: FontWeight.bold)),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppTheme.green700,
+                side: const BorderSide(color: AppTheme.green700),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               ),
             ),
+            const SizedBox(width: 8),
+            ElevatedButton.icon(
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => AddEditHarvestScreen(onSaved: _loadHarvests),
+                ).then((_) => _loadHarvests());
+              },
+              icon: const Icon(Icons.add, size: 16),
+              label: const Text('Catat Panen', style: TextStyle(fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.green700,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              ),
+            ),
+          ],
+          bottomNavigationBar: const AppBottomNav(currentIndex: 1),
+          floatingActionButton: isDesktop
+              ? null
+              : FloatingActionButton.extended(
+                  backgroundColor: AppTheme.green700,
+                  foregroundColor: Colors.white,
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) =>
+                          AddEditHarvestScreen(onSaved: _loadHarvests),
+                    ).then((_) => _loadHarvests());
+                  },
+                  icon: const Icon(Icons.add),
+                  label: const Text('Catat Panen',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+          child: _isLoading
+              ? const Center(
+                  child: CircularProgressIndicator(
+                      color: AppTheme.green700))
+              : RefreshIndicator(
+                  onRefresh: _loadHarvests,
+                  color: AppTheme.green700,
+                  child: isDesktop
+                      ? _buildDesktopLayout()
+                      : _buildMobileLayout(),
+                ),
+        );
+      },
     );
   }
 
@@ -140,9 +156,76 @@ class _HarvestScreenState extends State<HarvestScreen> {
     if (_harvests.isEmpty) return _buildEmptyState();
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: _harvests.length,
+      itemCount: _harvests.length + 1,
       itemBuilder: (context, index) {
-        final harvest = _harvests[index];
+        if (index == 0) {
+          return Container(
+            margin: const EdgeInsets.only(bottom: 14),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF1B5E20), Color(0xFF2E7D32)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.account_balance_wallet_outlined, color: Colors.white, size: 24),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Laba/Rugi Terpadu (Hulu & Hilir)',
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Pantau total panen kebun & margin olahan',
+                        style: TextStyle(color: Colors.white70, fontSize: 11),
+                      ),
+                    ],
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => const IntegratedEconomicDialog(),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: const Color(0xFF1B5E20),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    elevation: 0,
+                  ),
+                  child: const Text('Buka', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                ),
+              ],
+            ),
+          );
+        }
+
+        final harvest = _harvests[index - 1];
         final hasNotes = harvest.notes.isNotEmpty;
         return Card(
           elevation: 0,
@@ -276,6 +359,14 @@ class _HarvestScreenState extends State<HarvestScreen> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     _ActionBtn(
+                      icon: Icons.soup_kitchen_outlined,
+                      color: Colors.orange.shade800,
+                      bgColor: Colors.orange.shade100,
+                      tooltip: 'Alihkan ke Olahan',
+                      onTap: () => _showConvertDialog(context, harvest),
+                    ),
+                    const SizedBox(width: 8),
+                    _ActionBtn(
                       icon: Icons.analytics_outlined,
                       color: AppTheme.green700,
                       bgColor: AppTheme.green100,
@@ -326,7 +417,11 @@ class _HarvestScreenState extends State<HarvestScreen> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
+        final contentWidth = constraints.maxWidth - 56;
+        final tableWidth = contentWidth > 950 ? contentWidth : 950.0;
+
         return SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(28),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -417,10 +512,9 @@ class _HarvestScreenState extends State<HarvestScreen> {
               clipBehavior: Clip.antiAlias,
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minWidth: constraints.maxWidth > 920 ? constraints.maxWidth - 56 : 920,
-                  ),
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: SizedBox(
+                  width: tableWidth,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -436,7 +530,7 @@ class _HarvestScreenState extends State<HarvestScreen> {
                             _ColHeader(text: 'MUSIM TANAM', flex: 2),
                             _ColHeader(text: 'BERAT & NILAI PASAR', flex: 4),
                             _ColHeader(text: 'CATATAN', flex: 3),
-                            _ColHeader(text: 'AKSI', flex: 3),
+                            _ColHeader(text: 'AKSI', flex: 4),
                           ],
                         ),
                       ),
@@ -537,7 +631,7 @@ class _HarvestScreenState extends State<HarvestScreen> {
                               ),
                               // AKSI
                               Expanded(
-                                flex: 3,
+                                flex: 4,
                                 child: Align(
                                   alignment: Alignment.centerLeft,
                                   child: FittedBox(
@@ -545,6 +639,14 @@ class _HarvestScreenState extends State<HarvestScreen> {
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
+                                        _ActionBtn(
+                                          icon: Icons.soup_kitchen_outlined,
+                                          color: Colors.orange.shade800,
+                                          bgColor: Colors.orange.shade100,
+                                          tooltip: 'Alihkan ke Olahan',
+                                          onTap: () => _showConvertDialog(context, harvest),
+                                        ),
+                                        const SizedBox(width: 8),
                                         _ActionBtn(
                                           icon: Icons.analytics_outlined,
                                           color: AppTheme.green700,
@@ -661,6 +763,16 @@ class _HarvestScreenState extends State<HarvestScreen> {
                 style: TextStyle(color: Colors.red)),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showConvertDialog(BuildContext context, Harvest harvest) {
+    showDialog(
+      context: context,
+      builder: (ctx) => ConvertHarvestDialog(
+        initialHarvest: harvest,
+        onConverted: _loadHarvests,
       ),
     );
   }

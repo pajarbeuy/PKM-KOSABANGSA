@@ -12,9 +12,11 @@ class ProcessedProduct extends Model
 
     protected $fillable = [
         'owner_id',
+        'harvest_id',
         'name',
         'price',
         'stock',
+        'raw_material_weight_kg',
         'unit',
         'description',
         'photo',
@@ -22,12 +24,16 @@ class ProcessedProduct extends Model
     ];
 
     protected $casts = [
-        'price' => 'decimal:2',
-        'stock' => 'integer',
+        'price'                  => 'decimal:2',
+        'stock'                  => 'integer',
+        'raw_material_weight_kg' => 'decimal:2',
     ];
 
     protected $appends = [
         'photo_url',
+        'total_processing_cost',
+        'total_sales_revenue',
+        'profit_loss',
     ];
 
     protected static function booted(): void
@@ -55,6 +61,40 @@ class ProcessedProduct extends Model
     public function owner()
     {
         return $this->belongsTo(User::class, 'owner_id');
+    }
+
+    public function rawMaterialHarvest()
+    {
+        return $this->belongsTo(Harvest::class, 'harvest_id');
+    }
+
+    public function costs()
+    {
+        return $this->hasMany(ProductionCost::class, 'processed_product_id');
+    }
+
+    public function sales()
+    {
+        return $this->hasMany(Sale::class, 'processed_product_id');
+    }
+
+    public function getTotalProcessingCostAttribute(): float
+    {
+        return (float) ($this->relationLoaded('costs') ? $this->costs->sum('amount') : $this->costs()->sum('amount'));
+    }
+
+    public function getTotalSalesRevenueAttribute(): float
+    {
+        $paidSales = $this->relationLoaded('sales')
+            ? $this->sales->where('payment_status', 'paid')
+            : $this->sales()->where('payment_status', 'paid')->get();
+
+        return (float) $paidSales->sum('total');
+    }
+
+    public function getProfitLossAttribute(): float
+    {
+        return round($this->total_sales_revenue - $this->total_processing_cost, 2);
     }
 
     /**

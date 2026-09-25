@@ -82,4 +82,24 @@ class FarmerEconomicResultApiService {
       return null;
     }
   }
+
+  // ─── Integrated Agribusiness (Hulu + Hilir) ──────────────────────────────────
+
+  /// GET /api/farmer/integrated-economic-summary
+  /// Ringkasan Laba/Rugi Agribisnis Terpadu Petani (Hulu Kebun + Hilir Olahan).
+  Future<IntegratedAgribusinessEconomicSummary?> getIntegratedEconomicSummary() async {
+    try {
+      final uri = Uri.parse('${ApiConfig.baseUrl}/farmer/integrated-economic-summary');
+      final response = await http.get(uri, headers: _client.getHeaders());
+      final data = _client.decodeApiResponse(response);
+
+      if (data['success'] == true && data['data'] != null) {
+        return IntegratedAgribusinessEconomicSummary.fromJson(data['data'] as Map<String, dynamic>);
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
 }
+

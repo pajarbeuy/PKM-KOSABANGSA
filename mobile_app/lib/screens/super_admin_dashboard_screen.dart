@@ -17,6 +17,7 @@ import 'super_admin_profit_loss_screen.dart';
 import 'chatbot_screen.dart';
 import 'farmer_group_management_screen.dart';
 import 'market_price_screen.dart';
+import 'super_admin_commission_screen.dart';
 import '../widgets/charts/monthly_product_bar_chart.dart';
 import '../widgets/charts/cumulative_revenue_line_chart.dart';
 
@@ -106,6 +107,8 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
         return 'Kelola Kelompok Tani';
       case 9:
         return 'Harga Acuan Pasar';
+      case 10:
+        return 'Komisi Platform (10%)';
       default:
         return 'Super Admin Panel';
     }
@@ -133,6 +136,8 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
         return 'Manajemen data 10 Poktan, wilayah, ketua, dan anggota petani';
       case 9:
         return 'Kelola master harga pasar acuan komoditas dan sinkronisasi feed harga';
+      case 10:
+        return 'Pantauan pendapatan komisi 10% platform dari setiap transaksi penjualan';
       default:
         return '';
     }
@@ -376,6 +381,15 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
                                 width: mWidth,
                                 onTap: () => setState(() => _selectedIndex = 9),
                               ),
+                              _buildQuickNavCard(
+                                title: 'Komisi Platform (10%)',
+                                desc: 'Pantau total pendapatan bagi hasil 10% dan rincian penerimaan bersih petani',
+                                icon: Icons.account_balance_wallet_rounded,
+                                color: const Color(0xFF0F766E),
+                                bg: const Color(0xFFCCFBF1),
+                                width: mWidth,
+                                onTap: () => setState(() => _selectedIndex = 10),
+                              ),
                             ],
                           );
                         },
@@ -466,6 +480,10 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
                           ),
                           MarketPriceScreen(
                             key: ValueKey('market_prices_${_refreshTick}_${_selectedIndex == 9}'),
+                            isEmbedded: true,
+                          ),
+                          SuperAdminCommissionScreen(
+                            key: ValueKey('commissions_${_refreshTick}_${_selectedIndex == 10}'),
                             isEmbedded: true,
                           ),
                         ],
@@ -613,6 +631,12 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
         isActive: _selectedIndex == 9,
         onTap: () => setState(() => _selectedIndex = 9),
       ),
+      SidebarNavItem(
+        icon: Icons.account_balance_wallet_rounded,
+        label: 'Komisi Platform (10%)',
+        isActive: _selectedIndex == 10,
+        onTap: () => setState(() => _selectedIndex = 10),
+      ),
     ];
   }
 
@@ -707,6 +731,15 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
         onTap: () {
           Navigator.pop(context);
           setState(() => _selectedIndex = 9);
+        },
+      ),
+      SidebarNavItem(
+        icon: Icons.account_balance_wallet_rounded,
+        label: 'Komisi Platform (10%)',
+        isActive: _selectedIndex == 10,
+        onTap: () {
+          Navigator.pop(context);
+          setState(() => _selectedIndex = 10);
         },
       ),
     ];

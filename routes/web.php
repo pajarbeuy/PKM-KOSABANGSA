@@ -13,28 +13,14 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-// Landing Page
-Route::get('/', function () {
-    $products = collect();
-    $superAdminPhone = '6281234567890';
+use App\Http\Controllers\WebController;
 
-    try {
-        if (\Illuminate\Support\Facades\Schema::hasTable('processed_products')) {
-            $processedProductService = app(\App\Services\ProcessedProductService::class);
-            $products = $processedProductService->getActiveCatalog([], 12);
-        }
-        if (\Illuminate\Support\Facades\Schema::hasTable('users')) {
-            $superAdminUser = \App\Models\User::where('role', 'super_admin')->whereNotNull('phone')->first();
-            if ($superAdminUser && $superAdminUser->phone) {
-                $superAdminPhone = $superAdminUser->phone;
-            }
-        }
-    } catch (\Throwable $e) {
-        // Fallback gracefully if database table not yet migrated
-    }
+// Platform Landing Page
+Route::get('/', [WebController::class, 'landing'])->name('landing');
 
-    return view('landing', compact('products', 'superAdminPhone'));
-})->name('landing');
+// Dedicated Public Product Catalog
+Route::get('/katalog', [WebController::class, 'catalog'])->name('catalog');
+Route::get('/catalog', fn() => redirect()->route('catalog'));
 
 // Password Reset Flow (renders Blade views — required for email links)
 Route::get('/forgot-password', [PasswordResetController::class, 'showForgotPasswordForm'])->name('password.request');

@@ -16,6 +16,7 @@ import '../screens/feedback_screen.dart';
 import '../screens/farmer_commodity_screen.dart';
 import '../screens/super_admin_dashboard_screen.dart';
 import '../screens/market_price_screen.dart';
+import '../screens/super_admin_commission_screen.dart';
 
 class NavigationHelper {
   static void navigateTo(BuildContext context, Widget screen) {
@@ -88,6 +89,12 @@ class NavigationHelper {
           label: 'Harga Acuan Pasar',
           isActive: currentScreen == 'market_prices',
           onTap: () => navigateTo(context, const MarketPriceScreen()),
+        ),
+        SidebarNavItem(
+          icon: Icons.account_balance_wallet_rounded,
+          label: 'Komisi Platform (10%)',
+          isActive: currentScreen == 'commissions',
+          onTap: () => navigateTo(context, const SuperAdminCommissionScreen()),
         ),
       ];
     }
@@ -191,6 +198,16 @@ class NavigationHelper {
         onTap: () {
           if (currentScreen != 'target') {
             navigateTo(context, const TargetScreen());
+          }
+        },
+      ),
+      SidebarNavItem(
+        icon: Icons.account_balance_wallet_outlined,
+        label: 'Komisi Penjualan',
+        isActive: currentScreen == 'commissions',
+        onTap: () {
+          if (currentScreen != 'commissions') {
+            navigateTo(context, const SuperAdminCommissionScreen());
           }
         },
       ),

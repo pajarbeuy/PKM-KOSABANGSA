@@ -12,7 +12,7 @@ class LandingPageCatalogTest extends TestCase
     use RefreshDatabase;
 
     /** @test */
-    public function test_landing_page_renders_katalog_section_with_active_and_out_of_stock_products(): void
+    public function test_catalog_page_renders_active_and_out_of_stock_products(): void
     {
         $superAdmin = User::factory()->create([
             'role'  => 'super_admin',
@@ -51,16 +51,18 @@ class LandingPageCatalogTest extends TestCase
             'status'   => 'inactive',
         ]);
 
-        $response = $this->get('/');
+        // Test dedicated catalog page
+        $catalogResponse = $this->get('/katalog');
+        $catalogResponse->assertStatus(200);
+        $catalogResponse->assertSee('Keripik Tempe Renyah');
+        $catalogResponse->assertSee('Tersedia (15)');
+        $catalogResponse->assertSee('Stik Kentang Balado');
+        $catalogResponse->assertSee('Stok Habis');
+        $catalogResponse->assertDontSee('Tepung Kentang Rahasia');
 
-        $response->assertStatus(200);
-        $response->assertSee('Keripik Tempe Renyah');
-        $response->assertSee('Tersedia (15)');
-        $response->assertSee('Stik Kentang Balado');
-        $response->assertSee('Stok Habis');
-        $response->assertDontSee('Tepung Kentang Rahasia');
-
-        // Check WhatsApp link directed to Super Admin phone
-        $response->assertSee('wa.me/6281234567890');
+        // Check landing page has CTA to /katalog
+        $landingResponse = $this->get('/');
+        $landingResponse->assertStatus(200);
+        $landingResponse->assertSee(route('catalog'));
     }
 }

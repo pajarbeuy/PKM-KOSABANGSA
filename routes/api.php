@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\FarmerGroupController;
 use App\Http\Controllers\Api\FarmerCommodityController;
 use App\Http\Controllers\Api\MarketPriceController;
 use App\Http\Controllers\Api\FarmerEconomicResultController;
+use App\Http\Controllers\Api\CommissionController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -79,6 +80,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('sales',              SaleController::class)->names('api.sales');
     Route::apiResource('costs',              CostController::class)->names('api.costs');
     Route::apiResource('processed-products', ProcessedProductController::class)->names('api.processed-products');
+    Route::post('/processed-products/{processedProduct}/convert-harvest', [ProcessedProductController::class, 'convertHarvest']);
+    Route::get('/processed-products/{processedProduct}/economic-summary', [FarmerEconomicResultController::class, 'processedProductEconomicSummary']);
     Route::apiResource('commodities',        FarmerCommodityController::class)->names('api.commodities');
 
     // Market Prices (Phase 5 - Historical Market Price & Snapshot)
@@ -91,10 +94,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/market-prices/ingest',  [MarketPriceController::class, 'ingest']);
     });
 
-    // Economic Result (Phase 6 - Farmer Economic Result)
+    // Economic Result (Phase 6 - Farmer Economic Result) & Integrated (Hulu-Hilir)
     Route::get('/harvests/{harvest}/economic-result',  [FarmerEconomicResultController::class, 'harvestEconomicResult']);
     Route::get('/seasons/{season}/economic-summary',   [FarmerEconomicResultController::class, 'seasonEconomicSummary']);
     Route::get('/farmer/economic-summary',             [FarmerEconomicResultController::class, 'farmerEconomicSummary']);
+    Route::get('/farmer/integrated-economic-summary',  [FarmerEconomicResultController::class, 'integratedEconomicSummary']);
+
+    // Platform Commissions (Phase 8 - Commission 10%)
+    Route::get('/commissions',         [CommissionController::class, 'index']);
+    Route::get('/commissions/summary', [CommissionController::class, 'summary']);
 
     // Stock (custom routes — not a standard CRUD resource)
     Route::get('/stock',                      [StockController::class, 'index']);
@@ -168,6 +176,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Economic Aggregate (Phase 6)
         Route::get('/economic-aggregate', [FarmerEconomicResultController::class, 'superAdminEconomicAggregate']);
+
+        // Commission Aggregate (Phase 8)
+        Route::get('/commissions',         [CommissionController::class, 'index']);
+        Route::get('/commissions/summary', [CommissionController::class, 'summary']);
 
         // Farmer Groups (Poktan) Management
         Route::get('/farmer-groups',              [FarmerGroupController::class, 'adminIndex']);

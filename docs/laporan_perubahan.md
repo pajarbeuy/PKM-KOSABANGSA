@@ -39,6 +39,14 @@
    - [A. End-to-End Image Pipeline Produk Olahan](#a-end-to-end-image-pipeline-produk-olahan)
    - [B. Restrukturisasi Total Landing Page Web (`landing.blade.php`)](#b-restrukturisasi-total-landing-page-web-landingbladephp)
    - [C. Status Verifikasi Pengujian](#c-status-verifikasi-pengujian)
+13. [Phase 1: Multi-Commodity Extension (FarmerCommodity)](#13-phase-1-multi-commodity-extension-farmercommodity)
+14. [Phase 2: Farmer Group (Poktan) Governance](#14-phase-2-farmer-group-poktan-governance)
+15. [Phase 4: Processed Product Marketing & Catalog Orders](#15-phase-4-processed-product-marketing--catalog-orders)
+16. [Phase 5: Historical Market Price Ingestion & Snapshotting](#16-phase-5-historical-market-price-ingestion--snapshotting)
+17. [Phase 6: Farmer Economic Result & Cost Allocation](#17-phase-6-farmer-economic-result--cost-allocation)
+18. [Phase 8: Platform Commission (10%) Implementation](#18-phase-8-platform-commission-10-implementation)
+19. [Phase 9: Pemisahan Platform Landing Page & Katalog Publik (/ vs /katalog)](#19-phase-9-pemisahan-platform-landing-page--katalog-publik--vs-katalog)
+20. [Perhitungan Modal Produk Olahan & Analisis Laba/Rugi Agribisnis Terpadu](#20-perhitungan-modal-produk-olahan--analisis-labarugi-agribisnis-terpadu-hulu-kebun--hilir-olahan)
 
 ---
 
@@ -1200,4 +1208,205 @@ Sebelumnya, grafik di dashboard petani menggabungkan pencatatan panen (kg) dan p
   - Mengubah baris komoditas & harga pada kartu menjadi `Wrap`, memastikan harga per satuan turun rapi di bawah nama komoditas saat layar sempit tanpa memicu overflow.
   - Dialog tambah/ubah harga acuan diberi `isExpanded: true` dan pemotongan teks ellipsis pada opsi dropdown komoditas.
 
+---
+
+## 18. Phase 8: Standard Platform Commission 10% (Backend & Mobile/Web UI)
+
+### A. Konsep & Arsitektur Bisnis Komisi Platform (10%)
+1. **Kalkulasi Server-Side Standar & Imutabel**:
+   - Komisi platform ditetapkan standar sebesar **10%** dari total bruto penjualan (`base_amount × 10%`).
+   - Pendapatan bersih petani (*net farmer amount*) dihitung otomatis:
+     $$\text{net\_farmer\_amount} = \text{base\_amount} - \text{commission\_amount}$$
+   - Nilai komisi dan persentase bersifat imutabel (*read-only*) setelah tercatat untuk kepastian audit keuangan.
+2. **Pemisahan Tegas dari Biaya Produksi & Stok**:
+   - Komisi platform tidak memotong atau mencemari komponen biaya produksi petani (`costs` / `allocated_cost`) yang berasal dari sarana produksi/tenaga kerja di kebun.
+   - Komisi platform murni memotong dari perolehan transaksi penjualan pada lapisan distribusi/pasar.
+3. **Idempotensi & Proteksi Potongan Ganda**:
+   - Kolom `sale_id` pada tabel `commissions` diproteksi indeks `UNIQUE`.
+   - `CommissionService::calculateAndRecordCommission()` dijalankan di dalam `DB::transaction()` dengan `lockForUpdate()`. Jika penyelesaian pesanan dipanggil ulang (*retry* atau pemanggilan ganda), record komisi tidak akan digandakan.
+
+### B. Skema Database & Migrasi
+- **File Migrasi:** [`database/migrations/2026_09_25_000004_create_commissions_table.php`](file:///d:/laragon/www/PKM/database/migrations/2026_09_25_000004_create_commissions_table.php)
+  - `sale_id`: Foreign key ke `sales`, `unique()`.
+  - `order_id`: Foreign key ke `orders`, `nullable()`.
+  - `user_id`: Foreign key ke `users` (petani pemilik produk).
+  - `rate`: Decimal(5,2), default `10.00`.
+  - `base_amount`: Decimal(15,2) (Nilai kotor transaksi penjualan).
+  - `commission_amount`: Decimal(15,2) (Nominal komisi platform 10%).
+  - `net_farmer_amount`: Decimal(15,2) (Nominal bersih diterima petani 90%).
+  - `status`: Enum (`pending`, `collected`, `waived`), default `collected`.
+  - `notes`: Text nullable.
+
+### C. Backend Models & Service Integration
+- **Model:**
+  - [`app/Models/Commission.php`](file:///d:/laragon/www/PKM/app/Models/Commission.php): Mendefinisikan relasi `sale()`, `order()`, `farmer()`, `user()` dan casting tipe decimal/datetime.
+  - [`app/Models/Sale.php`](file:///d:/laragon/www/PKM/app/Models/Sale.php): Relasi `hasOne(Commission::class)`.
+  - [`app/Models/Order.php`](file:///d:/laragon/www/PKM/app/Models/Order.php): Relasi `hasMany(Commission::class)`.
+- **Service Layer:**
+  - [`app/Services/CommissionService.php`](file:///d:/laragon/www/PKM/app/Services/CommissionService.php):
+    - `calculateAndRecordCommission(Sale $sale)`: Menghitung 10% dan menyimpan record komisi secara idempoten.
+    - `getCommissionsForSuperAdmin()`: Mengambil seluruh riwayat komisi platform dengan filter pencarian, status, dan tanggal.
+    - `getCommissionsForFarmer()`: Mengambil komisi khusus petani yang sedang login.
+    - `getSummaryForSuperAdmin()` & `getSummaryForFarmer()`: Mengagregasi KPI metrik (total volume transaksi, total komisi terkumpul, total pendapatan petani).
+  - [`app/Services/SaleService.php`](file:///d:/laragon/www/PKM/app/Services/SaleService.php):
+    - Diinjeksikan `CommissionService`.
+    - Otomatis mencatat komisi 10% pada saat pemenuhan pesanan katalog (`createSaleFromOrder()`) maupun pencatatan penjualan langsung petani (`createSale()`).
+
+### D. RESTful API & Otorisasi
+- **Controller:** [`app/Http/Controllers/Api/CommissionController.php`](file:///d:/laragon/www/PKM/app/Http/Controllers/Api/CommissionController.php)
+- **Routes [`routes/api.php`](file:///d:/laragon/www/PKM/routes/api.php):**
+  - `GET /api/commissions`: Mendapatkan daftar komisi (multi-tenant aware: Super Admin melihat seluruh sistem, Petani hanya melihat miliknya).
+  - `GET /api/commissions/summary`: Ringkasan metrik finansial komisi.
+  - `GET /api/super-admin/commissions` & `GET /api/super-admin/commissions/summary`: Route alias untuk Super Admin dashboard.
+
+### E. Frontend Flutter Client
+- **Model:** [`mobile_app/lib/models/commission.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/models/commission.dart) (`Commission`, `CommissionSummary`).
+- **Service:** [`mobile_app/lib/services/api/commission_api_service.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/services/api/commission_api_service.dart) & Facade [`mobile_app/lib/services/api_service.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/services/api_service.dart).
+- **UI Screen:** [`mobile_app/lib/screens/super_admin_commission_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/super_admin_commission_screen.dart)
+  - Menampilkan 4 Kartu KPI Finansial Responsif (Total Transaksi, Komisi Platform 10%, Hak Bersih Petani, Rata-rata Komisi) yang mengalir adaptif saat lebar layar mengecil.
+  - Search bar interaktif dengan debouncing query pencarian (kode pesanan, nama pembeli, nama petani).
+  - Daftar transaksi komisi dengan pill status dinamis (`collected`, `pending`, `waived`).
+  - Dialog rincian komisi dengan rincian lengkap nilai bruto, rate (10%), potongan komisi, dan hak bersih petani.
+- **Navigasi:**
+  - Ditambahkan ke [`mobile_app/lib/utils/navigation_helper.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/utils/navigation_helper.dart) untuk Super Admin dan Petani.
+  - Diintegrasikan ke [`mobile_app/lib/screens/super_admin_dashboard_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/super_admin_dashboard_screen.dart) pada Tab 10, Quick Action Card, dan Sidebar Drawer.
+
+### F. Pengujian Otomatis
+- **Test Suite:** [`tests/Feature/API/CommissionTest.php`](file:///d:/laragon/www/PKM/tests/Feature/API/CommissionTest.php)
+  - `test_order_completion_automatically_records_ten_percent_commission`: Verifikasi otomatis komisi 10% saat order diselesaikan.
+  - `test_commission_creation_is_idempotent_and_prevents_duplicate_records`: Memverifikasi idempotensi dan pencegahan komisi duplikat.
+  - `test_direct_sale_automatically_records_commission`: Verifikasi komisi tercatat pada direct sale produk panen/olahan.
+  - `test_super_admin_can_view_all_commissions_and_filter`: Memastikan Super Admin dapat melihat dan memfilter seluruh komisi.
+  - `test_farmer_can_only_view_own_commissions`: Verifikasi isolasi multi-tenant antar petani.
+  - `test_commission_summary_calculates_correct_kpis`: Verifikasi agregasi matematis KPI ringkasan.
+  - `test_unauthenticated_user_cannot_access_commissions`: Proteksi otentikasi Sanctum (401 Unauthorized).
+- **Hasil:** **7/7 Passed (28 Assertions)**, serta seluruh 171 test suite sistem lulus 100%. Flutter analyze **0 Issues**.
+
+---
+
+## 19. Phase 9: Pemisahan Platform Landing Page & Katalog Publik (/ vs /katalog)
+
+### A. Rasional & Arsitektur Pemisahan Halaman
+Sesuai rancangan arsitektur PKM-Kosabangsa v2, halaman utama web direfaktor untuk memisahkan fokus audiens antara edukasi platform pertanian dan transaksi hilirisasi produk:
+1. **`/` (Platform Landing Page)**:
+   - Berfokus penuh pada **Edukasi, Value Proposition, Fitur Lengkap, Ekosistem, AI Pertanian, Poktan, Petani, dan Call to Action (CTA)**.
+   - Menggantikan katalog monolitik inline dengan **Etalase & Hilirisasi Showcase**: penjelasan edukatif manfaat peningkatan nilai tambah komoditas olahan (margin 2.5×–4× lebih tinggi), perlindungan harga panen raya, serta teaser produk olahan pilihan.
+   - Menyediakan high-conversion banner yang mengarahkan pengunjung langsung ke halaman katalog publik (`/katalog`).
+   - Menyediakan fitur pelacakan pesanan publik terintegrasi.
+2. **`/katalog` (Dedicated Product Catalog Page)**:
+   - Halaman etalase e-commerce publik yang bersih, fokus, dan responsif.
+   - Pencarian instan dan filter status ketersediaan (`Tersedia`, `Stok Habis`).
+   - Grid produk dengan thumbnail foto, badge stok, nama kelompok tani/pemilik, dan harga rupiah.
+   - Modal Rincian Produk & Modal Checkout Pesanan langsung terhubung ke WhatsApp resmi Super Admin.
+   - Pelacakan pesanan publik secara real-time.
+   - Alias route `/catalog` otomatis me-redirect ke `/katalog`.
+3. **Preservasi Pipeline Pesanan & Keamanan**:
+   - Seluruh pipeline pesanan katalog publik (`POST /api/catalog/orders` dan `GET /api/catalog/orders/{code}`) dipertahankan 100% tanpa perubahan breaking change.
+   - Produk dengan status `inactive` terfilter aman dan tidak pernah bocor ke katalog publik.
+
+### B. Controller & Routing
+- **Controller:** [`app/Http/Controllers/WebController.php`](file:///d:/laragon/www/PKM/app/Http/Controllers/WebController.php)
+  - `landing()`: Menyiapkan data edukasi, nomor resmi Super Admin, dan produk unggulan.
+  - `catalog(Request $request)`: Mengelola listing produk publik, paginasi, pencarian (`search`), dan filter status.
+- **Routing:** [`routes/web.php`](file:///d:/laragon/www/PKM/routes/web.php)
+  - `GET /` -> `WebController@landing` (`name: landing`)
+  - `GET /katalog` -> `WebController@catalog` (`name: catalog`)
+  - `GET /catalog` -> Redirect ke `catalog`
+- **Views:**
+  - [`resources/views/landing.blade.php`](file:///d:/laragon/www/PKM/resources/views/landing.blade.php) (Platform Landing Page)
+  - [`resources/views/catalog.blade.php`](file:///d:/laragon/www/PKM/resources/views/catalog.blade.php) (Product Catalog)
+
+### C. Pengujian Otomatis
+- **Test Suite:** [`tests/Feature/Web/CatalogSeparationTest.php`](file:///d:/laragon/www/PKM/tests/Feature/Web/CatalogSeparationTest.php) & [`tests/Feature/LandingPageCatalogTest.php`](file:///d:/laragon/www/PKM/tests/Feature/LandingPageCatalogTest.php)
+  - `test_landing_page_renders_platform_landing_view_with_ecosystem_and_catalog_cta`: Verifikasi konten edukasi, ekosistem, dan CTA `/katalog` pada `/`.
+  - `test_katalog_route_renders_dedicated_catalog_view_with_active_products`: Verifikasi tampilan etalase mandiri di `/katalog`.
+  - `test_catalog_alias_redirects_to_katalog`: Verifikasi HTTP 302 redirect dari `/catalog` ke `/katalog`.
+  - `test_inactive_products_are_hidden_from_public_catalog`: Memastikan produk nonaktif disembunyikan.
+  - `test_catalog_search_filters_matching_products`: Memverifikasi filter pencarian nama produk.
+  - `test_existing_order_pipeline_remains_fully_functional`: Memastikan pipeline order `POST /api/catalog/orders` & pelacakan pesanan publik tetap berfungsi normal.
+- **Hasil:** **10/10 Passed (62 Assertions)**, serta seluruh 171 API test suite lulus 100%.
+
+---
+
+## 20. Perhitungan Modal Produk Olahan & Analisis Laba/Rugi Agribisnis Terpadu (Hulu Kebun + Hilir Olahan)
+
+### A. Latar Belakang & Aturan Bisnis (Zero Double-Counting)
+Seringkali hasil panen petani (misalnya jamur tiram segar atau kentang segar) tidak seluruhnya dijual mentah ke pasar, melainkan sebagian dialihkan sebagai bahan baku untuk produk olahan (misalnya Jamur Crispy atau Keripik Kentang). 
+
+Sebelumnya, perhitungan modal panen dan produk olahan belum terintegrasi secara modular, sehingga berisiko terjadi **penghitungan ganda (double-counting)** jika biaya bibit/kebun dihitung dua kali saat membuat produk olahan.
+
+Sistem kini menerapkan **Arsitektur Agribisnis Terpadu**:
+1. **Sisi Hulu (Hasil Tani / Kebun)**:
+   - Petani mencatat modal kebun (bibit, pupuk, pestisida, sewa lahan) pada musim tanam tertentu (`farm_cost`).
+   - Contoh: Modal tanam kebun Rp 200.000, hasil panen 30 kg jamur tiram @ Rp 10.000/kg (Nilai Panen = Rp 300.000). Laba hulu = Rp 100.000.
+2. **Sisi Hilir (Pengalihan Bahan Baku & Produk Olahan)**:
+   - Petani mengalihkan sebagian hasil panen (misal 15 kg) untuk bahan baku produk olahan.
+   - **Prinsip Bebas Biaya Ganda (Zero Double-Counting):** Bahan baku panen tersebut bernilai kas **Rp 0** pada pos biaya olahan karena pembiayaannya sudah tercakup penuh di modal kebun.
+   - Stok gudang panen mentah otomatis berkurang secara atomik (`StockTransaction` tipe `out` dengan referensi panen).
+   - Petani hanya menginput biaya bahan penolong tambahan (*auxiliary processing costs*):
+     - Bahan penolong: Tepung terigu 2 kg @ Rp 10.000 = Rp 20.000, Minyak goreng 2 liter @ Rp 12.000 = Rp 24.000.
+     - Kemasan / Packaging, Utilitas (gas, listrik), dan Tenaga kerja olahan.
+     - Total modal olahan tambahan = Rp 44.000.
+3. **Analisis Finansial Terpadu (Integrated Agribusiness Summary)**:
+   - Jika 15 kg olahan menghasilkan 150 pcs Jamur Crispy @ Rp 5.000 = Rp 750.000:
+     - Laba Bersih Olahan (Hilir) = Rp 750.000 - Rp 44.000 = Rp 706.000.
+     - Penjualan Panen Mentah (Hulu) = 15 kg @ Rp 10.000 = Rp 150.000 (atau Nilai Panen Total Rp 300.000).
+     - **Total Laba Bersih Terpadu (Hulu + Hilir)** = Laba Panen Hulu (Rp 100.000) + Laba Olahan Hilir (Rp 706.000) = **Rp 806.000**.
+
+### B. Perubahan Skema Database
+- **Migration:** [`database/migrations/2026_09_25_000005_add_processing_cost_and_raw_material_to_production_costs_table.php`](file:///d:/laragon/www/PKM/database/migrations/2026_09_25_000005_add_processing_cost_and_raw_material_to_production_costs_table.php)
+  - Tabel `processed_products`: Menambahkan `harvest_id` (foreign key ke harvests) dan `raw_material_weight_kg` (decimal 10,2).
+  - Tabel `production_costs`:
+    - `cost_type`: enum `['farm', 'processing']` default `'farm'`.
+    - `processed_product_id`: foreign key ke `processed_products`.
+    - `raw_material_harvest_id`: foreign key ke `harvests`.
+    - `raw_material_weight_kg`: decimal 10,2.
+    - `item_name`: varchar 150 (misal: "Tepung Terigu", "Minyak Goreng", "Standing Pouch").
+    - `quantity`, `unit`, `price_per_unit`: decimal untuk rincian belanja bahan penolong.
+    - `category`: varchar 50 (fleksibel untuk kategori farm maupun processing).
+
+### C. Backend Services, Controllers, & Endpoints
+1. **Model & Relationship:**
+   - [`app/Models/ProductionCost.php`](file:///d:/laragon/www/PKM/app/Models/ProductionCost.php): Menambahkan relasi `processedProduct()`, `rawMaterialHarvest()`, scope `scopeFarm()`, `scopeProcessing()`, dan method `getTotalCost()`.
+   - [`app/Models/ProcessedProduct.php`](file:///d:/laragon/www/PKM/app/Models/ProcessedProduct.php): Menambahkan relasi `costs()`, computed attributes `total_processing_cost`, `total_sales_revenue`, dan `profit_loss`.
+2. **ProcessedProductService:**
+   - Method `convertHarvestToProcessedProduct(ProcessedProduct $product, Harvest $harvest, float $rawWeightKg, int $additionalStock, array $costItems)`: Memotong stok gudang bahan mentah panen secara atomik, mencatat entri bahan baku bebas biaya ganda (Rp 0), menambah stok produk olahan, dan mencatat rincian modal bahan penolong.
+3. **FarmerEconomicResultService:**
+   - Method `getProcessedProductEconomicSummary(ProcessedProduct $product)`: Menghitung modal per unit, rincian biaya penolong, pendapatan terwujud, dan laba/rugi produk olahan.
+   - Method `getIntegratedEconomicSummary(int $farmerId)`: Mengagregasikan metrik Hulu (kebun) dan Hilir (olahan) menjadi ringkasan finansial terpadu petani.
+4. **Endpoint API Baru:**
+   - `POST /api/processed-products/{processedProduct}/convert-harvest`: Konversi panen ke produk olahan & catat rincian modal bahan penolong.
+   - `GET /api/processed-products/{processedProduct}/economic-summary`: Ringkasan ekonomi satu produk olahan.
+   - `GET /api/farmer/integrated-economic-summary`: Ringkasan laba/rugi agribisnis terpadu (Hulu + Hilir).
+   - `POST /api/costs` & `GET /api/costs`: Mendukung filter `cost_type=processing` dan `processed_product_id`.
+
+### D. Frontend Flutter Models
+- [`mobile_app/lib/models/processed_product.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/models/processed_product.dart): Ditambahkan field `harvestId`, `rawMaterialWeightKg`, `totalProcessingCost`, `totalSalesRevenue`, dan `profitLoss`.
+- [`mobile_app/lib/models/economic_result.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/models/economic_result.dart): Ditambahkan class model `IntegratedAgribusinessEconomicSummary` dengan deserialisasi aman (`safe casting`).
+
+### E. Pengujian Otomatis
+- **Test Suite:** [`tests/Feature/API/ProcessedProductCostAndProfitLossTest.php`](file:///d:/laragon/www/PKM/tests/Feature/API/ProcessedProductCostAndProfitLossTest.php)
+  - `test_farmer_can_convert_harvest_to_processed_product_with_zero_double_counting`: Verifikasi konversi panen, pemotongan stok gudang mentah, dan pencatatan bahan baku Rp 0 bebas biaya ganda.
+  - `test_farmer_can_record_standalone_processing_cost_via_cost_api`: Verifikasi pencatatan rincian biaya kemasan/utilitas olahan via `POST /api/costs`.
+  - `test_processed_product_economic_summary_computes_correct_profit_and_margins`: Verifikasi perhitungan margin dan laba bersih olahan.
+  - `test_farmer_integrated_economic_summary_combines_hulu_and_hilir_cleanly`: Verifikasi agregasi laba hulu kebun + laba hilir olahan secara terpadu.
+  - `test_multi_tenancy_farmer_cannot_convert_another_farmers_harvest`: Proteksi keamanan multi-tenant (HTTP 403 Forbidden).
+  - `test_multi_tenancy_farmer_cannot_add_processing_cost_to_another_farmers_product`: Isolasi otorisasi produk olahan antar petani.
+### F. Integrasi Komprehensif Antarmuka Pengguna (Flutter UI & Dialogs)
+Fitur telah terhubung langsung ke antarmuka aplikasi dengan komponen interaktif:
+1. **Dialog & Modal Baru:**
+   - [`mobile_app/lib/widgets/convert_harvest_dialog.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/widgets/convert_harvest_dialog.dart): Modal formulir konversi panen menjadi produk olahan. Menampilkan pemilih panen, input bobot bahan baku (kg) dengan banner edukasi *Zero Double-Counting (Rp 0 Kas)*, target produk olahan (buat baru atau tambah stok yang ada), serta tabel rincian bahan penolong dinamis (Tepung, Minyak, Gula, Kemasan, Gas, dll.) beserta subtotal otomatis.
+   - [`mobile_app/lib/widgets/integrated_economic_dialog.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/widgets/integrated_economic_dialog.dart): Modal analisis finansial komprehensif agribisnis petani. Membandingkan performa **Sisi Hulu (Kebun)** vs **Sisi Hilir (Produk Olahan)** dan mengkalkulasi **Grand Total Laba/Rugi Terpadu**.
+   - [`mobile_app/lib/widgets/processed_economic_dialog.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/widgets/processed_economic_dialog.dart): Modal transparansi margin dan laba/rugi per unit produk olahan, mencakup penghematan bahan baku, rincian biaya penolong, pendapatan kotor, laba bersih, dan persentase margin keuntungan.
+2. **Pemicu & Tombol Aksi di Layar Panen ([`mobile_app/lib/screens/harvest_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/harvest_screen.dart)):**
+   - **Header AppShell:** Tombol `Laba/Rugi Terpadu` dengan ikon dompet untuk akses instan ke analisis finansial hulu-hilir.
+   - **Mobile View:** Banner informatif di bagian atas daftar panen untuk membuka ringkasan terpadu, serta tombol aksi berikon kuali oranye `Alihkan ke Olahan` pada setiap kartu panen.
+   - **Desktop View:** Kolom `AKSI` pada tabel panen kini memiliki tombol cepat `Alihkan ke Olahan` (ikon kuali oranye) yang langsung membuka dialog konversi dengan data panen terpilih secara otomatis.
+3. **Pemicu & Kartu Informasi di Layar Produk Olahan ([`mobile_app/lib/screens/processed_products_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/processed_products_screen.dart)):**
+   - **Header AppShell:** Tombol `Laba/Rugi Terpadu` dan tombol `Alihkan Panen`.
+   - **Mobile Banner:** Banner oranye `Buat Olahan dari Hasil Panen` dengan tombol cepat `Alihkan` tepat di atas ringkasan inventori.
+   - **Kartu Produk Dinamis:**
+     - Tag khusus oranye: `Bahan Baku Panen: X kg` jika produk dialihkan dari hasil panen.
+     - Kotak metrik ekonomi: Menampilkan `Modal: Rp ...` dan status `Laba: +Rp ...` (hijau) atau `Rugi: -Rp ...` (merah).
+     - Tombol `Analisis` di dalam kartu produk untuk langsung membuka rincian ekonomi produk tersebut.
 

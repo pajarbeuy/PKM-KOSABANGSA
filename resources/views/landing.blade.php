@@ -117,7 +117,11 @@
             <div class="hidden lg:flex items-center gap-6 text-sm font-semibold text-white/90">
                 <a href="#beranda" class="nav-link hover:text-white transition rounded-full px-3 py-1.5 hover:bg-white/10">Beranda</a>
                 <a href="#fitur" class="nav-link hover:text-white transition rounded-full px-3 py-1.5 hover:bg-white/10">Fitur</a>
-                <a href="#katalog" class="nav-link hover:text-white transition rounded-full px-3 py-1.5 text-[#e3cba8] font-bold hover:bg-white/10">Katalog Produk</a>
+                <a href="#hilirisasi" class="nav-link hover:text-white transition rounded-full px-3 py-1.5 hover:bg-white/10">Hilirisasi</a>
+                <a href="{{ route('catalog') }}" class="nav-link hover:text-white transition rounded-full px-3.5 py-1.5 text-[#e3cba8] font-bold hover:bg-white/10 flex items-center gap-1.5 border border-[#e3cba8]/30">
+                    <span>Katalog Produk</span>
+                    <span class="text-[9px] bg-emerald-600 text-white px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Toko</span>
+                </a>
                 <a href="#cara-kerja" class="nav-link hover:text-white transition rounded-full px-3 py-1.5 hover:bg-white/10">Cara Kerja</a>
                 <a href="#tentang" class="nav-link hover:text-white transition rounded-full px-3 py-1.5 hover:bg-white/10">Tentang SumberTani</a>
             </div>
@@ -147,7 +151,11 @@
         <div id="mobile-menu" class="hidden lg:hidden pt-4 pb-2 border-t border-white/10 mt-3 flex flex-col gap-2 text-sm font-semibold text-white/90">
             <a href="#beranda" class="mobile-nav-link px-3 py-2 rounded-lg hover:bg-white/10 transition">Beranda</a>
             <a href="#fitur" class="mobile-nav-link px-3 py-2 rounded-lg hover:bg-white/10 transition">Fitur</a>
-            <a href="#katalog" class="mobile-nav-link px-3 py-2 rounded-lg text-[#e3cba8] font-bold hover:bg-white/10 transition">Katalog Produk</a>
+            <a href="#hilirisasi" class="mobile-nav-link px-3 py-2 rounded-lg hover:bg-white/10 transition">Hilirisasi</a>
+            <a href="{{ route('catalog') }}" class="mobile-nav-link px-3 py-2 rounded-lg text-[#e3cba8] font-bold hover:bg-white/10 transition flex items-center justify-between">
+                <span>Katalog Produk</span>
+                <span class="text-[9px] bg-emerald-600 text-white px-2 py-0.5 rounded-full font-bold uppercase">Buka Toko ➔</span>
+            </a>
             <a href="#cara-kerja" class="mobile-nav-link px-3 py-2 rounded-lg hover:bg-white/10 transition">Cara Kerja</a>
             <a href="#tentang" class="mobile-nav-link px-3 py-2 rounded-lg hover:bg-white/10 transition">Tentang SumberTani</a>
         </div>
@@ -172,11 +180,11 @@
             <strong class="text-[#e3cba8] font-semibold">SumberTani berbasis AI</strong> membantu petani mengelola musim tanam, mencatat panen, memantau stok, dan memasarkan produk olahan langsung ke pasar secara modern, transparan, dan terintegrasi.
         </p>
 
-        <!-- CTAs: "Lihat Katalog" & "Masuk Aplikasi" -->
+        <!-- CTAs: "Jelajahi Katalog Produk" & "Masuk Aplikasi" -->
         <div class="flex flex-col sm:flex-row items-center gap-4 mt-10 w-full sm:w-auto">
-            <!-- CTA 1: Lihat Katalog -->
-            <a href="#katalog" class="text-base font-bold text-[#391F18] bg-[#e3cba8] hover:bg-white transition-all px-8 py-3.5 rounded-xl border-2 border-[#391F18] shadow-[5px_5px_0px_0px_#391F18] hover:shadow-[7px_7px_0px_0px_#391F18] hover:-translate-y-1 flex items-center justify-center gap-2.5 w-full sm:w-auto">
-                <span>Lihat Katalog</span>
+            <!-- CTA 1: Jelajahi Katalog Produk -->
+            <a href="{{ route('catalog') }}" class="text-base font-bold text-[#391F18] bg-[#e3cba8] hover:bg-white transition-all px-8 py-3.5 rounded-xl border-2 border-[#391F18] shadow-[5px_5px_0px_0px_#391F18] hover:shadow-[7px_7px_0px_0px_#391F18] hover:-translate-y-1 flex items-center justify-center gap-2.5 w-full sm:w-auto">
+                <span>Jelajahi Katalog Produk</span>
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
                 </svg>
@@ -326,131 +334,123 @@
         </div>
     </section>
 
-    <!-- 4. KATALOG PRODUK OLAHAN SECTION -->
-    <section id="katalog" class="w-full bg-transparent py-20 px-4 text-white relative">
+    <!-- 4. HILIRISASI & ETALASE PRODUK OLAHAN SECTION -->
+    <section id="hilirisasi" class="w-full bg-transparent py-20 px-4 text-white relative">
         <div class="max-w-6xl mx-auto">
+            <!-- Section Header: Edukasi & Value Proposition Hilirisasi -->
             <div class="text-center mb-16">
                 <div class="inline-block px-4 py-1.5 bg-[#e3cba8] border-2 border-[#391F18] shadow-[2px_2px_0px_0px_#391F18] rounded-full text-xs font-bold text-[#391F18] uppercase tracking-wide mb-4">
-                    Katalog Produk Olahan Tani
+                    Edukasi & Hilirisasi Produk Olahan
                 </div>
-                <h2 class="text-4xl md:text-5xl font-heading font-black text-[#e3cba8]">Produk Unggulan Petani Lokal</h2>
-                <p class="mt-3 text-white/80 max-w-2xl mx-auto text-base">
-                    Dukung petani lokal dengan menikmati aneka produk olahan hasil tani berkualitas tinggi. Pesan cepat dan mudah via WhatsApp resmi Super Admin.
+                <h2 class="text-4xl md:text-5xl font-heading font-black text-[#e3cba8]">Dari Kebun Menuju Nilai Tambah Tinggi</h2>
+                <p class="mt-3 text-white/80 max-w-3xl mx-auto text-base leading-relaxed">
+                    SumberTani memberdayakan kelompok tani mitra untuk mengolah hasil panen mentah menjadi aneka komoditas pangan olahan bernilai jual tinggi, menjaga stabilitas harga saat panen raya, dan memperluas jangkauan pasar secara langsung.
                 </p>
             </div>
 
-            @if(isset($products) && count($products) > 0)
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                    @foreach($products as $product)
-                        @php
-                            $isOutOfStock = $product->status === 'out_of_stock' || $product->stock <= 0;
-                            $cleanPhone = preg_replace('/[^0-9]/', '', $superAdminPhone ?? '6281234567890');
-                            if (str_starts_with($cleanPhone, '0')) {
-                                $cleanPhone = '62' . substr($cleanPhone, 1);
-                            }
-                            $waMessage = "Halo Admin SumberTani, saya tertarik untuk memesan produk olahan: " . $product->name . " (Rp " . number_format($product->price, 0, ',', '.') . "). Mohon info ketersediaan stok dan proses pemesanannya. Terima kasih!";
-                            $waUrl = "https://wa.me/" . $cleanPhone . "?text=" . urlencode($waMessage);
-                        @endphp
-                        <div class="bg-white rounded-2xl border-2 border-[#391F18] shadow-[6px_6px_0px_0px_#391F18] overflow-hidden flex flex-col justify-between hover:-translate-y-1 transition-all duration-300 group text-left">
-                            <!-- Foto Produk -->
-                            <div class="relative w-full h-52 bg-[#e3cba8]/20 overflow-hidden flex items-center justify-center border-b-2 border-[#391F18]">
-                                @if($product->photo)
-                                    <img src="{{ asset('storage/' . ltrim($product->photo, '/')) }}" alt="{{ $product->name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                                @elseif($product->photo_url)
-                                    <img src="{{ $product->photo_url }}" alt="{{ $product->name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                                @else
-                                    <div class="flex flex-col items-center justify-center text-[#5D3A2F]/60 gap-2">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-14">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
-                                        </svg>
-                                        <span class="text-xs font-bold uppercase tracking-wider">Foto Produk</span>
-                                    </div>
-                                @endif
-
-                                <!-- Status Badge -->
-                                <div class="absolute top-3 right-3">
-                                    @if($isOutOfStock)
-                                        <span class="inline-flex items-center gap-1.5 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
-                                            <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
-                                            Stok Habis
-                                        </span>
-                                    @else
-                                        <span class="inline-flex items-center gap-1.5 bg-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
-                                            <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
-                                            Tersedia ({{ $product->stock }})
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
-
-                            <!-- Detail Konten -->
-                            <div class="p-6 flex-1 flex flex-col justify-between">
-                                <div>
-                                    <!-- Petani -->
-                                    <div class="flex items-center justify-between text-xs text-gray-500 mb-1.5">
-                                        <span class="font-bold text-primary flex items-center gap-1">
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5">
-                                                <path fill-rule="evenodd" d="M10 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm-7 9a7 7 0 1 1 14 0H3Z" clip-rule="evenodd" />
-                                            </svg>
-                                            Petani: {{ $product->owner?->farm_name ?? $product->owner?->name ?? 'Mitra Petani' }}
-                                        </span>
-                                        <!-- Stok -->
-                                        <span class="font-semibold text-gray-600 bg-gray-100 px-2 py-0.5 rounded">
-                                            Stok: {{ $product->stock }} unit
-                                        </span>
-                                    </div>
-
-                                    <!-- Nama Produk -->
-                                    <h3 class="text-xl font-bold text-gray-900 leading-snug mb-2 group-hover:text-primary transition-colors">
-                                        {{ $product->name }}
-                                    </h3>
-
-                                    <!-- Deskripsi -->
-                                    <p class="text-gray-600 text-sm line-clamp-2 mb-4">
-                                        {{ $product->description ?: 'Produk olahan hasil tani bermutu tinggi dari petani binaan SumberTani.' }}
-                                    </p>
-                                </div>
-
-                                <div class="pt-4 border-t border-gray-100 flex items-center justify-between mt-auto">
-                                    <!-- Harga -->
-                                    <div>
-                                        <span class="text-[11px] text-gray-400 block font-medium uppercase">Harga</span>
-                                        <span class="text-lg font-extrabold text-[#2d6a4f]">
-                                            Rp {{ number_format($product->price, 0, ',', '.') }}
-                                        </span>
-                                    </div>
-
-                                    <!-- Pesan via WhatsApp -->
-                                    @if($isOutOfStock)
-                                        <button disabled class="cursor-not-allowed bg-gray-100 text-gray-400 text-xs font-bold px-4 py-2.5 rounded-xl border border-gray-300 flex items-center gap-1.5">
-                                            <span>Stok Habis</span>
-                                        </button>
-                                    @else
-                                        <a href="{{ $waUrl }}" target="_blank" rel="noopener noreferrer" onclick="event.preventDefault(); openOrderModal({{ $product->id }}, '{{ addslashes($product->name) }}', {{ (float) $product->price }}, {{ (int) $product->stock }}, '{{ addslashes($product->owner?->farm_name ?? $product->owner?->name ?? 'Mitra Petani') }}');" class="inline-flex items-center gap-2 bg-[#25D366] hover:bg-[#20ba59] text-white text-xs font-bold px-4 py-2.5 rounded-xl border-2 border-[#1E3A2A] shadow-[2px_2px_0px_0px_#1E3A2A] hover:shadow-[4px_4px_0px_0px_#1E3A2A] hover:-translate-y-0.5 transition-all">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="size-4 fill-current" viewBox="0 0 24 24">
-                                                <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.275.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824zm-3.423-14.416c-6.627 0-12 5.373-12 12 0 2.159.57 4.187 1.564 5.946l-1.662 6.075 6.221-1.632c1.701.928 3.652 1.459 5.727 1.459 6.627 0 12-5.373 12-12 0-6.627-5.373-12-12-12z"/>
-                                            </svg>
-                                            <span>Pesan via WhatsApp</span>
-                                        </a>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            @else
-                <div class="bg-white/10 backdrop-blur-md rounded-2xl border-2 border-[#e3cba8]/30 p-12 text-center max-w-xl mx-auto">
-                    <div class="w-16 h-16 mx-auto bg-[#e3cba8]/20 rounded-full flex items-center justify-center text-[#e3cba8] mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-8">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
-                        </svg>
+            <!-- 3 Pilar Manfaat Hilirisasi -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16 text-left">
+                <div class="bg-white/95 text-gray-900 rounded-2xl border-2 border-[#391F18] shadow-[5px_5px_0px_0px_#391F18] p-6 hover:-translate-y-1 transition-all">
+                    <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-xl mb-4">
+                        📈
                     </div>
-                    <h3 class="text-xl font-bold text-white mb-2">Katalog Sedang Dipersiapkan</h3>
-                    <p class="text-white/70 text-sm leading-relaxed">
-                        Mitra petani kami sedang memproses hasil olahan terbaik. Segera hadir ragam produk olahan bermutu tinggi dari petani binaan SumberTani.
+                    <h3 class="text-lg font-bold text-gray-900 mb-2">Nilai Tambah Ekonomis</h3>
+                    <p class="text-gray-600 text-xs leading-relaxed">
+                        Mengolah komoditas mentah (seperti kentang) menjadi olahan keripik atau tepung pati meningkatkan margin perolehan petani hingga 2.5× sampai 4× lipat dibandingkan menjual mentah di pasar tradisional.
                     </p>
                 </div>
+
+                <div class="bg-white/95 text-gray-900 rounded-2xl border-2 border-[#391F18] shadow-[5px_5px_0px_0px_#391F18] p-6 hover:-translate-y-1 transition-all">
+                    <div class="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-xl mb-4">
+                        🛡️
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2">Penyangga Panen Raya</h3>
+                    <p class="text-gray-600 text-xs leading-relaxed">
+                        Saat musim panen raya menyebabkan pasokan melimpah dan harga pasar anjlok, unit pengolahan hasil panen menyerap stok berlebih untuk diolah menjadi produk berdaya simpan panjang.
+                    </p>
+                </div>
+
+                <div class="bg-white/95 text-gray-900 rounded-2xl border-2 border-[#391F18] shadow-[5px_5px_0px_0px_#391F18] p-6 hover:-translate-y-1 transition-all">
+                    <div class="w-12 h-12 rounded-xl bg-teal-100 text-teal-800 flex items-center justify-center font-bold text-xl mb-4">
+                        🤝
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2">Pemberdayaan Kelompok Tani</h3>
+                    <p class="text-gray-600 text-xs leading-relaxed">
+                        Mendorong kemitraan erat antara petani budidaya dan kelompok wanita tani (KWT), menciptakan lapangan kerja produktif baru bagi masyarakat pedesaan.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Featured Products Teaser -->
+            @if(isset($featuredProducts) && count($featuredProducts) > 0)
+                <div class="mb-12">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <span class="text-xs font-bold text-[#e3cba8] uppercase tracking-wider block">Etalase Pilihan</span>
+                            <h3 class="text-2xl font-bold text-white">Produk Olahan Unggulan</h3>
+                        </div>
+                        <a href="{{ route('catalog') }}" class="text-xs sm:text-sm font-bold text-[#e3cba8] hover:text-white flex items-center gap-1.5 transition">
+                            <span>Lihat Semua Produk</span>
+                            <span class="text-base">➔</span>
+                        </a>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-left">
+                        @foreach($featuredProducts as $item)
+                            <div class="bg-white rounded-2xl border-2 border-[#391F18] shadow-[4px_4px_0px_0px_#391F18] overflow-hidden flex flex-col justify-between hover:-translate-y-1 transition-all group">
+                                <div class="w-full h-40 bg-gray-100 overflow-hidden border-b-2 border-[#391F18] flex items-center justify-center">
+                                    @if($item->photo_url)
+                                        <img src="{{ $item->photo_url }}" alt="{{ $item->name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                    @else
+                                        <img src="{{ asset('images/logo.png') }}" alt="{{ $item->name }}" class="w-16 h-16 object-contain opacity-50">
+                                    @endif
+                                </div>
+                                <div class="p-4 flex-1 flex flex-col justify-between">
+                                    <div>
+                                        <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded block w-fit mb-1">
+                                            Petani: {{ $item->owner?->farm_name ?? $item->owner?->name ?? 'Mitra Petani' }}
+                                        </span>
+                                        <h4 class="text-sm font-bold text-gray-900 group-hover:text-primary transition-colors leading-snug">
+                                            {{ $item->name }}
+                                        </h4>
+                                    </div>
+                                    <div class="pt-3 mt-3 border-t border-gray-100 flex items-center justify-between">
+                                        <span class="text-sm font-extrabold text-primary">
+                                            Rp {{ number_format($item->price, 0, ',', '.') }}
+                                        </span>
+                                        <a href="{{ route('catalog') }}" class="text-xs font-bold text-[#391F18] bg-[#e3cba8] hover:bg-white px-2.5 py-1 rounded-lg border border-[#391F18] transition">
+                                            Detail ➔
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
             @endif
+
+            <!-- High-Impact CTA Banner to Dedicated /katalog -->
+            <div class="bg-gradient-to-r from-[#391F18]/90 via-[#2d6a4f]/80 to-[#391F18]/90 backdrop-blur-md rounded-3xl border-2 border-[#e3cba8]/50 p-8 sm:p-10 shadow-2xl text-center">
+                <div class="max-w-2xl mx-auto space-y-4">
+                    <span class="inline-block px-3 py-1 bg-emerald-500/20 text-emerald-300 rounded-full text-[11px] font-bold uppercase tracking-wider border border-emerald-400/30">
+                        🛒 Etalase Publik Tersedia
+                    </span>
+                    <h3 class="text-2xl sm:text-3xl font-heading font-black text-[#e3cba8]">
+                        Jelajahi Katalog Lengkap Produk Olahan Tani
+                    </h3>
+                    <p class="text-white/80 text-xs sm:text-sm leading-relaxed">
+                        Lihat aneka ragam produk olahan karya petani binaan kami, cek ketersediaan stok aktual, dan pesan langsung melalui WhatsApp resmi Super Admin dengan proses mudah.
+                    </p>
+                    <div class="pt-2">
+                        <a href="{{ route('catalog') }}" class="inline-flex items-center gap-2.5 text-sm sm:text-base font-bold text-[#391F18] bg-[#e3cba8] hover:bg-white transition-all px-8 py-3.5 rounded-2xl border-2 border-[#391F18] shadow-[5px_5px_0px_0px_#000] hover:shadow-[7px_7px_0px_0px_#000] hover:-translate-y-1">
+                            <span>Buka Katalog Produk (/katalog)</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
 
             <!-- Tracking Bar Pelacakan Pesanan Pelanggan -->
             <div class="mt-14 max-w-2xl mx-auto bg-[#391F18]/80 backdrop-blur-md border-2 border-[#e3cba8]/40 rounded-2xl p-6 shadow-xl text-center">
@@ -461,7 +461,7 @@
                     Lacak Pesanan Publik
                 </div>
                 <h3 class="text-lg font-bold text-white mb-2">Sudah Memesan? Cek Status Pesanan Anda</h3>
-                <p class="text-white/70 text-xs mb-4">Masukkan kode pesanan Anda (contoh: <span class="font-mono text-[#e3cba8]">ORD-20260922-XXXX</span>) untuk melihat progres pemrosesan pesanan.</p>
+                <p class="text-white/70 text-xs mb-4">Masukkan kode pesanan Anda (contoh: <span class="font-mono text-[#e3cba8]">ORD-20260925-XXXX</span>) untuk melihat progres pemrosesan pesanan.</p>
                 <form onsubmit="event.preventDefault(); trackOrderFromInput();" class="flex flex-col sm:flex-row gap-2 max-w-lg mx-auto">
                     <input type="text" id="landing-tracking-input" placeholder="Masukkan Kode Pesanan..." required class="flex-1 px-4 py-2.5 rounded-xl bg-white/10 border border-[#e3cba8]/40 text-white placeholder-white/40 focus:outline-none focus:border-[#e3cba8] text-sm font-mono uppercase">
                     <button type="submit" class="px-6 py-2.5 bg-[#e3cba8] hover:bg-white text-[#391F18] font-bold rounded-xl text-sm transition-all shadow-[2px_2px_0px_0px_#000]">
@@ -759,7 +759,7 @@
             </p>
             
             <div class="flex flex-col sm:flex-row items-center justify-center gap-4 relative z-10">
-                <a href="#katalog" class="text-base font-bold text-[#391F18] bg-[#e3cba8] hover:bg-white transition-all px-8 py-3.5 rounded-xl border-2 border-[#391F18] shadow-[5px_5px_0px_0px_#391F18] hover:shadow-[7px_7px_0px_0px_#391F18] hover:-translate-y-1 flex items-center justify-center gap-2 w-full sm:w-auto">
+                <a href="{{ route('catalog') }}" class="text-base font-bold text-[#391F18] bg-[#e3cba8] hover:bg-white transition-all px-8 py-3.5 rounded-xl border-2 border-[#391F18] shadow-[5px_5px_0px_0px_#391F18] hover:shadow-[7px_7px_0px_0px_#391F18] hover:-translate-y-1 flex items-center justify-center gap-2 w-full sm:w-auto">
                     <span>Lihat Katalog Produk</span>
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
@@ -797,7 +797,8 @@
             <div class="flex flex-wrap items-center justify-center gap-6 text-sm text-white/90 font-medium">
                 <a href="#beranda" class="hover:text-white transition">Beranda</a>
                 <a href="#fitur" class="hover:text-white transition">Fitur</a>
-                <a href="#katalog" class="hover:text-white transition">Katalog Produk</a>
+                <a href="#hilirisasi" class="hover:text-white transition">Hilirisasi</a>
+                <a href="{{ route('catalog') }}" class="hover:text-[#e3cba8] transition font-bold">Katalog Produk</a>
                 <a href="#cara-kerja" class="hover:text-white transition">Cara Kerja</a>
                 <a href="#tentang" class="hover:text-white transition">Tentang SumberTani</a>
             </div>

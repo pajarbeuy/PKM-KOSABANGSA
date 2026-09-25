@@ -198,4 +198,49 @@ class ProcessedProductController extends Controller
             ],
         ], 'Katalog publik produk olahan.');
     }
+
+    /**
+     * Convert raw harvest weight into processed product raw material (Farmer).
+     */
+    public function convertHarvest(Request $request, ProcessedProduct $processedProduct): JsonResponse
+    {
+        if ($processedProduct->owner_id !== $request->user()->id) {
+            return $this->forbiddenResponse('Anda tidak berhak mengelola produk olahan ini.');
+        }
+
+        $validated = $request->validate([
+            'harvest_id'                  => 'required|exists:harvests,id',
+            'raw_material_weight_kg'      => 'required|numeric|min:0.01',
+            'additional_stock'            => 'nullable|integer|min:0',
+            'cost_items'                  => 'nullable|array',
+            'cost_items.*.item_name'      => 'nullable|string|max:150',
+            'cost_items.*.category'       => 'nullable|string|max:50',
+            'cost_items.*.quantity'       => 'nullable|numeric|min:0',
+            'cost_items.*.unit'           => 'nullable|string|max:50',
+            'cost_items.*.price_per_unit' => 'nullable|numeric|min:0',
+            'cost_items.*.amount'         => 'nullable|numeric|min:0',
+            'cost_items.*.notes'          => 'nullable|string|max:255',
+        ]);
+
+        $harvest = \App\Models\Harvest::findOrFail($validated['harvest_id']);
+        if ($harvest->user_id !== $request->user()->id) {
+            return $this->forbiddenResponse('Panen tidak ditemukan atau bukan milik Anda.');
+        }
+
+        try {
+            $result = $this->processedProductService->convertHarvestToProcessedProduct(
+                $processedProduct,
+                $harvest,
+                (float) $validated['raw_material_weight_kg'],
+                (int) ($validated['additional_stock'] ?? 0),
+                $validated['cost_items'] ?? []
+            );
+
+            return $this->successResponse($result, 'Bahan baku panen berhasil dialihkan ke produk olahan.', 200);
+        } catch (\DomainException $e) {
+            return $this->errorResponse($e->getMessage(), 422);
+        } catch (\InvalidArgumentException $e) {
+            return $this->errorResponse($e->getMessage(), 422);
+        }
+    }
 }

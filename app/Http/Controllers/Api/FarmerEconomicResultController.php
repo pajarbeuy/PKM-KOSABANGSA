@@ -73,6 +73,43 @@ class FarmerEconomicResultController extends Controller
         return $this->successResponse($summary, 'Ringkasan ekonomi keseluruhan petani.');
     }
 
+    // ─── Petani & Super Admin: Processed Product Economic Summary ─────────────
+
+    /**
+     * GET /api/processed-products/{processedProduct}/economic-summary
+     * Ringkasan modal dan laba/rugi per produk olahan.
+     */
+    public function processedProductEconomicSummary(Request $request, \App\Models\ProcessedProduct $processedProduct)
+    {
+        if ($request->user()->role !== 'super_admin' && $processedProduct->owner_id !== $request->user()->id) {
+            return $this->forbiddenResponse('Anda tidak berhak mengakses data produk olahan ini.');
+        }
+
+        $summary = $this->service->getProcessedProductEconomicSummary($processedProduct);
+
+        return $this->successResponse($summary, 'Ringkasan ekonomi produk olahan.');
+    }
+
+    // ─── Petani & Super Admin: Integrated Economic Summary (Hulu + Hilir) ─────
+
+    /**
+     * GET /api/farmer/integrated-economic-summary
+     * Total laba/rugi terpadu agribisnis petani: Laba Panen (Hulu) + Laba Olahan (Hilir).
+     */
+    public function integratedEconomicSummary(Request $request)
+    {
+        $farmerId = $request->user()->id;
+
+        // Super Admin can view a specific farmer's integrated summary via query param
+        if ($request->user()->role === 'super_admin' && $request->has('farmer_id')) {
+            $farmerId = (int) $request->input('farmer_id');
+        }
+
+        $summary = $this->service->getIntegratedEconomicSummary($farmerId);
+
+        return $this->successResponse($summary, 'Ringkasan ekonomi terpadu agribisnis petani.');
+    }
+
     // ─── Super Admin: Aggregate ───────────────────────────────────────────────
 
     /**
