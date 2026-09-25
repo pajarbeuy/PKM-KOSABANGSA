@@ -33,8 +33,8 @@ class CommissionApiService {
           .map((item) => Commission.fromJson(item as Map<String, dynamic>))
           .toList();
 
-      final total = (payload['commissions']['total'] ?? commissionsList.length) as int;
-      final lastPage = (payload['commissions']['last_page'] ?? 1) as int;
+      final total = (payload['commissions']['total'] as num?)?.toInt() ?? commissionsList.length;
+      final lastPage = (payload['commissions']['last_page'] as num?)?.toInt() ?? 1;
 
       return {
         'summary': summary,

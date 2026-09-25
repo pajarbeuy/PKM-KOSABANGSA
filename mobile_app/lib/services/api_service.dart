@@ -537,6 +537,27 @@ class ApiService {
   Future<bool> updateProductStatusBySuperAdmin(int id, String status) =>
       _processedProductService.updateStatusBySuperAdmin(id, status);
 
+  Future<Map<String, dynamic>> convertHarvestToProcessedProduct({
+    required int productId,
+    required int harvestId,
+    required double rawMaterialWeightKg,
+    int additionalStock = 0,
+    List<Map<String, dynamic>> costItems = const [],
+  }) =>
+      _processedProductService.convertHarvest(
+        productId: productId,
+        harvestId: harvestId,
+        rawMaterialWeightKg: rawMaterialWeightKg,
+        additionalStock: additionalStock,
+        costItems: costItems,
+      );
+
+  Future<Map<String, dynamic>?> getProcessedProductEconomicSummary(int productId) =>
+      _processedProductService.getEconomicSummary(productId);
+
+  Future<IntegratedAgribusinessEconomicSummary?> getIntegratedEconomicSummary() =>
+      _economicResultService.getIntegratedEconomicSummary();
+
   // ─── Super Admin Aggregate Reports ──────────────────────────────────────────
   Future<Map<String, dynamic>?> getFarmerProfitLossAggregate({
     String? startDate,

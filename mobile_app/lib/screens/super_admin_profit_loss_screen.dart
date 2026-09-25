@@ -3,6 +3,21 @@ import 'package:intl/intl.dart';
 import '../services/api_service.dart';
 import '../widgets/app_theme.dart';
 
+double _toDouble(dynamic v, [double defaultValue = 0.0]) {
+  if (v == null) return defaultValue;
+  if (v is num) return v.toDouble();
+  if (v is String) return double.tryParse(v) ?? defaultValue;
+  return defaultValue;
+}
+
+int _toInt(dynamic v, [int defaultValue = 0]) {
+  if (v == null) return defaultValue;
+  if (v is int) return v;
+  if (v is num) return v.toInt();
+  if (v is String) return int.tryParse(v) ?? defaultValue;
+  return defaultValue;
+}
+
 class SuperAdminProfitLossScreen extends StatefulWidget {
   final bool isEmbedded;
   const SuperAdminProfitLossScreen({super.key, this.isEmbedded = false});
@@ -47,10 +62,10 @@ class _SuperAdminProfitLossScreenState extends State<SuperAdminProfitLossScreen>
 
   @override
   Widget build(BuildContext context) {
-    final totalRevenue = (_aggregateData?['total_farmer_revenue'] as num?)?.toDouble() ?? 0.0;
-    final totalCost = (_aggregateData?['total_farmer_cost'] as num?)?.toDouble() ?? 0.0;
-    final totalProfitLoss = (_aggregateData?['total_farmer_profit_loss'] as num?)?.toDouble() ?? 0.0;
-    final farmerCount = (_aggregateData?['farmer_count'] as num?)?.toInt() ?? 0;
+    final totalRevenue = _toDouble(_aggregateData?['total_farmer_revenue']);
+    final totalCost = _toDouble(_aggregateData?['total_farmer_cost']);
+    final totalProfitLoss = _toDouble(_aggregateData?['total_farmer_profit_loss']);
+    final farmerCount = _toInt(_aggregateData?['farmer_count']);
     final farmers = (_aggregateData?['farmers'] as List?) ?? [];
 
     final isNetProfit = totalProfitLoss >= 0;
@@ -155,9 +170,9 @@ class _SuperAdminProfitLossScreenState extends State<SuperAdminProfitLossScreen>
                 separatorBuilder: (ctx, i) => const SizedBox(height: 10),
                 itemBuilder: (ctx, i) {
                   final f = farmers[i] as Map<String, dynamic>;
-                  final rev = (f['revenue'] as num?)?.toDouble() ?? 0.0;
-                  final cost = (f['cost'] as num?)?.toDouble() ?? 0.0;
-                  final pl = (f['profit_loss'] as num?)?.toDouble() ?? 0.0;
+                  final rev = _toDouble(f['revenue']);
+                  final cost = _toDouble(f['cost']);
+                  final pl = _toDouble(f['profit_loss']);
                   final isProfit = pl >= 0;
 
                   return Container(

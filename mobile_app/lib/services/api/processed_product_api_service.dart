@@ -313,4 +313,61 @@ class ProcessedProductApiService {
       return false;
     }
   }
+
+  /// Alihkan hasil panen mentah ke produk olahan & catat modal bahan penolong
+  Future<Map<String, dynamic>> convertHarvest({
+    required int productId,
+    required int harvestId,
+    required double rawMaterialWeightKg,
+    int additionalStock = 0,
+    List<Map<String, dynamic>> costItems = const [],
+  }) async {
+    try {
+      final payload = {
+        'harvest_id': harvestId,
+        'raw_material_weight_kg': rawMaterialWeightKg,
+        'additional_stock': additionalStock,
+        'cost_items': costItems,
+      };
+
+      final response = await http
+          .post(
+            Uri.parse('${ApiConfig.baseUrl}/processed-products/$productId/convert-harvest'),
+            headers: _client.getHeaders(),
+            body: jsonEncode(payload),
+          )
+          .timeout(const Duration(seconds: 20));
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        return {'success': true, 'data': data['data'], 'message': data['message']};
+      }
+      return {'success': false, 'message': data['message'] ?? 'Gagal mengalihkan hasil panen'};
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  /// Ambil ringkasan finansial dan laba/rugi produk olahan
+  Future<Map<String, dynamic>?> getEconomicSummary(int productId) async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse('${ApiConfig.baseUrl}/processed-products/$productId/economic-summary'),
+            headers: _client.getHeaders(),
+          )
+          .timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['data'] != null) {
+          return data['data'] as Map<String, dynamic>;
+        }
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
 }
+

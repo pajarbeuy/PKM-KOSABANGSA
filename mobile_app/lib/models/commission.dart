@@ -1,3 +1,18 @@
+double _toDouble(dynamic v, [double defaultValue = 0.0]) {
+  if (v == null) return defaultValue;
+  if (v is num) return v.toDouble();
+  if (v is String) return double.tryParse(v) ?? defaultValue;
+  return defaultValue;
+}
+
+int _toInt(dynamic v, [int defaultValue = 0]) {
+  if (v == null) return defaultValue;
+  if (v is int) return v;
+  if (v is num) return v.toInt();
+  if (v is String) return int.tryParse(v) ?? defaultValue;
+  return defaultValue;
+}
+
 class Commission {
   final int id;
   final int saleId;
@@ -33,17 +48,17 @@ class Commission {
 
   factory Commission.fromJson(Map<String, dynamic> json) {
     return Commission(
-      id: json['id'] as int,
-      saleId: json['sale_id'] as int,
-      orderId: json['order_id'] as int?,
-      userId: json['user_id'] as int,
-      rate: (json['rate'] as num?)?.toDouble() ?? 10.0,
-      baseAmount: (json['base_amount'] as num?)?.toDouble() ?? 0.0,
-      commissionAmount: (json['commission_amount'] as num?)?.toDouble() ?? 0.0,
-      netFarmerAmount: (json['net_farmer_amount'] as num?)?.toDouble() ?? 0.0,
+      id: _toInt(json['id']),
+      saleId: _toInt(json['sale_id']),
+      orderId: json['order_id'] != null ? _toInt(json['order_id']) : null,
+      userId: _toInt(json['user_id']),
+      rate: _toDouble(json['rate'], 10.0),
+      baseAmount: _toDouble(json['base_amount']),
+      commissionAmount: _toDouble(json['commission_amount']),
+      netFarmerAmount: _toDouble(json['net_farmer_amount']),
       status: json['status'] as String? ?? 'calculated',
       notes: json['notes'] as String?,
-      createdAt: json['created_at'] as String? ?? '',
+      createdAt: json['created_at']?.toString() ?? '',
       farmerName: json['farmer']?['name'] as String?,
       productName: json['sale']?['processed_product']?['name'] as String?,
       orderCode: json['order']?['order_code'] as String?,
@@ -68,11 +83,11 @@ class CommissionSummary {
 
   factory CommissionSummary.fromJson(Map<String, dynamic> json) {
     return CommissionSummary(
-      totalTransactions: (json['total_transactions'] ?? json['total_sales_count'] ?? 0) as int,
-      totalGrossAmount: ((json['total_gross_amount'] ?? json['total_gross_sales'] ?? 0) as num).toDouble(),
-      totalCommissionAmount: ((json['total_commission_amount'] ?? json['total_platform_commission'] ?? 0) as num).toDouble(),
-      totalNetFarmerAmount: ((json['total_net_farmer_amount'] ?? json['total_net_received'] ?? 0) as num).toDouble(),
-      commissionRateDefault: (json['commission_rate_default'] as num?)?.toDouble() ?? 10.0,
+      totalTransactions: _toInt(json['total_transactions'] ?? json['total_sales_count']),
+      totalGrossAmount: _toDouble(json['total_gross_amount'] ?? json['total_gross_sales']),
+      totalCommissionAmount: _toDouble(json['total_commission_amount'] ?? json['total_platform_commission']),
+      totalNetFarmerAmount: _toDouble(json['total_net_farmer_amount'] ?? json['total_net_received']),
+      commissionRateDefault: _toDouble(json['commission_rate_default'], 10.0),
     );
   }
 }

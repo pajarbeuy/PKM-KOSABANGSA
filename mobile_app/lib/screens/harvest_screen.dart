@@ -7,6 +7,8 @@ import 'package:intl/intl.dart';
 import '../widgets/app_theme.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/app_shell.dart';
+import '../widgets/convert_harvest_dialog.dart';
+import '../widgets/integrated_economic_dialog.dart';
 import 'add_edit_harvest_screen.dart';
 
 class HarvestScreen extends StatefulWidget {
@@ -59,6 +61,23 @@ class _HarvestScreenState extends State<HarvestScreen> {
           subtitle: 'Pantau hasil panen kelompok tani',
           onRefresh: _loadHarvests,
           headerActions: [
+            OutlinedButton.icon(
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => const IntegratedEconomicDialog(),
+                );
+              },
+              icon: const Icon(Icons.account_balance_wallet_outlined, size: 16),
+              label: const Text('Laba/Rugi Terpadu', style: TextStyle(fontWeight: FontWeight.bold)),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppTheme.green700,
+                side: const BorderSide(color: AppTheme.green700),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              ),
+            ),
+            const SizedBox(width: 8),
             ElevatedButton.icon(
               onPressed: () {
                 showDialog(
@@ -137,9 +156,76 @@ class _HarvestScreenState extends State<HarvestScreen> {
     if (_harvests.isEmpty) return _buildEmptyState();
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: _harvests.length,
+      itemCount: _harvests.length + 1,
       itemBuilder: (context, index) {
-        final harvest = _harvests[index];
+        if (index == 0) {
+          return Container(
+            margin: const EdgeInsets.only(bottom: 14),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF1B5E20), Color(0xFF2E7D32)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.account_balance_wallet_outlined, color: Colors.white, size: 24),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Laba/Rugi Terpadu (Hulu & Hilir)',
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Pantau total panen kebun & margin olahan',
+                        style: TextStyle(color: Colors.white70, fontSize: 11),
+                      ),
+                    ],
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => const IntegratedEconomicDialog(),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: const Color(0xFF1B5E20),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    elevation: 0,
+                  ),
+                  child: const Text('Buka', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                ),
+              ],
+            ),
+          );
+        }
+
+        final harvest = _harvests[index - 1];
         final hasNotes = harvest.notes.isNotEmpty;
         return Card(
           elevation: 0,
@@ -272,6 +358,14 @@ class _HarvestScreenState extends State<HarvestScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
+                    _ActionBtn(
+                      icon: Icons.soup_kitchen_outlined,
+                      color: Colors.orange.shade800,
+                      bgColor: Colors.orange.shade100,
+                      tooltip: 'Alihkan ke Olahan',
+                      onTap: () => _showConvertDialog(context, harvest),
+                    ),
+                    const SizedBox(width: 8),
                     _ActionBtn(
                       icon: Icons.analytics_outlined,
                       color: AppTheme.green700,
@@ -436,7 +530,7 @@ class _HarvestScreenState extends State<HarvestScreen> {
                             _ColHeader(text: 'MUSIM TANAM', flex: 2),
                             _ColHeader(text: 'BERAT & NILAI PASAR', flex: 4),
                             _ColHeader(text: 'CATATAN', flex: 3),
-                            _ColHeader(text: 'AKSI', flex: 3),
+                            _ColHeader(text: 'AKSI', flex: 4),
                           ],
                         ),
                       ),
@@ -537,7 +631,7 @@ class _HarvestScreenState extends State<HarvestScreen> {
                               ),
                               // AKSI
                               Expanded(
-                                flex: 3,
+                                flex: 4,
                                 child: Align(
                                   alignment: Alignment.centerLeft,
                                   child: FittedBox(
@@ -545,6 +639,14 @@ class _HarvestScreenState extends State<HarvestScreen> {
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
+                                        _ActionBtn(
+                                          icon: Icons.soup_kitchen_outlined,
+                                          color: Colors.orange.shade800,
+                                          bgColor: Colors.orange.shade100,
+                                          tooltip: 'Alihkan ke Olahan',
+                                          onTap: () => _showConvertDialog(context, harvest),
+                                        ),
+                                        const SizedBox(width: 8),
                                         _ActionBtn(
                                           icon: Icons.analytics_outlined,
                                           color: AppTheme.green700,
@@ -661,6 +763,16 @@ class _HarvestScreenState extends State<HarvestScreen> {
                 style: TextStyle(color: Colors.red)),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showConvertDialog(BuildContext context, Harvest harvest) {
+    showDialog(
+      context: context,
+      builder: (ctx) => ConvertHarvestDialog(
+        initialHarvest: harvest,
+        onConverted: _loadHarvests,
       ),
     );
   }

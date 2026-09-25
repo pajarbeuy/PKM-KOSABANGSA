@@ -1392,9 +1392,21 @@ Sistem kini menerapkan **Arsitektur Agribisnis Terpadu**:
   - `test_farmer_integrated_economic_summary_combines_hulu_and_hilir_cleanly`: Verifikasi agregasi laba hulu kebun + laba hilir olahan secara terpadu.
   - `test_multi_tenancy_farmer_cannot_convert_another_farmers_harvest`: Proteksi keamanan multi-tenant (HTTP 403 Forbidden).
   - `test_multi_tenancy_farmer_cannot_add_processing_cost_to_another_farmers_product`: Isolasi otorisasi produk olahan antar petani.
-- **Hasil:** **6/6 Passed (17 Assertions)**, seluruh 177 Feature API Tests lulus 100%, Flutter analyze **0 Issues**.
-
-
-
-
+### F. Integrasi Komprehensif Antarmuka Pengguna (Flutter UI & Dialogs)
+Fitur telah terhubung langsung ke antarmuka aplikasi dengan komponen interaktif:
+1. **Dialog & Modal Baru:**
+   - [`mobile_app/lib/widgets/convert_harvest_dialog.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/widgets/convert_harvest_dialog.dart): Modal formulir konversi panen menjadi produk olahan. Menampilkan pemilih panen, input bobot bahan baku (kg) dengan banner edukasi *Zero Double-Counting (Rp 0 Kas)*, target produk olahan (buat baru atau tambah stok yang ada), serta tabel rincian bahan penolong dinamis (Tepung, Minyak, Gula, Kemasan, Gas, dll.) beserta subtotal otomatis.
+   - [`mobile_app/lib/widgets/integrated_economic_dialog.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/widgets/integrated_economic_dialog.dart): Modal analisis finansial komprehensif agribisnis petani. Membandingkan performa **Sisi Hulu (Kebun)** vs **Sisi Hilir (Produk Olahan)** dan mengkalkulasi **Grand Total Laba/Rugi Terpadu**.
+   - [`mobile_app/lib/widgets/processed_economic_dialog.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/widgets/processed_economic_dialog.dart): Modal transparansi margin dan laba/rugi per unit produk olahan, mencakup penghematan bahan baku, rincian biaya penolong, pendapatan kotor, laba bersih, dan persentase margin keuntungan.
+2. **Pemicu & Tombol Aksi di Layar Panen ([`mobile_app/lib/screens/harvest_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/harvest_screen.dart)):**
+   - **Header AppShell:** Tombol `Laba/Rugi Terpadu` dengan ikon dompet untuk akses instan ke analisis finansial hulu-hilir.
+   - **Mobile View:** Banner informatif di bagian atas daftar panen untuk membuka ringkasan terpadu, serta tombol aksi berikon kuali oranye `Alihkan ke Olahan` pada setiap kartu panen.
+   - **Desktop View:** Kolom `AKSI` pada tabel panen kini memiliki tombol cepat `Alihkan ke Olahan` (ikon kuali oranye) yang langsung membuka dialog konversi dengan data panen terpilih secara otomatis.
+3. **Pemicu & Kartu Informasi di Layar Produk Olahan ([`mobile_app/lib/screens/processed_products_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/processed_products_screen.dart)):**
+   - **Header AppShell:** Tombol `Laba/Rugi Terpadu` dan tombol `Alihkan Panen`.
+   - **Mobile Banner:** Banner oranye `Buat Olahan dari Hasil Panen` dengan tombol cepat `Alihkan` tepat di atas ringkasan inventori.
+   - **Kartu Produk Dinamis:**
+     - Tag khusus oranye: `Bahan Baku Panen: X kg` jika produk dialihkan dari hasil panen.
+     - Kotak metrik ekonomi: Menampilkan `Modal: Rp ...` dan status `Laba: +Rp ...` (hijau) atau `Rugi: -Rp ...` (merah).
+     - Tombol `Analisis` di dalam kartu produk untuk langsung membuka rincian ekonomi produk tersebut.
 

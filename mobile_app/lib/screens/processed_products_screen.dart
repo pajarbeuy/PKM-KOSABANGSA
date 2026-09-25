@@ -7,6 +7,9 @@ import '../models/processed_product.dart';
 import '../services/api_service.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/app_theme.dart';
+import '../widgets/convert_harvest_dialog.dart';
+import '../widgets/integrated_economic_dialog.dart';
+import '../widgets/processed_economic_dialog.dart';
 
 class ProcessedProductsScreen extends StatefulWidget {
   const ProcessedProductsScreen({super.key});
@@ -513,6 +516,41 @@ class _ProcessedProductsScreenState extends State<ProcessedProductsScreen> {
       title: 'Produk Olahan',
       subtitle: 'Kelola inventori dan ragam produk olahan hasil tani mandiri',
       onRefresh: _loadProducts,
+      headerActions: [
+        OutlinedButton.icon(
+          onPressed: () {
+            showDialog(
+              context: context,
+              builder: (context) => const IntegratedEconomicDialog(),
+            );
+          },
+          icon: const Icon(Icons.account_balance_wallet_outlined, size: 16),
+          label: const Text('Laba/Rugi Terpadu', style: TextStyle(fontWeight: FontWeight.bold)),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppTheme.green700,
+            side: const BorderSide(color: AppTheme.green700),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          ),
+        ),
+        const SizedBox(width: 8),
+        ElevatedButton.icon(
+          onPressed: () {
+            showDialog(
+              context: context,
+              builder: (context) => ConvertHarvestDialog(onConverted: _loadProducts),
+            );
+          },
+          icon: const Icon(Icons.soup_kitchen_outlined, size: 16),
+          label: const Text('Alihkan Panen', style: TextStyle(fontWeight: FontWeight.bold)),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.orange.shade800,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          ),
+        ),
+      ],
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddEditBottomSheet(),
         backgroundColor: AppTheme.green700,
@@ -529,6 +567,71 @@ class _ProcessedProductsScreenState extends State<ProcessedProductsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Banner Alihkan Panen & Laba Terpadu
+              Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFE65100), Color(0xFFF57C00)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.soup_kitchen_outlined, color: Colors.white, size: 24),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Buat Olahan dari Hasil Panen',
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Bahan baku Rp 0 (hemat modal), catat bahan pelengkap & margin laba',
+                            style: TextStyle(color: Colors.white70, fontSize: 11),
+                          ),
+                        ],
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) => ConvertHarvestDialog(onConverted: _loadProducts),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: const Color(0xFFE65100),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        elevation: 0,
+                      ),
+                      child: const Text('Alihkan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    ),
+                  ],
+                ),
+              ),
               // Summary Stats Row
               _buildStatsRow(),
               const SizedBox(height: 20),
@@ -694,7 +797,7 @@ class _ProcessedProductsScreenState extends State<ProcessedProductsScreen> {
             crossAxisCount: isWide ? 2 : 1,
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
-            mainAxisExtent: 290,
+            mainAxisExtent: 385,
           ),
           itemCount: _products.length,
           itemBuilder: (context, index) {
@@ -971,7 +1074,86 @@ class _ProcessedProductsScreenState extends State<ProcessedProductsScreen> {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 10),
+                if (product.harvestId != null || (product.rawMaterialWeightKg != null && product.rawMaterialWeightKg! > 0)) ...[
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF3E0),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: const Color(0xFFFFCC80)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.soup_kitchen_outlined, size: 12, color: Color(0xFFE65100)),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Bahan Baku Panen: ${product.rawMaterialWeightKg ?? 0} kg',
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFFE65100)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Modal: ${_currencyFormat.format(product.totalProcessingCost ?? 0)}',
+                              style: TextStyle(fontSize: 11, color: Colors.grey[700], fontWeight: FontWeight.w500),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              (product.profitLoss ?? 0) >= 0
+                                  ? 'Laba: +${_currencyFormat.format(product.profitLoss ?? 0)}'
+                                  : 'Rugi: ${_currencyFormat.format(product.profitLoss ?? 0)}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: (product.profitLoss ?? 0) >= 0 ? const Color(0xFF2E7D32) : Colors.red,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      InkWell(
+                        onTap: () => showDialog(
+                          context: context,
+                          builder: (_) => ProcessedEconomicDialog(product: product),
+                        ),
+                        borderRadius: BorderRadius.circular(6),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppTheme.green700.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.analytics_outlined, size: 12, color: AppTheme.green700),
+                              SizedBox(width: 4),
+                              Text('Analisis', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.green700)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
                 const Divider(height: 1),
                 const SizedBox(height: 6),
                 Row(
