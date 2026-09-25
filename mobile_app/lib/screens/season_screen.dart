@@ -201,6 +201,23 @@ class _SeasonScreenState extends State<SeasonScreen> {
                     _buildStatusBadge(season.computedStatus),
                   ],
                 ),
+                if (season.commodityName != null && season.commodityName!.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      const Icon(Icons.eco_outlined, size: 16, color: Color(0xFF2E7D32)),
+                      const SizedBox(width: 6),
+                      Text(
+                        season.commodityName!,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF2E7D32),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 12),
                 Row(
                   children: [
@@ -351,13 +368,30 @@ class _SeasonScreenState extends State<SeasonScreen> {
                               ),
                               Expanded(
                                 flex: 3,
-                                child: Text(
-                                  season.name,
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppTheme.textPrimary,
-                                  ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      season.name,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppTheme.textPrimary,
+                                      ),
+                                    ),
+                                    if (season.commodityName != null && season.commodityName!.isNotEmpty) ...[
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        season.commodityName!,
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFF2E7D32),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
                                 ),
                               ),
                               Expanded(

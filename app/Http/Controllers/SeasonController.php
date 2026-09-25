@@ -29,12 +29,22 @@ class SeasonController extends Controller
     {
         try {
             $validated = $request->validate([
-                'name'       => 'required|string|max:255',
-                'start_date' => 'required|date',
-                'end_date'   => 'required|date|after:start_date',
-                'status'     => 'required|in:active,completed,cancelled',
-                'target_kg'  => 'required|numeric|min:0',
+                'commodity_id' => 'nullable|integer|exists:farmer_commodities,id',
+                'name'         => 'required|string|max:255',
+                'start_date'   => 'required|date',
+                'end_date'     => 'required|date|after:start_date',
+                'status'       => 'required|in:active,completed,cancelled',
+                'target_kg'    => 'required|numeric|min:0',
             ]);
+
+            if (!empty($validated['commodity_id'])) {
+                $ownsCommodity = \App\Models\FarmerCommodity::where('id', $validated['commodity_id'])
+                    ->where('user_id', $request->user()->id)
+                    ->exists();
+                if (!$ownsCommodity) {
+                    return $this->forbiddenResponse('Komoditas hasil tani tidak ditemukan atau bukan milik Anda.');
+                }
+            }
 
             $season    = $this->seasonService->createSeason($validated, $request->user()->id);
             $formatted = array_merge($this->seasonService->formatSeason($season), ['created_at' => $season->created_at]);
@@ -67,12 +77,22 @@ class SeasonController extends Controller
             }
 
             $validated = $request->validate([
-                'name'       => 'required|string|max:255',
-                'start_date' => 'required|date',
-                'end_date'   => 'required|date|after:start_date',
-                'status'     => 'required|in:active,completed,cancelled',
-                'target_kg'  => 'required|numeric|min:0',
+                'commodity_id' => 'nullable|integer|exists:farmer_commodities,id',
+                'name'         => 'required|string|max:255',
+                'start_date'   => 'required|date',
+                'end_date'     => 'required|date|after:start_date',
+                'status'       => 'required|in:active,completed,cancelled',
+                'target_kg'    => 'required|numeric|min:0',
             ]);
+
+            if (!empty($validated['commodity_id'])) {
+                $ownsCommodity = \App\Models\FarmerCommodity::where('id', $validated['commodity_id'])
+                    ->where('user_id', $request->user()->id)
+                    ->exists();
+                if (!$ownsCommodity) {
+                    return $this->forbiddenResponse('Komoditas hasil tani tidak ditemukan atau bukan milik Anda.');
+                }
+            }
 
             $updated   = $this->seasonService->updateSeason($season, $validated);
             $formatted = array_merge($this->seasonService->formatSeason($updated), ['updated_at' => $updated->updated_at]);

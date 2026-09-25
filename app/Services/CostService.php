@@ -11,7 +11,8 @@ class CostService
      */
     public function createCost(array $data, int $userId): ProductionCost
     {
-        return ProductionCost::create(array_merge($data, ['user_id' => $userId]));
+        $cost = ProductionCost::create(array_merge($data, ['user_id' => $userId]));
+        return $cost->load(['season', 'season.commodity']);
     }
 
     /**
@@ -20,7 +21,7 @@ class CostService
     public function updateCost(ProductionCost $cost, array $data): ProductionCost
     {
         $cost->update($data);
-        return $cost;
+        return $cost->load(['season', 'season.commodity']);
     }
 
     /**
@@ -37,11 +38,15 @@ class CostService
     public function formatCost(ProductionCost $cost): array
     {
         return [
-            'id'       => $cost->id,
-            'date'     => $cost->date,
-            'category' => $cost->category,
-            'amount'   => $cost->amount,
-            'notes'    => $cost->notes,
+            'id'             => $cost->id,
+            'season_id'      => $cost->season_id,
+            'season_name'    => $cost->season?->name,
+            'commodity_id'   => $cost->season?->commodity_id,
+            'commodity_name' => $cost->season?->commodity?->name,
+            'date'           => $cost->date,
+            'category'       => $cost->category,
+            'amount'         => (float) $cost->amount,
+            'notes'          => $cost->notes,
         ];
     }
 }

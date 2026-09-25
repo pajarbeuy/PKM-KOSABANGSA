@@ -21,7 +21,7 @@ class CostController extends Controller
         $perPage  = $request->input('per_page', 15);
         $seasonId = $request->input('season_id');
 
-        $query = ProductionCost::where('user_id', $userId)->with('season')->latest('date');
+        $query = ProductionCost::where('user_id', $userId)->with(['season', 'season.commodity'])->latest('date');
         if ($seasonId) $query->where('season_id', $seasonId);
 
         $costs          = $query->paginate($perPage);

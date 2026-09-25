@@ -38,6 +38,13 @@ class SeasonService
     {
         return [
             'id'              => $season->id,
+            'commodity_id'    => $season->commodity_id,
+            'commodity_name'  => $season->commodity?->name ?? 'N/A',
+            'commodity'       => $season->commodity ? [
+                'id'   => $season->commodity->id,
+                'name' => $season->commodity->name,
+                'unit' => $season->commodity->unit,
+            ] : null,
             'name'            => $season->name,
             'start_date'      => $season->start_date,
             'end_date'        => $season->end_date,

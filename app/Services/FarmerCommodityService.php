@@ -117,6 +117,12 @@ class FarmerCommodityService
             throw new \InvalidArgumentException("Komoditas '{$commodity->name}' tidak dapat dihapus karena telah terhubung dengan {$harvestCount} data panen.");
         }
 
+        // Business guard: check if historical market prices are attached (Phase 5)
+        $marketPriceCount = $commodity->marketPrices()->count();
+        if ($marketPriceCount > 0) {
+            throw new \InvalidArgumentException("Komoditas '{$commodity->name}' tidak dapat dihapus karena memiliki riwayat {$marketPriceCount} data harga acuan pasar.");
+        }
+
         return (bool) $commodity->delete();
     }
 

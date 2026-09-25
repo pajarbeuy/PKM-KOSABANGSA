@@ -1040,6 +1040,97 @@ Sebelumnya, grafik di dashboard petani menggabungkan pencatatan panen (kg) dan p
 - **Full Backend API Suite**: `php vendor/bin/phpunit tests/Feature/API/` ➔ ✅ **132/132 Passed (563 assertions)**.
 - **Flutter Static Analysis**: `flutter analyze` ➔ ✅ **No issues found! (0 errors, 0 warnings)**.
 
+---
+
+## 15. Implementasi V2: Phase 4 (Integrasi Panen & Biaya Produksi / Harvest & Cost Integration)
+
+### A. Prinsip Bisnis & Backward Compatibility
+- **Rantai Nilai Terintegrasi**: Menghubungkan secara eksplisit `Petani` → `Hasil Tani (Commodity)` → `Musim Tanam (Season)` → `Biaya Produksi (Cost)` → `Hasil Panen (Harvest)`.
+- **Pewarisan Otomatis Komoditas**: Saat mencatat panen tanpa menyertakan `commodity_id`, panen secara cerdas mewarisi `commodity_id` dari musim tanam (`seasons.commodity_id`) jika musim tersebut telah mengaitkan komoditas.
+- **Pemisahan Kuantitas & Satuan Unit**: Form panen mendukung input kuantitas numerik (`quantity`) dan satuan terpisah (`unit`: `kg`, `kuintal`, `ton`, `ikat`, `pcs`), dengan berat baku penyimpanan gudang (`weight_kg`) tetap dipertahankan untuk menjamin integritas stok.
+- **Atribusi Biaya ke Komoditas via Musim**: Biaya produksi (`production_costs`) kini memuat atribusi komoditas hasil tani secara konsisten melalui relasi musim tanam (`season_id -> commodity_id`).
+- **Integritas Historis (Tanpa Backfill Asumtif)**: Data panen dan biaya lama tetap valid (`commodity_id = NULL`), tidak memicu error kalkulasi, dan mutasi stok gudang (`StockTransaction`) tetap akurat dengan presisi desimal 2 angka.
+
+### B. Database Schema & Migrations
+1. Migration [`database/migrations/2026_09_25_000001_add_unit_to_harvests_table.php`](file:///d:/laragon/www/PKM/database/migrations/2026_09_25_000001_add_unit_to_harvests_table.php):
+   - Menambahkan kolom `unit` (nullable string: `kg`, `kuintal`, `ton`, `ikat`, `pcs`) pada tabel `harvests`.
+
+### C. Backend Domain Logic, Controller & Services
+- **Models**:
+  - [`app/Models/Harvest.php`](file:///d:/laragon/www/PKM/app/Models/Harvest.php): `$fillable` menambahkan `commodity_id` dan `unit`, relasi `commodity()`, eager load `$with = ['season', 'commodity']`.
+  - [`app/Models/Season.php`](file:///d:/laragon/www/PKM/app/Models/Season.php): `$fillable` menambahkan `commodity_id`, relasi `commodity()`, eager load `$with = ['commodity']`.
+- **Harvest Service & Controller**:
+  - [`app/Services/HarvestService.php`](file:///d:/laragon/www/PKM/app/Services/HarvestService.php): Logika pewarisan otomatis komoditas musim, penanganan `unit`, dan pembaruan format respon API.
+  - [`app/Http/Controllers/HarvestController.php`](file:///d:/laragon/www/PKM/app/Http/Controllers/HarvestController.php): Validasi ketat kepemilikan komoditas (`user_id` guard) dan validasi enum satuan `unit`.
+- **Cost Service & Controller**:
+  - [`app/Services/CostService.php`](file:///d:/laragon/www/PKM/app/Services/CostService.php) & [`app/Http/Controllers/CostController.php`](file:///d:/laragon/www/PKM/app/Http/Controllers/CostController.php): Eager loading `season.commodity` serta penambahan `commodity_id` dan `commodity_name` pada format output biaya produksi.
+
+### D. Frontend Flutter Mobile & Desktop Client
+- **Models**:
+  - [`mobile_app/lib/models/harvest.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/models/harvest.dart): Ditambahkan `commodityId`, `commodityName`, dan `unit`.
+  - [`mobile_app/lib/models/season.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/models/season.dart): Ditambahkan `commodityId` dan `commodityName`.
+  - [`mobile_app/lib/models/cost.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/models/cost.dart): Ditambahkan `commodityId` dan `commodityName`.
+- **API Client & Facade**:
+  - [`mobile_app/lib/services/api/harvest_api_service.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/services/api/harvest_api_service.dart), [`mobile_app/lib/services/api/season_api_service.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/services/api/season_api_service.dart), dan [`mobile_app/lib/services/api_service.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/services/api_service.dart).
+- **UI Screens & Form Sheets**:
+  - [`mobile_app/lib/widgets/seasons/season_form_bottom_sheet.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/widgets/seasons/season_form_bottom_sheet.dart): Dropdown pilihan komoditas hasil tani pada form musim tanam.
+  - [`mobile_app/lib/screens/add_edit_harvest_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/add_edit_harvest_screen.dart): Form dialog panen lengkap dengan dropdown komoditas, jumlah panen, dropdown satuan (`kg`, `kuintal`, `ton`, `ikat`, `pcs`), dan input berat baku kg.
+  - [`mobile_app/lib/screens/harvest_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/harvest_screen.dart): Badge komoditas dan ringkasan satuan pada kartu mobile serta kolom tabel desktop.
+  - [`mobile_app/lib/screens/season_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/season_screen.dart): Indikator komoditas hasil tani pada kartu mobile dan kolom tabel desktop.
+
+### E. Hasil Pengujian & Status Verifikasi
+- **Integration Tests**: `php vendor/phpunit/phpunit/phpunit tests/Feature/API/HarvestCostIntegrationTest.php` ➔ ✅ **8/8 Passed (31 assertions)**.
+- **Full Backend API Suite**: `php vendor/phpunit/phpunit/phpunit tests/Feature/API/` ➔ ✅ **140/140 Passed (594 assertions)**.
+- **Flutter Static Analysis**: `flutter analyze` ➔ ✅ **No issues found! (0 errors, 0 warnings)**.
+
+---
+
+## 16. Implementasi V2: Phase 5 (Historical Market Price & Snapshotting)
+
+**Tanggal:** 25 September 2026  
+**Status:** ✅ **100% Selesai & Terverifikasi (Production Ready)**  
+**Hasil Pengujian:**
+- **Feature Tests Phase 5**: `php vendor/phpunit/phpunit/phpunit tests/Feature/API/MarketPriceTest.php` ➔ ✅ **11/11 Passed (69 assertions)**
+- **Full Backend API Suite**: `php vendor/phpunit/phpunit/phpunit tests/Feature/API/` ➔ ✅ **151/151 Passed (663 assertions)**
+- **Flutter Static Analysis**: `flutter analyze` ➔ ✅ **No issues found! (0 errors, 0 warnings)**
+
+### A. Prinsip Bisnis & Kepatuhan Arsitektur
+1. **Harga Acuan Pasar Berbasis Tanggal Efektif**: Setiap harga acuan terikat pada `commodity_id` dan `effective_date`. Database menerapkan constraint `UNIQUE (commodity_id, effective_date)` sebagai sumber kebenaran tunggal (*single source of truth*) yang deterministik.
+2. **Snapshotting Otomatis Panen**: Saat panen dicatat, sistem secara otomatis mengunci harga acuan pasar terbaru yang berlaku (`effective_date <= harvest_date`).
+3. **Immutability Panen Historis**: Snapshot pada panen lama tidak akan pernah berubah meskipun master harga pasar di masa depan dimutasi atau diterbitkan harga baru.
+4. **Proteksi Integritas Referensi**:
+   - Master harga pasar yang telah dirujuk oleh catatan panen historis (`isReferenced() == true`) **dilarang dihapus (HTTP 422)**.
+   - Nominal harga dan tanggal pada master harga yang sudah dirujuk **dilarang diubah (HTTP 422)**, hanya catatan (*notes*) yang diizinkan untuk dikoreksi secara non-destruktif.
+5. **Proteksi Komoditas (No Cascade Delete)**: Foreign key `market_prices.commodity_id` menggunakan **`ON DELETE RESTRICT`**. Menghapus komoditas yang memiliki histori harga acuan pasar ditolak di tingkat domain service maupun oleh database engine.
+6. **Pemisahan Tegas Harga Panen vs Harga Transaksi**:
+   - $\text{Gross Harvest Value} = \text{weight\_kg} \times \text{market\_price\_snapshot}$ adalah estimasi pendapatan kotor hasil bumi saat panen (bukan net economic profit).
+   - Transaksi jual beli produk olahan tetap menggunakan harga katalog olahan (`order_items.price_snapshot`).
+   - Penjualan hasil tani mentah mengacu pada harga pasar tanggal transaksi (`effective_date <= transaction_date`), tanpa membuat duplikasi tabel/field transaksi baru.
+7. **Otorisasi Ketat**: Petani bersifat **READ-ONLY**, form manipulasi CRUD dan pemicu sinkronisasi (*ingestion*) hanya dapat diakses oleh **Super Admin** (`role: super_admin`).
+
+### B. Database Schema & Migrations
+1. Migration [`database/migrations/2026_09_25_000002_create_market_prices_table.php`](file:///d:/laragon/www/PKM/database/migrations/2026_09_25_000002_create_market_prices_table.php):
+   - Tabel `market_prices` dengan `commodity_id`, `price`, `unit`, `effective_date`, `source`, `notes`, `created_by`, `ON DELETE RESTRICT`.
+2. Migration [`database/migrations/2026_09_25_000003_add_market_price_snapshot_to_harvests_table.php`](file:///d:/laragon/www/PKM/database/migrations/2026_09_25_000003_add_market_price_snapshot_to_harvests_table.php):
+   - Menambahkan `market_price_id`, `market_price_snapshot`, `market_price_effective_date` pada tabel `harvests`.
+
+### C. Backend Providers, Services & API
+- Contract & Mock: [`app/Contracts/MarketPriceProviderInterface.php`](file:///d:/laragon/www/PKM/app/Contracts/MarketPriceProviderInterface.php) dan [`app/Services/MarketPrice/MockMarketPriceProvider.php`](file:///d:/laragon/www/PKM/app/Services/MarketPrice/MockMarketPriceProvider.php).
+- Ingestion Service: [`app/Services/MarketPriceIngestionService.php`](file:///d:/laragon/www/PKM/app/Services/MarketPriceIngestionService.php) dengan aturan mutasi aman: *same price* $\rightarrow$ no-op, *different + unreferenced* $\rightarrow$ update, *different + referenced* $\rightarrow$ reject.
+- Artisan Command: [`app/Console/Commands/IngestMarketPricesCommand.php`](file:///d:/laragon/www/PKM/app/Console/Commands/IngestMarketPricesCommand.php) (`php artisan market-price:ingest`).
+- Domain Services & Models: [`app/Models/MarketPrice.php`](file:///d:/laragon/www/PKM/app/Models/MarketPrice.php), [`app/Services/MarketPriceService.php`](file:///d:/laragon/www/PKM/app/Services/MarketPriceService.php), dan integrasi snapshotting pada [`app/Services/HarvestService.php`](file:///d:/laragon/www/PKM/app/Services/HarvestService.php).
+- REST Controller: [`app/Http/Controllers/Api/MarketPriceController.php`](file:///d:/laragon/www/PKM/app/Http/Controllers/Api/MarketPriceController.php) dengan 6 endpoints dilindungi middleware `auth:sanctum` & `role:super_admin`.
+
+### D. Frontend Flutter Client
+- Models: [`mobile_app/lib/models/market_price.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/models/market_price.dart) dan pembaruan [`mobile_app/lib/models/harvest.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/models/harvest.dart).
+- Services: [`mobile_app/lib/services/api/market_price_api_service.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/services/api/market_price_api_service.dart) dan facade [`mobile_app/lib/services/api_service.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/services/api_service.dart).
+- Screens:
+  - [`mobile_app/lib/screens/market_price_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/market_price_screen.dart): Layar pemantauan harga acuan pasar, filter komoditas, dialog CRUD dan tombol sync Super Admin.
+  - [`mobile_app/lib/screens/harvest_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/harvest_screen.dart): Menampilkan badge harga acuan pasar dan taksiran pendapatan kotor panen (*Gross Harvest Value*).
+  - [`mobile_app/lib/utils/navigation_helper.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/utils/navigation_helper.dart): Pendaftaran menu sidebar untuk Petani dan Super Admin.
+
+
+
 
 
 

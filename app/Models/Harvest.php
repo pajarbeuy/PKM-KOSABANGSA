@@ -10,11 +10,27 @@ class Harvest extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $fillable = ['user_id', 'season_id', 'quantity', 'date', 'weight_kg', 'notes', 'photo', 'status'];
+    protected $fillable = [
+        'user_id',
+        'season_id',
+        'commodity_id',
+        'market_price_id',
+        'market_price_snapshot',
+        'market_price_effective_date',
+        'quantity',
+        'date',
+        'weight_kg',
+        'unit',
+        'notes',
+        'photo',
+        'status',
+    ];
 
     protected $casts = [
-        'date' => 'date',
-        'weight_kg' => 'decimal:2',
+        'date'                        => 'date',
+        'weight_kg'                   => 'decimal:2',
+        'market_price_snapshot'       => 'decimal:2',
+        'market_price_effective_date' => 'date',
     ];
 
     protected $appends = ['photo_url'];
@@ -38,7 +54,7 @@ class Harvest extends Model
         return asset(ltrim($this->photo, '/'));
     }
 
-    protected $with = ['season'];
+    protected $with = ['season', 'commodity', 'marketPrice'];
 
     public function user()
     {
@@ -48,5 +64,15 @@ class Harvest extends Model
     public function season()
     {
         return $this->belongsTo(Season::class);
+    }
+
+    public function commodity()
+    {
+        return $this->belongsTo(FarmerCommodity::class, 'commodity_id');
+    }
+
+    public function marketPrice()
+    {
+        return $this->belongsTo(MarketPrice::class, 'market_price_id');
     }
 }

@@ -16,6 +16,7 @@ import 'sales_screen.dart';
 import 'super_admin_profit_loss_screen.dart';
 import 'chatbot_screen.dart';
 import 'farmer_group_management_screen.dart';
+import 'market_price_screen.dart';
 import '../widgets/charts/monthly_product_bar_chart.dart';
 import '../widgets/charts/cumulative_revenue_line_chart.dart';
 
@@ -103,6 +104,8 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
         return 'TaniBot AI (Operasional)';
       case 8:
         return 'Kelola Kelompok Tani';
+      case 9:
+        return 'Harga Acuan Pasar';
       default:
         return 'Super Admin Panel';
     }
@@ -128,6 +131,8 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
         return 'Asisten cerdas analisis pemasaran, stok petani, dan operasional';
       case 8:
         return 'Manajemen data 10 Poktan, wilayah, ketua, dan anggota petani';
+      case 9:
+        return 'Kelola master harga pasar acuan komoditas dan sinkronisasi feed harga';
       default:
         return '';
     }
@@ -362,6 +367,15 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
                                 width: mWidth,
                                 onTap: () => setState(() => _selectedIndex = 8),
                               ),
+                              _buildQuickNavCard(
+                                title: 'Harga Acuan Pasar',
+                                desc: 'Kelola master harga acuan komoditas dan sinkronisasi feed harga',
+                                icon: Icons.trending_up_rounded,
+                                color: AppTheme.green700,
+                                bg: AppTheme.green100,
+                                width: mWidth,
+                                onTap: () => setState(() => _selectedIndex = 9),
+                              ),
                             ],
                           );
                         },
@@ -448,6 +462,10 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
                           const ChatbotScreen(isEmbedded: true),
                           FarmerGroupManagementScreen(
                             key: ValueKey('poktan_${_refreshTick}_${_selectedIndex == 8}'),
+                            isEmbedded: true,
+                          ),
+                          MarketPriceScreen(
+                            key: ValueKey('market_prices_${_refreshTick}_${_selectedIndex == 9}'),
                             isEmbedded: true,
                           ),
                         ],
@@ -589,6 +607,12 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
         isActive: _selectedIndex == 8,
         onTap: () => setState(() => _selectedIndex = 8),
       ),
+      SidebarNavItem(
+        icon: Icons.trending_up_rounded,
+        label: 'Harga Acuan Pasar',
+        isActive: _selectedIndex == 9,
+        onTap: () => setState(() => _selectedIndex = 9),
+      ),
     ];
   }
 
@@ -674,6 +698,15 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
         onTap: () {
           Navigator.pop(context);
           setState(() => _selectedIndex = 8);
+        },
+      ),
+      SidebarNavItem(
+        icon: Icons.trending_up_rounded,
+        label: 'Harga Acuan Pasar',
+        isActive: _selectedIndex == 9,
+        onTap: () {
+          Navigator.pop(context);
+          setState(() => _selectedIndex = 9);
         },
       ),
     ];

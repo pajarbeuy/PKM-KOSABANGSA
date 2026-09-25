@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/season.dart';
+import '../../models/farmer_commodity.dart';
 import '../../services/api_service.dart';
 import '../app_theme.dart';
 
@@ -30,6 +31,8 @@ class _SeasonFormBottomSheetState extends State<SeasonFormBottomSheet> {
   late TextEditingController _targetKgController;
   late TextEditingController _notesController;
   String _status = 'active';
+  int? _selectedCommodityId;
+  List<FarmerCommodity> _commodities = [];
   bool _isLoading = false;
 
   @override
@@ -43,6 +46,19 @@ class _SeasonFormBottomSheetState extends State<SeasonFormBottomSheet> {
       text: widget.season != null ? widget.season!.targetKg.toString() : '',
     );
     _status = widget.season?.status ?? 'active';
+    _selectedCommodityId = widget.season?.commodityId;
+    _loadCommodities();
+  }
+
+  Future<void> _loadCommodities() async {
+    try {
+      final items = await widget.apiService.getFarmerCommodities(activeOnly: true);
+      if (mounted) {
+        setState(() {
+          _commodities = items;
+        });
+      }
+    } catch (_) {}
   }
 
   @override
@@ -112,6 +128,7 @@ class _SeasonFormBottomSheetState extends State<SeasonFormBottomSheet> {
       if (widget.season == null) {
         result = await widget.apiService.createSeason(
           name: _nameController.text,
+          commodityId: _selectedCommodityId,
           startDate: _startDateController.text,
           endDate: _endDateController.text,
           status: _status,
@@ -122,6 +139,7 @@ class _SeasonFormBottomSheetState extends State<SeasonFormBottomSheet> {
         result = await widget.apiService.updateSeason(
           widget.season!.id,
           name: _nameController.text,
+          commodityId: _selectedCommodityId,
           startDate: _startDateController.text,
           endDate: _endDateController.text,
           status: _status,
@@ -244,6 +262,25 @@ class _SeasonFormBottomSheetState extends State<SeasonFormBottomSheet> {
                     validator: (value) => value == null || value.trim().isEmpty 
                         ? 'Nama musim tanam wajib diisi' 
                         : null,
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<int?>(
+                    initialValue: _selectedCommodityId,
+                    decoration: _inputDecoration(
+                      label: 'Komoditas Hasil Tani (Opsional)',
+                      prefixIcon: const Icon(Icons.eco_outlined),
+                    ),
+                    items: [
+                      const DropdownMenuItem<int?>(
+                        value: null,
+                        child: Text('-- Tidak Terkait Hasil Tani --', style: TextStyle(color: Colors.grey)),
+                      ),
+                      ..._commodities.map((c) => DropdownMenuItem<int?>(
+                        value: c.id,
+                        child: Text('${c.name} (${c.unit})'),
+                      )),
+                    ],
+                    onChanged: (value) => setState(() => _selectedCommodityId = value),
                   ),
                   const SizedBox(height: 12),
                   TextField(

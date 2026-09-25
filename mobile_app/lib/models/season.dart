@@ -1,6 +1,8 @@
 class Season {
   final int id;
   final String name;
+  final int? commodityId;
+  final String? commodityName;
   final String startDate;
   final String endDate;
   final String status;
@@ -12,6 +14,8 @@ class Season {
   Season({
     required this.id,
     required this.name,
+    this.commodityId,
+    this.commodityName,
     required this.startDate,
     required this.endDate,
     required this.status,
@@ -27,6 +31,8 @@ class Season {
     return Season(
       id: int.tryParse(json['id']?.toString() ?? '') ?? 0,
       name: json['name']?.toString() ?? '',
+      commodityId: int.tryParse(json['commodity_id']?.toString() ?? ''),
+      commodityName: json['commodity_name'] as String? ?? (json['commodity'] != null ? json['commodity']['name'] as String? : null),
       startDate: (json['start_date']?.toString() ?? '').split('T')[0],
       endDate: (json['end_date']?.toString() ?? '').split('T')[0],
       status: rawStatus,
