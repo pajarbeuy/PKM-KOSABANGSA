@@ -18,6 +18,7 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\Api\ChatbotController;
 use App\Http\Controllers\Api\FarmerGroupController;
 use App\Http\Controllers\Api\FarmerCommodityController;
+use App\Http\Controllers\Api\MarketPriceController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -78,6 +79,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('costs',              CostController::class)->names('api.costs');
     Route::apiResource('processed-products', ProcessedProductController::class)->names('api.processed-products');
     Route::apiResource('commodities',        FarmerCommodityController::class)->names('api.commodities');
+
+    // Market Prices (Phase 5 - Historical Market Price & Snapshot)
+    Route::get('/market-prices',                      [MarketPriceController::class, 'index']);
+    Route::get('/market-prices/latest/{commodity_id}', [MarketPriceController::class, 'latest']);
+    Route::middleware('role:super_admin')->group(function () {
+        Route::post('/market-prices',         [MarketPriceController::class, 'store']);
+        Route::put('/market-prices/{id}',     [MarketPriceController::class, 'update']);
+        Route::delete('/market-prices/{id}',  [MarketPriceController::class, 'destroy']);
+        Route::post('/market-prices/ingest',  [MarketPriceController::class, 'ingest']);
+    });
 
     // Stock (custom routes — not a standard CRUD resource)
     Route::get('/stock',                      [StockController::class, 'index']);

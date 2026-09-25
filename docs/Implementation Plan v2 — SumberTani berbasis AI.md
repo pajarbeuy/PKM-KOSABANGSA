@@ -1520,10 +1520,10 @@ Dokumentasi harus diperbarui setelah implementasi aktual, bukan ditulis seolah-o
 
 ## Historical Price
 
-* [ ] Harga memiliki tanggal berlaku.
-* [ ] Harga yang digunakan mengikuti tanggal panen.
-* [ ] Historical price tidak berubah setelah master price diperbarui.
-* [ ] Price snapshot tersedia.
+* [x] Harga memiliki tanggal berlaku.
+* [x] Harga yang digunakan mengikuti tanggal panen.
+* [x] Historical price tidak berubah setelah master price diperbarui.
+* [x] Price snapshot tersedia.
 
 ## Economic Result
 

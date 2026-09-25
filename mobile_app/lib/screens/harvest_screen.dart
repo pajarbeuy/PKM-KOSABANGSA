@@ -222,6 +222,36 @@ class _HarvestScreenState extends State<HarvestScreen> {
                     ],
                   ],
                 ),
+                if (harvest.hasMarketPriceSnapshot) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppTheme.green100.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppTheme.green300),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.price_change_outlined, size: 14, color: AppTheme.green700),
+                            const SizedBox(width: 4),
+                            Text(
+                              '@ ${_formatCurrency(harvest.marketPriceSnapshot!)}/${harvest.unit}',
+                              style: const TextStyle(fontSize: 12, color: AppTheme.green900, fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          'Gross: ${_formatCurrency(harvest.calculatedGrossValue)}',
+                          style: const TextStyle(fontSize: 12, color: AppTheme.green900, fontWeight: FontWeight.w800),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 if (hasNotes) ...[
                   const SizedBox(height: 6),
                   Text(harvest.notes,
@@ -350,7 +380,7 @@ class _HarvestScreenState extends State<HarvestScreen> {
                         _ColHeader(text: 'TANGGAL', flex: 3),
                         _ColHeader(text: 'HASIL TANI', flex: 3),
                         _ColHeader(text: 'MUSIM TANAM', flex: 2),
-                        _ColHeader(text: 'JUMLAH & BERAT', flex: 3),
+                        _ColHeader(text: 'BERAT & NILAI PASAR', flex: 4),
                         _ColHeader(text: 'CATATAN', flex: 3),
                         _ColHeader(text: 'AKSI', flex: 2),
                       ],
@@ -401,17 +431,37 @@ class _HarvestScreenState extends State<HarvestScreen> {
                                 child:
                                     _HarvestBlokBadge(label: harvest.seasonName),
                               ),
-                              // JUMLAH & BERAT (KG)
+                              // BERAT & NILAI PASAR
                               Expanded(
-                                flex: 3,
-                                child: Text(
-                                  harvest.quantity > 0 && harvest.unit != 'kg'
-                                      ? '${harvest.quantity} ${harvest.unit} (${_formatNumber(harvest.weightKg)} kg)'
-                                      : '${_formatNumber(harvest.weightKg)} kg',
-                                  style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppTheme.green700),
+                                flex: 4,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      harvest.quantity > 0 && harvest.unit != 'kg'
+                                          ? '${harvest.quantity} ${harvest.unit} (${_formatNumber(harvest.weightKg)} kg)'
+                                          : '${_formatNumber(harvest.weightKg)} kg',
+                                      style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppTheme.green700),
+                                    ),
+                                    if (harvest.hasMarketPriceSnapshot) ...[
+                                      const SizedBox(height: 3),
+                                      Text(
+                                        '@ ${_formatCurrency(harvest.marketPriceSnapshot!)}/${harvest.unit} (Pasar)',
+                                        style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary),
+                                      ),
+                                      Text(
+                                        'Gross: ${_formatCurrency(harvest.calculatedGrossValue)}',
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppTheme.green900,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
                                 ),
                               ),
                               // CATATAN
@@ -493,6 +543,11 @@ class _HarvestScreenState extends State<HarvestScreen> {
     if (value == 0) return '0';
     final formatter = NumberFormat('#,##0', 'id');
     return formatter.format(value);
+  }
+
+  String _formatCurrency(double value) {
+    final formatter = NumberFormat('#,##0', 'id');
+    return 'Rp ${formatter.format(value)}';
   }
 
   void _showDeleteDialog(BuildContext context, Harvest harvest) {

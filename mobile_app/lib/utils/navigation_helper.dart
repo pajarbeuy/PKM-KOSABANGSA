@@ -15,6 +15,7 @@ import '../screens/profile_screen.dart';
 import '../screens/feedback_screen.dart';
 import '../screens/farmer_commodity_screen.dart';
 import '../screens/super_admin_dashboard_screen.dart';
+import '../screens/market_price_screen.dart';
 
 class NavigationHelper {
   static void navigateTo(BuildContext context, Widget screen) {
@@ -82,6 +83,12 @@ class NavigationHelper {
           isActive: currentScreen == 'chatbot',
           onTap: () => navigateTo(context, const SuperAdminDashboardScreen(initialTabIndex: 6)),
         ),
+        SidebarNavItem(
+          icon: Icons.trending_up_rounded,
+          label: 'Harga Acuan Pasar',
+          isActive: currentScreen == 'market_prices',
+          onTap: () => navigateTo(context, const MarketPriceScreen()),
+        ),
       ];
     }
 
@@ -104,6 +111,16 @@ class NavigationHelper {
         onTap: () {
           if (currentScreen != 'commodities') {
             navigateTo(context, const FarmerCommodityScreen());
+          }
+        },
+      ),
+      SidebarNavItem(
+        icon: Icons.trending_up_rounded,
+        label: 'Harga Acuan',
+        isActive: currentScreen == 'market_prices',
+        onTap: () {
+          if (currentScreen != 'market_prices') {
+            navigateTo(context, const MarketPriceScreen());
           }
         },
       ),

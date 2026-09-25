@@ -62,4 +62,12 @@ class FarmerCommodity extends Model
     {
         return $this->hasMany(Season::class, 'commodity_id');
     }
+
+    /**
+     * Historical market prices associated with this commodity.
+     */
+    public function marketPrices(): HasMany
+    {
+        return $this->hasMany(MarketPrice::class, 'commodity_id');
+    }
 }

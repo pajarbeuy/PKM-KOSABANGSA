@@ -21,10 +21,12 @@ import 'api/processed_product_api_service.dart';
 import 'api/order_api_service.dart';
 import 'api/farmer_group_api_service.dart';
 import 'api/farmer_commodity_api_service.dart';
+import 'api/market_price_api_service.dart';
 import '../models/processed_product.dart';
 import '../models/order_model.dart';
 import '../models/farmer_group.dart';
 import '../models/farmer_commodity.dart';
+import '../models/market_price.dart';
 
 /// Facade Singleton providing a unified API interface across all domain services.
 class ApiService {
@@ -50,6 +52,7 @@ class ApiService {
   final OrderApiService _orderService = OrderApiService();
   final FarmerGroupApiService _farmerGroupService = FarmerGroupApiService();
   final FarmerCommodityApiService _farmerCommodityService = FarmerCommodityApiService();
+  final MarketPriceApiService _marketPriceService = MarketPriceApiService();
 
   // ─── Client / Token Management ─────────────────────────────────────────────
   void setAuthToken(String token) => _client.setAuthToken(token);
@@ -613,4 +616,35 @@ class ApiService {
 
   Future<Map<String, dynamic>> updateSuperAdminCommodity(int id, Map<String, dynamic> payload) =>
       _farmerCommodityService.updateSuperAdminCommodity(id, payload);
+
+  // ─── Historical Market Prices (Phase 5) ──────────────────────────────────
+  Future<Map<String, dynamic>> getMarketPrices({
+    int? commodityId,
+    String? fromDate,
+    String? toDate,
+    int page = 1,
+    int perPage = 15,
+  }) =>
+      _marketPriceService.getMarketPrices(
+        commodityId: commodityId,
+        fromDate: fromDate,
+        toDate: toDate,
+        page: page,
+        perPage: perPage,
+      );
+
+  Future<MarketPrice?> getLatestMarketPrice(int commodityId, {String? date}) =>
+      _marketPriceService.getLatestPrice(commodityId, date: date);
+
+  Future<Map<String, dynamic>> createMarketPrice(Map<String, dynamic> payload) =>
+      _marketPriceService.createMarketPrice(payload);
+
+  Future<Map<String, dynamic>> updateMarketPrice(int id, Map<String, dynamic> payload) =>
+      _marketPriceService.updateMarketPrice(id, payload);
+
+  Future<Map<String, dynamic>> deleteMarketPrice(int id) =>
+      _marketPriceService.deleteMarketPrice(id);
+
+  Future<Map<String, dynamic>> triggerMarketPriceIngest({String? date}) =>
+      _marketPriceService.triggerIngest(date: date);
 }

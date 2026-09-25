@@ -11,6 +11,10 @@ use Illuminate\Support\Facades\Storage;
 
 class HarvestService
 {
+    public function __construct(
+        private readonly MarketPriceService $marketPriceService
+    ) {}
+
     /**
      * Verify that a season belongs to the given user.
      */
@@ -34,19 +38,31 @@ class HarvestService
             }
         }
 
+        $harvestDate = $data['harvest_date'] ?? $data['date'] ?? now()->toDateString();
+
         $dbData = [
             'user_id'      => $userId,
             'season_id'    => $data['season_id'],
             'commodity_id' => $commodityId,
             'quantity'     => $data['quantity'] ?? 0,
             'unit'         => $data['unit'] ?? 'kg',
-            'date'         => $data['harvest_date'] ?? $data['date'] ?? now()->toDateString(),
+            'date'         => $harvestDate,
             'weight_kg'    => $data['weight_kg'],
             'notes'        => $data['notes'] ?? null,
             'status'       => isset($data['status']) && in_array($data['status'], ['recorded', 'verified', 'cancelled'])
                 ? $data['status']
                 : 'recorded',
         ];
+
+        // Otomatisasi Snapshot Harga Pasar Acuan (Phase 5)
+        if ($commodityId) {
+            $effectivePrice = $this->marketPriceService->findEffectivePrice((int) $commodityId, $harvestDate);
+            if ($effectivePrice) {
+                $dbData['market_price_id']             = $effectivePrice->id;
+                $dbData['market_price_snapshot']       = (float) $effectivePrice->price;
+                $dbData['market_price_effective_date'] = $effectivePrice->effective_date ? $effectivePrice->effective_date->toDateString() : null;
+            }
+        }
 
         if ($photo) {
             $photoPath       = $photo->store('harvest_photos', 'public');
@@ -64,7 +80,7 @@ class HarvestService
                 $userId
             );
 
-            return $harvest->load(['season', 'commodity']);
+            return $harvest->load(['season', 'commodity', 'marketPrice']);
         });
     }
 
@@ -89,6 +105,28 @@ class HarvestService
              $dbData['status'] = in_array($data['status'], ['recorded', 'verified', 'cancelled'])
                  ? $data['status']
                  : $harvest->status;
+         }
+
+         $commodityChanged = array_key_exists('commodity_id', $data) && $data['commodity_id'] != $harvest->commodity_id;
+         $dateChanged = $newDate !== null && $newDate != ($harvest->date ? $harvest->date->toDateString() : null);
+
+         // Jika komoditas atau tanggal berubah, atau sebelumnya belum ada snapshot, sinkronkan ulang snapshot
+         if ($commodityChanged || $dateChanged || empty($harvest->market_price_snapshot)) {
+             $targetCommodityId = array_key_exists('commodity_id', $data) ? $data['commodity_id'] : $harvest->commodity_id;
+             $targetDate = $newDate ?? ($harvest->date ? $harvest->date->toDateString() : now()->toDateString());
+
+             if ($targetCommodityId) {
+                 $effectivePrice = $this->marketPriceService->findEffectivePrice((int) $targetCommodityId, $targetDate);
+                 if ($effectivePrice) {
+                     $dbData['market_price_id']             = $effectivePrice->id;
+                     $dbData['market_price_snapshot']       = (float) $effectivePrice->price;
+                     $dbData['market_price_effective_date'] = $effectivePrice->effective_date ? $effectivePrice->effective_date->toDateString() : null;
+                 } else {
+                     $dbData['market_price_id']             = null;
+                     $dbData['market_price_snapshot']       = null;
+                     $dbData['market_price_effective_date'] = null;
+                 }
+             }
          }
 
          if ($photo) {
@@ -117,7 +155,7 @@ class HarvestService
                  );
              }
 
-             return $harvest->load(['season', 'commodity']);
+             return $harvest->load(['season', 'commodity', 'marketPrice']);
          });
      }
 
@@ -149,21 +187,28 @@ class HarvestService
      */
     public function formatHarvest(Harvest $harvest, ?string $seasonName = null): array
     {
+        $snapshot = $harvest->market_price_snapshot !== null ? (float) $harvest->market_price_snapshot : null;
+        $grossHarvestValue = $snapshot !== null ? round((float) $harvest->weight_kg * $snapshot, 2) : null;
+
         return [
-            'id'             => $harvest->id,
-            'season_id'      => $harvest->season_id,
-            'season_name'    => $seasonName ?? $harvest->season?->name ?? 'N/A',
-            'commodity_id'   => $harvest->commodity_id,
-            'commodity_name' => $harvest->commodity?->name ?? null,
-            'harvest_date'   => $harvest->date ? $harvest->date->toDateString() : null,
-            'date'           => $harvest->date ? $harvest->date->toDateString() : null,
-            'weight_kg'      => (float) $harvest->weight_kg,
-            'quantity'       => (float) ($harvest->quantity ?? 0),
-            'unit'           => $harvest->unit ?? 'kg',
-            'status'         => $harvest->status,
-            'notes'          => $harvest->notes ?? '',
-            'photo'          => $harvest->photo ?? '',
-            'photo_url'      => $harvest->photo_url,
+            'id'                          => $harvest->id,
+            'season_id'                   => $harvest->season_id,
+            'season_name'                 => $seasonName ?? $harvest->season?->name ?? 'N/A',
+            'commodity_id'                => $harvest->commodity_id,
+            'commodity_name'              => $harvest->commodity?->name ?? null,
+            'market_price_id'             => $harvest->market_price_id,
+            'market_price_snapshot'       => $snapshot,
+            'market_price_effective_date' => $harvest->market_price_effective_date ? $harvest->market_price_effective_date->toDateString() : null,
+            'gross_harvest_value'         => $grossHarvestValue,
+            'harvest_date'                => $harvest->date ? $harvest->date->toDateString() : null,
+            'date'                        => $harvest->date ? $harvest->date->toDateString() : null,
+            'weight_kg'                   => (float) $harvest->weight_kg,
+            'quantity'                    => (float) ($harvest->quantity ?? 0),
+            'unit'                        => $harvest->unit ?? 'kg',
+            'status'                      => $harvest->status,
+            'notes'                       => $harvest->notes ?? '',
+            'photo'                       => $harvest->photo ?? '',
+            'photo_url'                   => $harvest->photo_url,
         ];
     }
 }
