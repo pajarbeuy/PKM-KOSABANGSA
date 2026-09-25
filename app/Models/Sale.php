@@ -60,6 +60,11 @@ class Sale extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function commission()
+    {
+        return $this->hasOne(Commission::class);
+    }
+
     public static function getTotalSales($userId = null)
     {
         $query = self::where('payment_status', 'paid');

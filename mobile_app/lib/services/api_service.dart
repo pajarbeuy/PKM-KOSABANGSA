@@ -23,12 +23,14 @@ import 'api/farmer_group_api_service.dart';
 import 'api/farmer_commodity_api_service.dart';
 import 'api/market_price_api_service.dart';
 import 'api/farmer_economic_result_api_service.dart';
+import 'api/commission_api_service.dart';
 import '../models/processed_product.dart';
 import '../models/order_model.dart';
 import '../models/farmer_group.dart';
 import '../models/farmer_commodity.dart';
 import '../models/market_price.dart';
 import '../models/economic_result.dart';
+import '../models/commission.dart';
 
 /// Facade Singleton providing a unified API interface across all domain services.
 class ApiService {
@@ -56,6 +58,7 @@ class ApiService {
   final FarmerCommodityApiService _farmerCommodityService = FarmerCommodityApiService();
   final MarketPriceApiService _marketPriceService = MarketPriceApiService();
   final FarmerEconomicResultApiService _economicResultService = FarmerEconomicResultApiService();
+  final CommissionApiService _commissionService = CommissionApiService();
 
   // ─── Client / Token Management ─────────────────────────────────────────────
   void setAuthToken(String token) => _client.setAuthToken(token);
@@ -663,4 +666,31 @@ class ApiService {
 
   Future<Map<String, dynamic>?> getSuperAdminEconomicAggregate() =>
       _economicResultService.getSuperAdminEconomicAggregate();
+
+  // ─── Platform Commissions (Phase 8) ──────────────────────────────────────
+  Future<Map<String, dynamic>> getCommissions({
+    String? startDate,
+    String? endDate,
+    int? userId,
+    int page = 1,
+    int perPage = 15,
+  }) =>
+      _commissionService.getCommissions(
+        startDate: startDate,
+        endDate: endDate,
+        userId: userId,
+        page: page,
+        perPage: perPage,
+      );
+
+  Future<CommissionSummary> getCommissionSummary({
+    String? startDate,
+    String? endDate,
+    int? userId,
+  }) =>
+      _commissionService.getCommissionSummary(
+        startDate: startDate,
+        endDate: endDate,
+        userId: userId,
+      );
 }

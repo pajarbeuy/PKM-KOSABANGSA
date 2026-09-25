@@ -1200,4 +1200,79 @@ Sebelumnya, grafik di dashboard petani menggabungkan pencatatan panen (kg) dan p
   - Mengubah baris komoditas & harga pada kartu menjadi `Wrap`, memastikan harga per satuan turun rapi di bawah nama komoditas saat layar sempit tanpa memicu overflow.
   - Dialog tambah/ubah harga acuan diberi `isExpanded: true` dan pemotongan teks ellipsis pada opsi dropdown komoditas.
 
+---
+
+## 18. Phase 8: Standard Platform Commission 10% (Backend & Mobile/Web UI)
+
+### A. Konsep & Arsitektur Bisnis Komisi Platform (10%)
+1. **Kalkulasi Server-Side Standar & Imutabel**:
+   - Komisi platform ditetapkan standar sebesar **10%** dari total bruto penjualan (`base_amount × 10%`).
+   - Pendapatan bersih petani (*net farmer amount*) dihitung otomatis:
+     $$\text{net\_farmer\_amount} = \text{base\_amount} - \text{commission\_amount}$$
+   - Nilai komisi dan persentase bersifat imutabel (*read-only*) setelah tercatat untuk kepastian audit keuangan.
+2. **Pemisahan Tegas dari Biaya Produksi & Stok**:
+   - Komisi platform tidak memotong atau mencemari komponen biaya produksi petani (`costs` / `allocated_cost`) yang berasal dari sarana produksi/tenaga kerja di kebun.
+   - Komisi platform murni memotong dari perolehan transaksi penjualan pada lapisan distribusi/pasar.
+3. **Idempotensi & Proteksi Potongan Ganda**:
+   - Kolom `sale_id` pada tabel `commissions` diproteksi indeks `UNIQUE`.
+   - `CommissionService::calculateAndRecordCommission()` dijalankan di dalam `DB::transaction()` dengan `lockForUpdate()`. Jika penyelesaian pesanan dipanggil ulang (*retry* atau pemanggilan ganda), record komisi tidak akan digandakan.
+
+### B. Skema Database & Migrasi
+- **File Migrasi:** [`database/migrations/2026_09_25_000004_create_commissions_table.php`](file:///d:/laragon/www/PKM/database/migrations/2026_09_25_000004_create_commissions_table.php)
+  - `sale_id`: Foreign key ke `sales`, `unique()`.
+  - `order_id`: Foreign key ke `orders`, `nullable()`.
+  - `user_id`: Foreign key ke `users` (petani pemilik produk).
+  - `rate`: Decimal(5,2), default `10.00`.
+  - `base_amount`: Decimal(15,2) (Nilai kotor transaksi penjualan).
+  - `commission_amount`: Decimal(15,2) (Nominal komisi platform 10%).
+  - `net_farmer_amount`: Decimal(15,2) (Nominal bersih diterima petani 90%).
+  - `status`: Enum (`pending`, `collected`, `waived`), default `collected`.
+  - `notes`: Text nullable.
+
+### C. Backend Models & Service Integration
+- **Model:**
+  - [`app/Models/Commission.php`](file:///d:/laragon/www/PKM/app/Models/Commission.php): Mendefinisikan relasi `sale()`, `order()`, `farmer()`, `user()` dan casting tipe decimal/datetime.
+  - [`app/Models/Sale.php`](file:///d:/laragon/www/PKM/app/Models/Sale.php): Relasi `hasOne(Commission::class)`.
+  - [`app/Models/Order.php`](file:///d:/laragon/www/PKM/app/Models/Order.php): Relasi `hasMany(Commission::class)`.
+- **Service Layer:**
+  - [`app/Services/CommissionService.php`](file:///d:/laragon/www/PKM/app/Services/CommissionService.php):
+    - `calculateAndRecordCommission(Sale $sale)`: Menghitung 10% dan menyimpan record komisi secara idempoten.
+    - `getCommissionsForSuperAdmin()`: Mengambil seluruh riwayat komisi platform dengan filter pencarian, status, dan tanggal.
+    - `getCommissionsForFarmer()`: Mengambil komisi khusus petani yang sedang login.
+    - `getSummaryForSuperAdmin()` & `getSummaryForFarmer()`: Mengagregasi KPI metrik (total volume transaksi, total komisi terkumpul, total pendapatan petani).
+  - [`app/Services/SaleService.php`](file:///d:/laragon/www/PKM/app/Services/SaleService.php):
+    - Diinjeksikan `CommissionService`.
+    - Otomatis mencatat komisi 10% pada saat pemenuhan pesanan katalog (`createSaleFromOrder()`) maupun pencatatan penjualan langsung petani (`createSale()`).
+
+### D. RESTful API & Otorisasi
+- **Controller:** [`app/Http/Controllers/Api/CommissionController.php`](file:///d:/laragon/www/PKM/app/Http/Controllers/Api/CommissionController.php)
+- **Routes [`routes/api.php`](file:///d:/laragon/www/PKM/routes/api.php):**
+  - `GET /api/commissions`: Mendapatkan daftar komisi (multi-tenant aware: Super Admin melihat seluruh sistem, Petani hanya melihat miliknya).
+  - `GET /api/commissions/summary`: Ringkasan metrik finansial komisi.
+  - `GET /api/super-admin/commissions` & `GET /api/super-admin/commissions/summary`: Route alias untuk Super Admin dashboard.
+
+### E. Frontend Flutter Client
+- **Model:** [`mobile_app/lib/models/commission.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/models/commission.dart) (`Commission`, `CommissionSummary`).
+- **Service:** [`mobile_app/lib/services/api/commission_api_service.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/services/api/commission_api_service.dart) & Facade [`mobile_app/lib/services/api_service.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/services/api_service.dart).
+- **UI Screen:** [`mobile_app/lib/screens/super_admin_commission_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/super_admin_commission_screen.dart)
+  - Menampilkan 4 Kartu KPI Finansial Responsif (Total Transaksi, Komisi Platform 10%, Hak Bersih Petani, Rata-rata Komisi) yang mengalir adaptif saat lebar layar mengecil.
+  - Search bar interaktif dengan debouncing query pencarian (kode pesanan, nama pembeli, nama petani).
+  - Daftar transaksi komisi dengan pill status dinamis (`collected`, `pending`, `waived`).
+  - Dialog rincian komisi dengan rincian lengkap nilai bruto, rate (10%), potongan komisi, dan hak bersih petani.
+- **Navigasi:**
+  - Ditambahkan ke [`mobile_app/lib/utils/navigation_helper.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/utils/navigation_helper.dart) untuk Super Admin dan Petani.
+  - Diintegrasikan ke [`mobile_app/lib/screens/super_admin_dashboard_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/super_admin_dashboard_screen.dart) pada Tab 10, Quick Action Card, dan Sidebar Drawer.
+
+### F. Pengujian Otomatis
+- **Test Suite:** [`tests/Feature/API/CommissionTest.php`](file:///d:/laragon/www/PKM/tests/Feature/API/CommissionTest.php)
+  - `test_order_completion_automatically_records_ten_percent_commission`: Verifikasi otomatis komisi 10% saat order diselesaikan.
+  - `test_commission_creation_is_idempotent_and_prevents_duplicate_records`: Memverifikasi idempotensi dan pencegahan komisi duplikat.
+  - `test_direct_sale_automatically_records_commission`: Verifikasi komisi tercatat pada direct sale produk panen/olahan.
+  - `test_super_admin_can_view_all_commissions_and_filter`: Memastikan Super Admin dapat melihat dan memfilter seluruh komisi.
+  - `test_farmer_can_only_view_own_commissions`: Verifikasi isolasi multi-tenant antar petani.
+  - `test_commission_summary_calculates_correct_kpis`: Verifikasi agregasi matematis KPI ringkasan.
+  - `test_unauthenticated_user_cannot_access_commissions`: Proteksi otentikasi Sanctum (401 Unauthorized).
+- **Hasil:** **7/7 Passed (28 Assertions)**, serta seluruh 171 test suite sistem lulus 100%. Flutter analyze **0 Issues**.
+
+
 

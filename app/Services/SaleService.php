@@ -11,7 +11,8 @@ use Illuminate\Support\Facades\DB;
 class SaleService
 {
     public function __construct(
-        private readonly ProcessedProductService $processedProductService
+        private readonly ProcessedProductService $processedProductService,
+        private readonly CommissionService $commissionService
     ) {}
 
     /**
@@ -69,6 +70,9 @@ class SaleService
                     'sale_' . $sale->id,
                     $product->owner_id
                 );
+
+                // Calculate and record 10% platform commission atomically
+                $this->commissionService->calculateAndRecordCommission($sale);
 
                 if (!$firstSale) {
                     $firstSale = $sale;
@@ -191,6 +195,9 @@ class SaleService
                     $farmerUserId
                 );
 
+                // Calculate and record 10% platform commission atomically
+                $this->commissionService->calculateAndRecordCommission($sale);
+
                 return $sale;
             });
         }
@@ -222,6 +229,9 @@ class SaleService
                 'sale_' . $sale->id,
                 $farmerUserId
             );
+
+            // Calculate and record 10% platform commission atomically
+            $this->commissionService->calculateAndRecordCommission($sale);
 
             return $sale;
         });
