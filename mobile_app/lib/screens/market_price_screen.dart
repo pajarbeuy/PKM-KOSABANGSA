@@ -391,7 +391,9 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
             ),
             child: DropdownButton<int?>(
               isExpanded: isNarrow,
-              value: _selectedCommodityId,
+              value: (_selectedCommodityId != null && _commodities.any((c) => c.id == _selectedCommodityId))
+                  ? _selectedCommodityId
+                  : null,
               hint: const Text('Semua Komoditas', style: TextStyle(fontSize: 13)),
               items: [
                 const DropdownMenuItem<int?>(
@@ -659,7 +661,25 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
       return;
     }
 
-    int? selectedCommId = existing?.commodityId ?? (_commodities.isNotEmpty ? _commodities.first.id : null);
+    int? selectedCommId;
+    if (existing != null) {
+      final exactMatch = _commodities.where((c) => c.id == existing.commodityId).firstOrNull;
+      if (exactMatch != null) {
+        selectedCommId = exactMatch.id;
+      } else {
+        final nameMatch = _commodities.where(
+          (c) => c.name.trim().toLowerCase() == existing.commodityName.trim().toLowerCase(),
+        ).firstOrNull;
+        selectedCommId = nameMatch?.id ?? (_commodities.isNotEmpty ? _commodities.first.id : null);
+      }
+    } else {
+      selectedCommId = _commodities.isNotEmpty ? _commodities.first.id : null;
+    }
+
+    if (selectedCommId != null && !_commodities.any((c) => c.id == selectedCommId)) {
+      selectedCommId = _commodities.isNotEmpty ? _commodities.first.id : null;
+    }
+
     final priceCtrl = TextEditingController(text: existing != null ? existing.price.toStringAsFixed(0) : '');
     final dateCtrl = TextEditingController(text: existing?.effectiveDate ?? DateTime.now().toIso8601String().split('T')[0]);
     final notesCtrl = TextEditingController(text: existing?.notes ?? '');
