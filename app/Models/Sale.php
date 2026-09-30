@@ -14,6 +14,7 @@ class Sale extends Model
         'user_id',
         'order_id',
         'season_id',
+        'commodity_id',
         'product_type',
         'processed_product_id',
         'created_by',
@@ -48,6 +49,11 @@ class Sale extends Model
     public function season()
     {
         return $this->belongsTo(Season::class);
+    }
+
+    public function commodity()
+    {
+        return $this->belongsTo(FarmerCommodity::class, 'commodity_id');
     }
 
     public function processedProduct()

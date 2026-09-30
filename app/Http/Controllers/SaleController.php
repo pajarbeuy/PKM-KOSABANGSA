@@ -24,16 +24,23 @@ class SaleController extends Controller
         $productType = $request->input('product_type');
         $farmerId    = $request->input('user_id');
 
-        $query = Sale::with(['user:id,name,farm_name,phone', 'processedProduct:id,name,price,stock'])
-            ->latest('date');
+        $query = Sale::with([
+            'user:id,name,farm_name,phone',
+            'processedProduct:id,name,price,stock',
+            'commodity:id,name,unit',
+            'season.commodity:id,name',
+        ])->latest('date');
 
         if ($currentUser->role === 'super_admin') {
             if ($farmerId) {
                 $query->where('user_id', $farmerId);
             }
         } else {
-            // Petani can only view their own sales (read-only)
+            // Petani can view their own sales (raw materials / harvest)
             $query->where('user_id', $currentUser->id);
+            if (!$productType) {
+                $query->where('product_type', 'harvest');
+            }
         }
 
         if ($seasonId) {
@@ -73,13 +80,27 @@ class SaleController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        if ($request->user()->role !== 'super_admin') {
-            return $this->forbiddenResponse('Hanya Super Admin yang berhak mencatat transaksi penjualan.');
+        $currentUser = $request->user();
+        $productType = $request->input('product_type') ?? ($request->filled('processed_product_id') ? 'processed' : 'harvest');
+
+        if ($productType === 'harvest') {
+            // Pencatatan penjualan bahan baku dicatat oleh petani, bukan super admin
+            if ($currentUser->role !== 'user') {
+                return $this->forbiddenResponse('Pencatatan penjualan bahan baku dicatat oleh petani bersangkutan, bukan Super Admin.');
+            }
+            $farmerUserId = $currentUser->id;
+        } else {
+            // Pencatatan produk olahan dikelola oleh Super Admin
+            if ($currentUser->role !== 'super_admin') {
+                return $this->forbiddenResponse('Pencatatan penjualan produk olahan dikelola oleh Super Admin.');
+            }
+            $farmerUserId = $request->input('user_id');
         }
 
         $validated = $request->validate([
             'user_id'              => 'nullable|integer|exists:users,id',
             'product_type'         => 'nullable|in:harvest,processed',
+            'commodity_id'         => 'nullable|integer|exists:farmer_commodities,id',
             'processed_product_id' => 'required_if:product_type,processed|nullable|integer|exists:processed_products,id',
             'season_id'            => 'nullable|integer|exists:seasons,id',
             'quantity'             => 'required_without:weight_kg|numeric|min:0.01',
@@ -95,9 +116,9 @@ class SaleController extends Controller
             'status'               => 'nullable|string',
             'payment_status'       => 'nullable|in:paid,unpaid',
         ], [
-            'buyer_name.required'                  => 'Nama pembeli harus diisi.',
-            'buyer_name.max'                       => 'Nama pembeli maksimal 255 karakter.',
-            'processed_product_id.required_if'     => 'Produk olahan wajib dipilih untuk penjualan produk olahan.',
+            'buyer_name.required'              => 'Nama pembeli harus diisi.',
+            'buyer_name.max'                   => 'Nama pembeli maksimal 255 karakter.',
+            'processed_product_id.required_if' => 'Produk olahan wajib dipilih untuk penjualan produk olahan.',
         ]);
 
         $normalized = $this->saleService->normalizeData($validated);
@@ -106,7 +127,17 @@ class SaleController extends Controller
             $product = ProcessedProduct::findOrFail($normalized['processed_product_id']);
             $farmerUserId = $product->owner_id;
         } else {
-            $farmerUserId = $validated['user_id'] ?? $request->user()->id;
+            $farmerUserId = $currentUser->id;
+
+            if (!empty($normalized['commodity_id'])) {
+                $commExists = \App\Models\FarmerCommodity::where('id', $normalized['commodity_id'])
+                    ->where(function ($q) use ($farmerUserId) {
+                        $q->where('user_id', $farmerUserId)->orWhereNull('user_id');
+                    })->exists();
+                if (!$commExists) {
+                    return $this->forbiddenResponse('Komoditas bahan baku tidak ditemukan atau tidak aktif.');
+                }
+            }
 
             if (!empty($normalized['season_id'])) {
                 $seasonExists = Season::where('id', $normalized['season_id'])->where('user_id', $farmerUserId)->exists();
@@ -122,7 +153,7 @@ class SaleController extends Controller
             return $this->errorResponse("Stok tidak mencukupi. Sisa stok: {$stock} {$unit}.", 422);
         }
 
-        $sale = $this->saleService->createSale($normalized, $farmerUserId, $request->user()->id);
+        $sale = $this->saleService->createSale($normalized, $farmerUserId, $currentUser->id);
 
         return $this->successResponse(
             $this->saleService->formatSale($sale, 'created'),
@@ -142,11 +173,20 @@ class SaleController extends Controller
 
     public function update(Request $request, Sale $sale): JsonResponse
     {
-        if ($request->user()->role !== 'super_admin') {
-            return $this->forbiddenResponse('Hanya Super Admin yang berhak mengubah transaksi penjualan.');
+        $currentUser = $request->user();
+
+        if ($sale->product_type === 'harvest') {
+            if ($currentUser->role !== 'user' || $sale->user_id !== $currentUser->id) {
+                return $this->forbiddenResponse('Hanya petani pemilik yang berhak mengubah transaksi penjualan bahan baku.');
+            }
+        } else {
+            if ($currentUser->role !== 'super_admin') {
+                return $this->forbiddenResponse('Hanya Super Admin yang berhak mengubah transaksi penjualan produk olahan.');
+            }
         }
 
         $validated = $request->validate([
+            'commodity_id'  => 'nullable|integer|exists:farmer_commodities,id',
             'season_id'     => 'sometimes|required|integer|exists:seasons,id',
             'quantity'      => 'sometimes|required_without:weight_kg|numeric|min:0.01',
             'weight_kg'     => 'sometimes|required_without:quantity|numeric|min:0.01',
@@ -193,8 +233,16 @@ class SaleController extends Controller
 
     public function destroy(Request $request, Sale $sale): JsonResponse
     {
-        if ($request->user()->role !== 'super_admin') {
-            return $this->forbiddenResponse('Hanya Super Admin yang berhak menghapus transaksi penjualan.');
+        $currentUser = $request->user();
+
+        if ($sale->product_type === 'harvest') {
+            if ($currentUser->role !== 'user' || $sale->user_id !== $currentUser->id) {
+                return $this->forbiddenResponse('Hanya petani pemilik yang berhak menghapus transaksi penjualan bahan baku.');
+            }
+        } else {
+            if ($currentUser->role !== 'super_admin') {
+                return $this->forbiddenResponse('Hanya Super Admin yang berhak menghapus transaksi penjualan produk olahan.');
+            }
         }
 
         $this->saleService->deleteSale($sale);

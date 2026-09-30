@@ -246,6 +246,7 @@ class ApiService {
     String? status,
     String? paymentStatus,
     int? seasonId,
+    int? commodityId,
   }) =>
       _saleService.createSale(
         quantity: quantity,
@@ -258,6 +259,7 @@ class ApiService {
         status: status,
         paymentStatus: paymentStatus,
         seasonId: seasonId,
+        commodityId: commodityId,
       );
 
   Future<Map<String, dynamic>> updateSale(
@@ -272,6 +274,7 @@ class ApiService {
     String? status,
     String? paymentStatus,
     int? seasonId,
+    int? commodityId,
   }) =>
       _saleService.updateSale(
         id,
@@ -285,6 +288,7 @@ class ApiService {
         status: status,
         paymentStatus: paymentStatus,
         seasonId: seasonId,
+        commodityId: commodityId,
       );
 
   Future<Map<String, dynamic>> deleteSale(int id) =>

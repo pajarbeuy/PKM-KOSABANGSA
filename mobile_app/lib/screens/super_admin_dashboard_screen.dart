@@ -337,13 +337,13 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
                                 onTap: () => setState(() => _selectedIndex = 4),
                               ),
                               _buildQuickNavCard(
-                                title: 'Penjualan Terpusat',
-                                desc: 'Pencatatan transaksi panen & produk olahan atas nama petani',
-                                icon: Icons.point_of_sale_rounded,
+                                title: 'Pesanan Produk Olahan',
+                                desc: 'Pencatatan dan pemrosesan pesanan olahan dari katalog web & WA',
+                                icon: Icons.receipt_long_rounded,
                                 color: AppTheme.blue600,
                                 bg: AppTheme.blue100,
                                 width: mWidth,
-                                onTap: () => setState(() => _selectedIndex = 5),
+                                onTap: () => setState(() => _selectedIndex = 1),
                               ),
                               _buildQuickNavCard(
                                 title: 'Laba / Rugi Agregat',
@@ -600,12 +600,6 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
         label: 'Pemasaran & Katalog',
         isActive: _selectedIndex == 4,
         onTap: () => setState(() => _selectedIndex = 4),
-      ),
-      SidebarNavItem(
-        icon: Icons.point_of_sale_rounded,
-        label: 'Penjualan Terpusat',
-        isActive: _selectedIndex == 5,
-        onTap: () => setState(() => _selectedIndex = 5),
       ),
       SidebarNavItem(
         icon: Icons.analytics_rounded,

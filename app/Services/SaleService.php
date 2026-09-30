@@ -94,6 +94,7 @@ class SaleService
         return [
             'product_type'         => $productType,
             'processed_product_id' => $data['processed_product_id'] ?? null,
+            'commodity_id'         => $data['commodity_id'] ?? null,
             'weight_kg'            => $data['weight_kg'] ?? $data['quantity'] ?? 0,
             'price_per_kg'         => $data['price_per_kg'] ?? $data['price_per_unit'] ?? 0,
             'date'                 => $data['date'] ?? $data['sale_date'] ?? now()->toDateString(),
@@ -203,13 +204,19 @@ class SaleService
         }
 
         $total = $normalized['weight_kg'] * $normalized['price_per_kg'];
+        $commodityId = $normalized['commodity_id'] ?? null;
+        if (!$commodityId && !empty($normalized['season_id'])) {
+            $season = \App\Models\Season::find($normalized['season_id']);
+            $commodityId = $season?->commodity_id;
+        }
 
-        return DB::transaction(function () use ($normalized, $farmerUserId, $createdBy, $total) {
+        return DB::transaction(function () use ($normalized, $farmerUserId, $createdBy, $total, $commodityId) {
             $sale = Sale::create([
                 'user_id'              => $farmerUserId,
                 'created_by'           => $createdBy,
                 'product_type'         => 'harvest',
                 'processed_product_id' => null,
+                'commodity_id'         => $commodityId,
                 'season_id'            => $normalized['season_id'],
                 'date'                 => $normalized['date'],
                 'buyer_name'           => $normalized['buyer_name'],
@@ -245,6 +252,7 @@ class SaleService
         $dbData = [];
 
         if (isset($data['season_id']))                      $dbData['season_id']     = $data['season_id'];
+        if (isset($data['commodity_id']))                   $dbData['commodity_id']  = $data['commodity_id'];
         if (isset($data['buyer_name']))                     $dbData['buyer_name']    = $data['buyer_name'];
         if (isset($data['buyer_phone']))                    $dbData['buyer_phone']   = $data['buyer_phone'];
         if (array_key_exists('buyer_address', $data))       $dbData['buyer_address'] = $data['buyer_address'];
@@ -336,6 +344,9 @@ class SaleService
      */
     public function formatSale(Sale $sale, string $event = 'created'): array
     {
+        $sale->loadMissing(['commodity', 'season.commodity', 'processedProduct']);
+        $commodityName = $sale->commodity?->name ?? $sale->season?->commodity?->name;
+
         $base = [
             'id'                   => $sale->id,
             'order_id'             => $sale->order_id,
@@ -343,7 +354,11 @@ class SaleService
             'created_by'           => $sale->created_by,
             'product_type'         => $sale->product_type ?? 'harvest',
             'processed_product_id' => $sale->processed_product_id,
-            'product_name'         => $sale->processedProduct?->name,
+            'commodity_id'         => $sale->commodity_id,
+            'commodity_name'       => $commodityName,
+            'product_name'         => $sale->product_type === 'processed'
+                ? $sale->processedProduct?->name
+                : ($commodityName ?? 'Bahan Baku'),
             'season_id'            => $sale->season_id,
             'sale_date'            => $sale->date->toDateString(),
             'date'                 => $sale->date->toDateString(),

@@ -65,6 +65,7 @@ class SaleApiService {
     String? status,
     String? paymentStatus,
     int? seasonId,
+    int? commodityId,
   }) async {
     try {
       final body = <String, dynamic>{
@@ -77,10 +78,14 @@ class SaleApiService {
         'notes': notes,
         'status': status ?? 'completed',
         'payment_status': paymentStatus ?? 'paid',
+        'product_type': 'harvest',
       };
       
       if (seasonId != null) {
         body['season_id'] = seasonId;
+      }
+      if (commodityId != null) {
+        body['commodity_id'] = commodityId;
       }
 
       final response = await http
@@ -119,6 +124,7 @@ class SaleApiService {
     String? status,
     String? paymentStatus,
     int? seasonId,
+    int? commodityId,
   }) async {
     try {
       final body = <String, dynamic>{};
@@ -132,6 +138,7 @@ class SaleApiService {
       if (status != null) body['status'] = status;
       if (paymentStatus != null) body['payment_status'] = paymentStatus;
       if (seasonId != null) body['season_id'] = seasonId;
+      if (commodityId != null) body['commodity_id'] = commodityId;
 
       final response = await http
           .put(

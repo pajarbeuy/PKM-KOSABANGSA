@@ -17,6 +17,7 @@ import '../screens/farmer_commodity_screen.dart';
 import '../screens/super_admin_dashboard_screen.dart';
 import '../screens/market_price_screen.dart';
 import '../screens/super_admin_commission_screen.dart';
+import '../screens/sales_screen.dart';
 
 class NavigationHelper {
   static void navigateTo(BuildContext context, Widget screen) {
@@ -73,12 +74,6 @@ class NavigationHelper {
           onTap: () => navigateTo(context, const SuperAdminDashboardScreen(initialTabIndex: 4)),
         ),
         SidebarNavItem(
-          icon: Icons.point_of_sale_rounded,
-          label: 'Penjualan Terpusat',
-          isActive: currentScreen == 'sales',
-          onTap: () => navigateTo(context, const SuperAdminDashboardScreen(initialTabIndex: 5)),
-        ),
-        SidebarNavItem(
           icon: Icons.analytics_rounded,
           label: 'Laba/Rugi Agregat',
           isActive: currentScreen == 'super_admin_profit_loss',
@@ -111,7 +106,7 @@ class NavigationHelper {
       ];
     }
 
-    // Farmer Navigation (Produk Olahan included; Penjualan and TaniBot managed centrally by Super Admin)
+    // Farmer Navigation (Produk Olahan included; Penjualan Bahan Baku recorded by Farmer)
     return [
       SidebarNavItem(
         icon: Icons.grid_view_rounded,
@@ -170,6 +165,16 @@ class NavigationHelper {
         onTap: () {
           if (currentScreen != 'stock') {
             navigateTo(context, const StockScreen());
+          }
+        },
+      ),
+      SidebarNavItem(
+        icon: Icons.point_of_sale_rounded,
+        label: 'Penjualan Bahan Baku',
+        isActive: currentScreen == 'sales',
+        onTap: () {
+          if (currentScreen != 'sales') {
+            navigateTo(context, const SalesScreen());
           }
         },
       ),

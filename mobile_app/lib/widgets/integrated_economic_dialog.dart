@@ -177,7 +177,7 @@ class _IntegratedEconomicDialogState extends State<IntegratedEconomicDialog> {
                                     child: const Row(
                                       children: [
                                         Icon(Icons.verified_outlined, color: Color(0xFF15803D), size: 20),
-                                        const SizedBox(width: 10),
+                                        SizedBox(width: 10),
                                         Expanded(
                                           child: Text(
                                             'Formula Terpadu memastikan biaya budidaya kebun tidak pernah dihitung dua kali saat hasil panen dialihkan ke produk olahan.',
