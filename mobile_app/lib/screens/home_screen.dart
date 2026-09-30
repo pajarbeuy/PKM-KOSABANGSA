@@ -376,7 +376,7 @@ class _HomeScreenState extends State<HomeScreen> {
         iconBg: AppTheme.blue100,
         iconColor: AppTheme.blue600,
         value: _formatCurrencyShort(rev),
-        label: 'Total Pendapatan',
+        label: 'Pendapatan Bersih',
         badgeLabel: '$txCount transaksi',
         badgeBg: AppTheme.blue100,
         badgeTextColor: AppTheme.blue600,
@@ -452,7 +452,7 @@ class _HomeScreenState extends State<HomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _financeTile(
-            label: 'Total Pendapatan',
+            label: 'Pendapatan Bersih',
             value: _formatCurrency(revenue),
             color: AppTheme.green700,
             bgColor: AppTheme.green100,

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Commission;
 use App\Models\Harvest;
 use App\Models\ProductionCost;
 use App\Models\Sale;
@@ -16,17 +17,20 @@ class DashboardService
      */
     public function getSummary(int $userId): array
     {
-        $activeSeason    = Season::where('user_id', $userId)
+        $activeSeason       = Season::where('user_id', $userId)
             ->where('status', '!=', 'cancelled')
             ->whereDate('start_date', '<=', today())
             ->whereDate('end_date', '>=', today())
             ->latest('start_date')
             ->first();
-        $stockBalance    = (float) StockTransaction::getCurrentBalance($userId);
-        $totalRevenue    = (float) Sale::where('user_id', $userId)->sum('total');
-        $totalCost       = (float) ProductionCost::where('user_id', $userId)->sum('amount');
-        $estimatedProfit = $totalRevenue - $totalCost;
-        $totalHarvest    = (float) Harvest::where('user_id', $userId)->sum('weight_kg');
+        $stockBalance       = (float) StockTransaction::getCurrentBalance($userId);
+        $totalGrossRevenue  = (float) Sale::where('user_id', $userId)->sum('total');
+        $totalCommission    = (float) Commission::where('user_id', $userId)->sum('commission_amount');
+        $totalNetRevenue    = max(0.0, $totalGrossRevenue - $totalCommission);
+        $totalRevenue       = $totalNetRevenue; // Net revenue received by farmer after 10% platform commission
+        $totalCost          = (float) ProductionCost::where('user_id', $userId)->sum('amount');
+        $estimatedProfit    = $totalRevenue - $totalCost;
+        $totalHarvest       = (float) Harvest::where('user_id', $userId)->sum('weight_kg');
 
         $rawSalesRev       = (float) Sale::where('user_id', $userId)
             ->where(fn($q) => $q->where('product_type', 'harvest')->orWhereNull('product_type'))
@@ -44,6 +48,9 @@ class DashboardService
         return [
             'totalStok'               => $stockBalance,
             'totalPenjualan'          => $totalRevenue,
+            'totalGrossRevenue'       => $totalGrossRevenue,
+            'totalCommission'         => $totalCommission,
+            'totalNetRevenue'         => $totalNetRevenue,
             'totalBiaya'              => $totalCost,
             'totalPanen'              => $totalHarvest,
             'estimatedProfit'         => $estimatedProfit,
