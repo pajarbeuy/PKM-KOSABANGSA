@@ -86,22 +86,6 @@ class MarketPriceService
      */
     public function updateMarketPrice(MarketPrice $marketPrice, array $data): MarketPrice
     {
-        if ($marketPrice->isReferenced()) {
-            $isPriceChanged = isset($data['price']) && (float) $data['price'] !== (float) $marketPrice->price;
-            $isDateChanged  = isset($data['effective_date']) && $data['effective_date'] !== $marketPrice->effective_date?->toDateString();
-            $isCommChanged  = isset($data['commodity_id']) && (int) $data['commodity_id'] !== (int) $marketPrice->commodity_id;
-
-            if ($isPriceChanged || $isDateChanged || $isCommChanged) {
-                throw new DomainException('Harga pasar tidak dapat diubah karena telah menjadi acuan pada data panen historis.');
-            }
-
-            // Jika hanya notes atau source yang diupdate
-            if (isset($data['notes'])) $marketPrice->notes = $data['notes'];
-            if (isset($data['source'])) $marketPrice->source = $data['source'];
-            $marketPrice->save();
-
-            return $marketPrice->load('commodity');
-        }
 
         if (isset($data['effective_date']) || isset($data['commodity_id'])) {
             $targetCommId = $data['commodity_id'] ?? $marketPrice->commodity_id;

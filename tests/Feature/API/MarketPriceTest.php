@@ -522,16 +522,17 @@ class MarketPriceTest extends TestCase
             'status'                      => 'recorded',
         ]);
 
-        // Coba ubah nominal harga -> 422 ditolak
+        // Super Admin dapat mengubah nominal harga acuan secara fleksibel -> 200 OK
         $updatePriceRes = $this->withHeaders([
             'Authorization' => "Bearer {$this->superAdminToken}",
             'Accept'        => 'application/json',
         ])->putJson("/api/market-prices/{$price->id}", [
             'price' => 22000,
         ]);
-        $updatePriceRes->assertStatus(422);
+        $updatePriceRes->assertStatus(200);
+        $this->assertEquals(22000.0, (float) $price->fresh()->price);
 
-        // Namun jika hanya mengupdate metadata non-destruktif (seperti notes) -> diizinkan 200
+        // Mengupdate metadata seperti notes juga sukses 200
         $updateNotesRes = $this->withHeaders([
             'Authorization' => "Bearer {$this->superAdminToken}",
             'Accept'        => 'application/json',
@@ -540,7 +541,7 @@ class MarketPriceTest extends TestCase
         ]);
         $updateNotesRes->assertStatus(200);
         $this->assertEquals('Catatan diperbarui tanpa mengubah harga', $price->fresh()->notes);
-        $this->assertEquals(20000.0, (float) $price->fresh()->price);
+        $this->assertEquals(22000.0, (float) $price->fresh()->price);
     }
 
     /**

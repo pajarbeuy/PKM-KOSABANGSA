@@ -261,11 +261,11 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
               ),
               const SizedBox(height: 10),
               _buildStatCard(
-                'Terkunci Panen',
+                'Dirujuk Panen',
                 '$referencedCount Record',
-                Icons.lock_clock,
-                AppTheme.amber600,
-                AppTheme.amber100,
+                Icons.verified_outlined,
+                AppTheme.green700,
+                AppTheme.green100,
               ),
               const SizedBox(height: 10),
               _buildStatCard(
@@ -293,11 +293,11 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
             const SizedBox(width: 14),
             Expanded(
               child: _buildStatCard(
-                'Terkunci Panen',
+                'Dirujuk Panen',
                 '$referencedCount Record',
-                Icons.lock_clock,
-                AppTheme.amber600,
-                AppTheme.amber100,
+                Icons.verified_outlined,
+                AppTheme.green700,
+                AppTheme.green100,
               ),
             ),
             const SizedBox(width: 14),
@@ -582,17 +582,17 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: AppTheme.amber100,
+                          color: AppTheme.green100,
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.lock, size: 12, color: AppTheme.amber600),
+                            Icon(Icons.verified_outlined, size: 12, color: AppTheme.green700),
                             SizedBox(width: 4),
                             Text(
-                              'Terkunci Panen',
-                              style: TextStyle(fontSize: 11, color: AppTheme.amber600, fontWeight: FontWeight.w700),
+                              'Dirujuk Panen',
+                              style: TextStyle(fontSize: 11, color: AppTheme.green700, fontWeight: FontWeight.w600),
                             ),
                           ],
                         ),
@@ -683,8 +683,7 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
     final priceCtrl = TextEditingController(text: existing != null ? existing.price.toStringAsFixed(0) : '');
     final dateCtrl = TextEditingController(text: existing?.effectiveDate ?? DateTime.now().toIso8601String().split('T')[0]);
     final notesCtrl = TextEditingController(text: existing?.notes ?? '');
-    final sourceCtrl = TextEditingController(text: existing?.source ?? 'manual');
-    final isLocked = existing?.isReferenced == true;
+    final sourceCtrl = TextEditingController(text: (existing?.source != null && existing!.source.isNotEmpty) ? existing.source : 'manual');
 
     showDialog(
       context: context,
@@ -698,28 +697,6 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (isLocked) ...[
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        margin: const EdgeInsets.only(bottom: 12),
-                        decoration: BoxDecoration(
-                          color: AppTheme.amber100,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Row(
-                          children: [
-                            Icon(Icons.warning_amber_rounded, color: AppTheme.amber600, size: 18),
-                            SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Record ini telah menjadi rujukan panen. Nilai harga & tanggal tidak dapat diubah.',
-                                style: TextStyle(fontSize: 11, color: AppTheme.amber600, fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
                     const Text('Komoditas', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                     const SizedBox(height: 6),
                     DropdownButtonFormField<int>(
@@ -737,93 +714,90 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
                             );
                           })
                           .toList(),
-                      onChanged: isLocked ? null : (val) => setDialogState(() => selectedCommId = val),
+                      onChanged: (val) => setDialogState(() => selectedCommId = val),
                     ),
-                const SizedBox(height: 12),
-                const Text('Harga per Satuan (Rp/kg)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: priceCtrl,
-                  keyboardType: TextInputType.number,
-                  enabled: !isLocked,
-                  decoration: const InputDecoration(
-                    prefixText: 'Rp ',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
+                    const SizedBox(height: 12),
+                    const Text('Harga per Satuan (Rp/kg)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: priceCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        prefixText: 'Rp ',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text('Tanggal Efektif Berlaku', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: dateCtrl,
+                      decoration: const InputDecoration(
+                        hintText: 'YYYY-MM-DD',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text('Sumber Acuan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: sourceCtrl,
+                      decoration: const InputDecoration(
+                        hintText: 'manual / pasar_lokal',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text('Catatan Tambahan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: notesCtrl,
+                      maxLines: 2,
+                      decoration: const InputDecoration(
+                        hintText: 'Keterangan opsional...',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 12),
-                const Text('Tanggal Efektif Berlaku', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: dateCtrl,
-                  enabled: !isLocked,
-                  decoration: const InputDecoration(
-                    hintText: 'YYYY-MM-DD',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Batal'),
                 ),
-                const SizedBox(height: 12),
-                const Text('Sumber Acuan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: sourceCtrl,
-                  decoration: const InputDecoration(
-                    hintText: 'manual / pasar_lokal / mock_feed',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Text('Catatan Tambahan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: notesCtrl,
-                  maxLines: 2,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Batal'),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.green700),
-              onPressed: () async {
-                final price = double.tryParse(priceCtrl.text) ?? 0.0;
-                if (selectedCommId == null || (price <= 0 && !isLocked)) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Komoditas dan harga valid wajib diisi!')),
-                  );
-                  return;
-                }
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: AppTheme.green700),
+                  onPressed: () async {
+                    final price = double.tryParse(priceCtrl.text) ?? 0.0;
+                    if (selectedCommId == null || price <= 0) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Komoditas dan harga valid wajib diisi!')),
+                      );
+                      return;
+                    }
 
-                Navigator.pop(ctx);
-                setState(() => _isLoading = true);
+                    Navigator.pop(ctx);
+                    setState(() => _isLoading = true);
 
-                final payload = <String, dynamic>{
-                  'notes': notesCtrl.text,
-                  'source': sourceCtrl.text,
-                };
-                if (!isLocked) {
-                  payload['commodity_id'] = selectedCommId;
-                  payload['price'] = price;
-                  payload['effective_date'] = dateCtrl.text;
-                }
+                    final payload = <String, dynamic>{
+                      'commodity_id': selectedCommId,
+                      'price': price,
+                      'effective_date': dateCtrl.text,
+                      'notes': notesCtrl.text,
+                      'source': sourceCtrl.text.isNotEmpty ? sourceCtrl.text : 'manual',
+                    };
 
-                Map<String, dynamic> result;
-                if (existing == null) {
-                  result = await _apiService.createMarketPrice(payload);
-                } else {
-                  result = await _apiService.updateMarketPrice(existing.id, payload);
-                }
+                    Map<String, dynamic> result;
+                    if (existing == null) {
+                      result = await _apiService.createMarketPrice(payload);
+                    } else {
+                      result = await _apiService.updateMarketPrice(existing.id, payload);
+                    }
 
                 if (!mounted) return;
                 setState(() => _isLoading = false);
