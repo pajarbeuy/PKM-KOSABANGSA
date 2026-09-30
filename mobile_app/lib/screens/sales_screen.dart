@@ -4,7 +4,6 @@ import '../services/api_service.dart';
 import '../models/sale.dart';
 import 'package:intl/intl.dart';
 import '../widgets/app_theme.dart';
-import '../widgets/app_bottom_nav.dart';
 import '../widgets/app_shell.dart';
 import 'add_edit_sale_screen.dart';
 
@@ -172,7 +171,6 @@ class _SalesScreenState extends State<SalesScreen> {
           ),
         ),
       ],
-      bottomNavigationBar: const AppBottomNav(currentIndex: 3),
       floatingActionButton: LayoutBuilder(
         builder: (context, constraints) {
           if (constraints.maxWidth > 800) return const SizedBox.shrink();

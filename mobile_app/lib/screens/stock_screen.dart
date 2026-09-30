@@ -5,7 +5,6 @@ import '../services/api_service.dart';
 import '../models/stock.dart';
 import 'package:intl/intl.dart';
 import '../widgets/app_theme.dart';
-import '../widgets/app_bottom_nav.dart';
 import '../widgets/app_shell.dart';
 
 class StockScreen extends StatefulWidget {
@@ -72,7 +71,6 @@ class _StockScreenState extends State<StockScreen> {
           ),
         ),
       ],
-      bottomNavigationBar: const AppBottomNav(currentIndex: 2),
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppTheme.green700,
         onPressed: () => _showAddStockDialog(context),

@@ -21,7 +21,6 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
   List<MarketPrice> _prices = [];
   List<FarmerCommodity> _commodities = [];
   bool _isLoading = true;
-  bool _isIngesting = false;
   int? _selectedCommodityId;
   String _searchQuery = '';
 
@@ -43,9 +42,19 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
         commodityId: _selectedCommodityId,
       );
 
+      // De-duplicate commodities by name so market price is per commodity type, not per farmer
+      final distinctMap = <String, FarmerCommodity>{};
+      for (final c in comms) {
+        final key = c.name.trim().toLowerCase();
+        if (!distinctMap.containsKey(key)) {
+          distinctMap[key] = c;
+        }
+      }
+      final uniqueComms = distinctMap.values.toList();
+
       if (!mounted) return;
       setState(() {
-        _commodities = comms;
+        _commodities = uniqueComms;
         _prices = priceRes['market_prices'] as List<MarketPrice>? ?? [];
         _isLoading = false;
       });
@@ -61,48 +70,6 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
     }
   }
 
-  Future<void> _triggerIngest() async {
-    setState(() => _isIngesting = true);
-    try {
-      final res = await _apiService.triggerMarketPriceIngest();
-      if (!mounted) return;
-      setState(() => _isIngesting = false);
-
-      if (res['success'] == true) {
-        final stats = res['data'] as Map<String, dynamic>? ?? {};
-        final created = stats['created'] ?? 0;
-        final updated = stats['updated'] ?? 0;
-        final skipped = stats['skipped'] ?? 0;
-        final rejected = stats['rejected'] ?? 0;
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Sinkronisasi sukses! Baru: $created, Diupdate: $updated, Lewat: $skipped, Ditolak: $rejected',
-            ),
-            backgroundColor: AppTheme.green700,
-          ),
-        );
-        _loadData();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(res['message'] ?? 'Gagal sinkronisasi harga pasar.'),
-            backgroundColor: AppTheme.red600,
-          ),
-        );
-      }
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _isIngesting = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Terjadi kesalahan: $e'),
-          backgroundColor: AppTheme.red600,
-        ),
-      );
-    }
-  }
 
   List<MarketPrice> get _filteredPrices {
     if (_searchQuery.isEmpty) return _prices;
@@ -176,7 +143,7 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
 
   Widget _buildHeader(bool isSuperAdmin) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: AppTheme.bannerGradient,
@@ -189,76 +156,68 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Wrap(
-            alignment: WrapAlignment.spaceBetween,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 14,
-            runSpacing: 14,
+          Row(
             children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.trending_up,
-                      color: Colors.white,
-                      size: 26,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Harga Acuan Pasar',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                        ),
-                      ),
-                      Text(
-                        isSuperAdmin
-                            ? 'Kelola master harga acuan komoditas (Super Admin)'
-                            : 'Pantauan harga acuan untuk estimasi nilai panen',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.white.withValues(alpha: 0.85),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.trending_up,
+                  color: Colors.white,
+                  size: 24,
+                ),
               ),
-              if (isSuperAdmin)
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Harga Acuan Pasar',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      isSuperAdmin
+                          ? 'Kelola master harga acuan pasar komoditas'
+                          : 'Pantauan harga acuan untuk estimasi nilai panen',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white.withValues(alpha: 0.85),
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              if (isSuperAdmin) ...[
+                const SizedBox(width: 8),
                 ElevatedButton.icon(
-                  onPressed: _isIngesting ? null : _triggerIngest,
+                  onPressed: () => _showAddEditPriceDialog(null),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: AppTheme.green900,
                     elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  icon: _isIngesting
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.sync, size: 18),
-                  label: Text(_isIngesting ? 'Sinkron...' : 'Sync Provider'),
+                  icon: const Icon(Icons.add, size: 16),
+                  label: const Text('Tambah', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                 ),
+              ],
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
@@ -271,7 +230,7 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
                 SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Harga acuan otomatis mengunci nilai saat panen dicatat (Snapshot permanen). Perubahan master harga di kemudian hari tidak mengubah histori panen lama.',
+                    'Harga acuan pasar diinput manual oleh Super Admin per jenis komoditas untuk dijadikan patokan estimasi nilai panen petani.',
                     style: TextStyle(color: Colors.white70, fontSize: 12),
                   ),
                 ),
@@ -749,11 +708,10 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
                       decoration: const InputDecoration(border: OutlineInputBorder(), isDense: true),
                       items: _commodities
                           .map((c) {
-                            final farmerLabel = c.farmer?['name'] != null ? ' (${c.farmer!['name']})' : '';
                             return DropdownMenuItem(
                               value: c.id,
                               child: Text(
-                                '${c.name}$farmerLabel - ${c.unit}',
+                                '${c.name} (${c.unit})',
                                 overflow: TextOverflow.ellipsis,
                               ),
                             );
