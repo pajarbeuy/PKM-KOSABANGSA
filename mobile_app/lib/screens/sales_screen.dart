@@ -230,7 +230,11 @@ class _SalesScreenState extends State<SalesScreen> {
       itemBuilder: (context, index) {
         final sale = _sales[index];
         final isLunas = sale.status == 'completed';
-        final displayName = sale.commodityName ?? sale.productName ?? 'Bahan Baku';
+        final isProcessed = sale.productType == 'processed';
+        final typeLabel = isProcessed ? 'Produk Olahan' : 'Komoditas';
+        final displayName = isProcessed
+            ? (sale.productName ?? sale.commodityName ?? 'Produk Olahan')
+            : (sale.commodityName ?? sale.productName ?? 'Bahan Baku');
 
         return Card(
           elevation: 0,
@@ -276,12 +280,20 @@ class _SalesScreenState extends State<SalesScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: AppTheme.green100,
+                        color: isProcessed ? const Color(0xFFFFF7ED) : AppTheme.green100,
                         borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: isProcessed ? const Color(0xFFFDBA74) : AppTheme.green300,
+                          width: 0.5,
+                        ),
                       ),
                       child: Text(
-                        displayName,
-                        style: const TextStyle(fontSize: 11, color: AppTheme.green700, fontWeight: FontWeight.bold),
+                        '$typeLabel: $displayName',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isProcessed ? const Color(0xFFC2410C) : AppTheme.green700,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                     if (sale.farmerName != null && sale.farmerName!.isNotEmpty)
@@ -438,7 +450,7 @@ class _SalesScreenState extends State<SalesScreen> {
                     child: Row(
                       children: [
                         const _ColHeader(text: 'TANGGAL', flex: 2),
-                        const _ColHeader(text: 'PEMBELI / KOMODITAS', flex: 4),
+                        const _ColHeader(text: 'PEMBELI / PRODUK', flex: 4),
                         const _ColHeader(text: 'JUMLAH', flex: 2),
                         const _ColHeader(text: 'HARGA/SATUAN', flex: 2),
                         const _ColHeader(text: 'TOTAL', flex: 3),
@@ -453,7 +465,11 @@ class _SalesScreenState extends State<SalesScreen> {
                     final sale = _sales[index];
                     final isLast = index == _sales.length - 1;
                     final isLunas = sale.status == 'completed';
-                    final displayName = sale.commodityName ?? sale.productName ?? 'Bahan Baku';
+                    final isProcessed = sale.productType == 'processed';
+                    final typeLabel = isProcessed ? 'Produk Olahan' : 'Komoditas';
+                    final displayName = isProcessed
+                        ? (sale.productName ?? sale.commodityName ?? 'Produk Olahan')
+                        : (sale.commodityName ?? sale.productName ?? 'Bahan Baku');
 
                     return Column(
                       children: [
@@ -487,10 +503,10 @@ class _SalesScreenState extends State<SalesScreen> {
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
-                                      'Komoditas: $displayName',
-                                      style: const TextStyle(
+                                      '$typeLabel: $displayName',
+                                      style: TextStyle(
                                           fontSize: 12,
-                                          color: AppTheme.green700,
+                                          color: isProcessed ? const Color(0xFFC2410C) : AppTheme.green700,
                                           fontWeight: FontWeight.w600),
                                     ),
                                     if (sale.farmerName != null && sale.farmerName!.isNotEmpty) ...[
