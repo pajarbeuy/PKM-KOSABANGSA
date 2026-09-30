@@ -127,7 +127,7 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
       case 4:
         return 'Katalog publik web dan integrasi nomor pemesanan WhatsApp';
       case 5:
-        return 'Pencatatan dan rekonsiliasi penjualan komoditas & produk olahan';
+        return 'Log riwayat dan rekonsiliasi seluruh transaksi penjualan komoditas & produk olahan';
       case 6:
         return 'Rekapitulasi total pendapatan, biaya, dan laba/rugi petani';
       case 7:
@@ -337,13 +337,13 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
                                 onTap: () => setState(() => _selectedIndex = 4),
                               ),
                               _buildQuickNavCard(
-                                title: 'Pesanan Produk Olahan',
-                                desc: 'Pencatatan dan pemrosesan pesanan olahan dari katalog web & WA',
-                                icon: Icons.receipt_long_rounded,
+                                title: 'Penjualan Terpusat',
+                                desc: 'Log riwayat seluruh transaksi penjualan bahan baku petani & produk olahan',
+                                icon: Icons.point_of_sale_rounded,
                                 color: AppTheme.blue600,
                                 bg: AppTheme.blue100,
                                 width: mWidth,
-                                onTap: () => setState(() => _selectedIndex = 1),
+                                onTap: () => setState(() => _selectedIndex = 5),
                               ),
                               _buildQuickNavCard(
                                 title: 'Laba / Rugi Agregat',
@@ -600,6 +600,12 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
         label: 'Pemasaran & Katalog',
         isActive: _selectedIndex == 4,
         onTap: () => setState(() => _selectedIndex = 4),
+      ),
+      SidebarNavItem(
+        icon: Icons.point_of_sale_rounded,
+        label: 'Penjualan Terpusat',
+        isActive: _selectedIndex == 5,
+        onTap: () => setState(() => _selectedIndex = 5),
       ),
       SidebarNavItem(
         icon: Icons.analytics_rounded,

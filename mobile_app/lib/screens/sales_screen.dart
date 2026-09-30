@@ -136,7 +136,7 @@ class _SalesScreenState extends State<SalesScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  isPetani ? 'Penjualan Bahan Baku' : 'Transaksi Penjualan Komoditas',
+                  isPetani ? 'Penjualan Bahan Baku' : 'Log Riwayat Seluruh Transaksi Penjualan',
                   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.dark900),
                 ),
                 if (isPetani)
@@ -164,7 +164,7 @@ class _SalesScreenState extends State<SalesScreen> {
       title: isPetani ? 'Penjualan Bahan Baku' : 'Penjualan Terpusat',
       subtitle: isPetani
           ? 'Catat dan kelola penjualan komoditas panen petani'
-          : 'Pantauan transaksi penjualan komoditas platform',
+          : 'Log riwayat seluruh transaksi penjualan bahan baku & produk olahan',
       onRefresh: _loadSales,
       headerActions: isPetani
           ? [
@@ -268,16 +268,35 @@ class _SalesScreenState extends State<SalesScreen> {
                       color: AppTheme.textPrimary),
                 ),
                 const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppTheme.green100,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    displayName,
-                    style: const TextStyle(fontSize: 11, color: AppTheme.green700, fontWeight: FontWeight.bold),
-                  ),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppTheme.green100,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        displayName,
+                        style: const TextStyle(fontSize: 11, color: AppTheme.green700, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    if (sale.farmerName != null && sale.farmerName!.isNotEmpty)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.person_outline, size: 12, color: AppTheme.textSecondary),
+                          const SizedBox(width: 3),
+                          Text(
+                            sale.farmerName!,
+                            style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 10),
                 Row(
@@ -474,6 +493,16 @@ class _SalesScreenState extends State<SalesScreen> {
                                           color: AppTheme.green700,
                                           fontWeight: FontWeight.w600),
                                     ),
+                                    if (sale.farmerName != null && sale.farmerName!.isNotEmpty) ...[
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'Petani: ${sale.farmerName}${sale.farmName != null && sale.farmName!.isNotEmpty ? ' (${sale.farmName})' : ''}',
+                                        style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey.shade600,
+                                            fontWeight: FontWeight.w500),
+                                      ),
+                                    ],
                                   ],
                                 ),
                               ),

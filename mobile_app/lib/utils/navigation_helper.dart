@@ -74,6 +74,12 @@ class NavigationHelper {
           onTap: () => navigateTo(context, const SuperAdminDashboardScreen(initialTabIndex: 4)),
         ),
         SidebarNavItem(
+          icon: Icons.point_of_sale_rounded,
+          label: 'Penjualan Terpusat',
+          isActive: currentScreen == 'sales',
+          onTap: () => navigateTo(context, const SuperAdminDashboardScreen(initialTabIndex: 5)),
+        ),
+        SidebarNavItem(
           icon: Icons.analytics_rounded,
           label: 'Laba/Rugi Agregat',
           isActive: currentScreen == 'super_admin_profit_loss',

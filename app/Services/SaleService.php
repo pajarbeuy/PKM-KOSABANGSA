@@ -344,13 +344,15 @@ class SaleService
      */
     public function formatSale(Sale $sale, string $event = 'created'): array
     {
-        $sale->loadMissing(['commodity', 'season.commodity', 'processedProduct']);
+        $sale->loadMissing(['commodity', 'season.commodity', 'processedProduct', 'user']);
         $commodityName = $sale->commodity?->name ?? $sale->season?->commodity?->name;
 
         $base = [
             'id'                   => $sale->id,
             'order_id'             => $sale->order_id,
             'user_id'              => $sale->user_id,
+            'farmer_name'          => $sale->user?->name,
+            'farm_name'            => $sale->user?->farm_name,
             'created_by'           => $sale->created_by,
             'product_type'         => $sale->product_type ?? 'harvest',
             'processed_product_id' => $sale->processed_product_id,
