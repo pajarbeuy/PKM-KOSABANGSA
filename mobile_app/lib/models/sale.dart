@@ -9,9 +9,13 @@ class Sale {
   final String? buyerAddress;
   final String? notes;
   final int? seasonId;
+  final int? commodityId;
+  final String? commodityName;
   final String status;
   final String productType;
   final String? productName;
+  final String? farmerName;
+  final String? farmName;
 
   String get unit => productType == 'processed' ? 'pcs' : 'kg';
 
@@ -26,9 +30,13 @@ class Sale {
     this.buyerAddress,
     this.notes,
     this.seasonId,
+    this.commodityId,
+    this.commodityName,
     required this.status,
     this.productType = 'harvest',
     this.productName,
+    this.farmerName,
+    this.farmName,
   });
 
   factory Sale.fromJson(Map<String, dynamic> json) {
@@ -51,7 +59,10 @@ class Sale {
     if (statusVal.isEmpty) statusVal = 'completed';
 
     final pType = json['product_type']?.toString() ?? 'harvest';
-    final pName = json['product_name']?.toString() ?? json['processed_product']?['name']?.toString();
+    final commName = json['commodity_name']?.toString() ?? json['commodity']?['name']?.toString();
+    final pName = json['product_name']?.toString() ?? json['processed_product']?['name']?.toString() ?? commName;
+    final fName = json['farmer_name']?.toString() ?? json['user']?['name']?.toString();
+    final farm = json['farm_name']?.toString() ?? json['user']?['farm_name']?.toString();
 
     return Sale(
       id: int.tryParse(json['id']?.toString() ?? '') ?? 0,
@@ -64,9 +75,13 @@ class Sale {
       buyerAddress: json['buyer_address']?.toString(),
       notes: json['notes']?.toString(),
       seasonId: int.tryParse(json['season_id']?.toString() ?? ''),
+      commodityId: int.tryParse(json['commodity_id']?.toString() ?? ''),
+      commodityName: commName,
       status: statusVal,
       productType: pType,
       productName: pName,
+      farmerName: fName,
+      farmName: farm,
     );
   }
 }

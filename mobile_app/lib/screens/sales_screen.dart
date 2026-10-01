@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../services/api_service.dart';
 import '../models/sale.dart';
+import '../providers/auth_provider.dart';
 import 'package:intl/intl.dart';
 import '../widgets/app_theme.dart';
-import '../widgets/app_bottom_nav.dart';
 import '../widgets/app_shell.dart';
 import 'add_edit_sale_screen.dart';
 
@@ -107,6 +108,9 @@ class _SalesScreenState extends State<SalesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final auth = Provider.of<AuthProvider>(context);
+    final isPetani = auth.user?.role == 'user';
+
     final content = _isLoading
         ? const Center(child: CircularProgressIndicator(color: AppTheme.green700))
         : RefreshIndicator(
@@ -115,9 +119,9 @@ class _SalesScreenState extends State<SalesScreen> {
             child: LayoutBuilder(
               builder: (context, constraints) {
                 if (constraints.maxWidth > 800) {
-                  return _buildDesktopLayout();
+                  return _buildDesktopLayout(isPetani);
                 }
-                return _buildMobileLayout();
+                return _buildMobileLayout(isPetani);
               },
             ),
           );
@@ -131,21 +135,22 @@ class _SalesScreenState extends State<SalesScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Transaksi Penjualan Terpusat',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.dark900),
+                Text(
+                  isPetani ? 'Penjualan Bahan Baku' : 'Log Riwayat Seluruh Transaksi Penjualan',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.dark900),
                 ),
-                ElevatedButton.icon(
-                  onPressed: _showSaleForm,
-                  icon: const Icon(Icons.add, size: 16),
-                  label: const Text('Catat Penjualan', style: TextStyle(fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.green700,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                if (isPetani)
+                  ElevatedButton.icon(
+                    onPressed: _showSaleForm,
+                    icon: const Icon(Icons.add, size: 16),
+                    label: const Text('Catat Penjualan', style: TextStyle(fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.green700,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    ),
                   ),
-                ),
               ],
             ),
           ),
@@ -156,36 +161,41 @@ class _SalesScreenState extends State<SalesScreen> {
 
     return AppShell(
       currentRoute: 'sales',
-      title: 'Penjualan',
-      subtitle: 'Kelola transaksi penjualan komoditas',
+      title: isPetani ? 'Penjualan Bahan Baku' : 'Penjualan Terpusat',
+      subtitle: isPetani
+          ? 'Catat dan kelola penjualan komoditas panen petani'
+          : 'Log riwayat seluruh transaksi penjualan bahan baku & produk olahan',
       onRefresh: _loadSales,
-      headerActions: [
-        ElevatedButton.icon(
-          onPressed: _showSaleForm,
-          icon: const Icon(Icons.add, size: 16),
-          label: const Text('Tambah Penjualan', style: TextStyle(fontWeight: FontWeight.bold)),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.green700,
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          ),
-        ),
-      ],
-      bottomNavigationBar: const AppBottomNav(currentIndex: 3),
-      floatingActionButton: LayoutBuilder(
-        builder: (context, constraints) {
-          if (constraints.maxWidth > 800) return const SizedBox.shrink();
-          return FloatingActionButton.extended(
-            backgroundColor: AppTheme.green700,
-            foregroundColor: Colors.white,
-            onPressed: _showSaleForm,
-            icon: const Icon(Icons.add),
-            label: const Text('Tambah Penjualan',
-                style: TextStyle(fontWeight: FontWeight.bold)),
-          );
-        },
-      ),
+      headerActions: isPetani
+          ? [
+              ElevatedButton.icon(
+                onPressed: _showSaleForm,
+                icon: const Icon(Icons.add, size: 16),
+                label: const Text('Tambah Penjualan', style: TextStyle(fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.green700,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                ),
+              ),
+            ]
+          : [],
+      floatingActionButton: isPetani
+          ? LayoutBuilder(
+              builder: (context, constraints) {
+                if (constraints.maxWidth > 800) return const SizedBox.shrink();
+                return FloatingActionButton.extended(
+                  backgroundColor: AppTheme.green700,
+                  foregroundColor: Colors.white,
+                  onPressed: _showSaleForm,
+                  icon: const Icon(Icons.add),
+                  label: const Text('Tambah Penjualan',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                );
+              },
+            )
+          : null,
       child: content,
     );
   }
@@ -212,7 +222,7 @@ class _SalesScreenState extends State<SalesScreen> {
   }
 
   // ── Mobile Layout ──────────────────────────────────────────────────────────
-  Widget _buildMobileLayout() {
+  Widget _buildMobileLayout(bool isPetani) {
     if (_sales.isEmpty) return _buildEmptyState();
     return ListView.builder(
       padding: const EdgeInsets.all(16),
@@ -220,6 +230,11 @@ class _SalesScreenState extends State<SalesScreen> {
       itemBuilder: (context, index) {
         final sale = _sales[index];
         final isLunas = sale.status == 'completed';
+        final isProcessed = sale.productType == 'processed';
+        final typeLabel = isProcessed ? 'Produk Olahan' : 'Komoditas';
+        final displayName = isProcessed
+            ? (sale.productName ?? sale.commodityName ?? 'Produk Olahan')
+            : (sale.commodityName ?? sale.productName ?? 'Bahan Baku');
 
         return Card(
           elevation: 0,
@@ -256,20 +271,45 @@ class _SalesScreenState extends State<SalesScreen> {
                       fontWeight: FontWeight.bold,
                       color: AppTheme.textPrimary),
                 ),
-                if (sale.productName != null) ...[
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AppTheme.green100,
-                      borderRadius: BorderRadius.circular(6),
+                const SizedBox(height: 4),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: isProcessed ? const Color(0xFFFFF7ED) : AppTheme.green100,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: isProcessed ? const Color(0xFFFDBA74) : AppTheme.green300,
+                          width: 0.5,
+                        ),
+                      ),
+                      child: Text(
+                        '$typeLabel: $displayName',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isProcessed ? const Color(0xFFC2410C) : AppTheme.green700,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
-                    child: Text(
-                      sale.productName!,
-                      style: const TextStyle(fontSize: 11, color: AppTheme.green700, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
+                    if (sale.farmerName != null && sale.farmerName!.isNotEmpty)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.person_outline, size: 12, color: AppTheme.textSecondary),
+                          const SizedBox(width: 3),
+                          Text(
+                            sale.farmerName!,
+                            style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
                 const SizedBox(height: 10),
                 Row(
                   children: [
@@ -292,27 +332,29 @@ class _SalesScreenState extends State<SalesScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    _ActionBtn(
-                      icon: Icons.edit_outlined,
-                      color: AppTheme.blue600,
-                      bgColor: AppTheme.blue100,
-                      tooltip: 'Edit',
-                      onTap: () => _showSaleForm(sale: sale),
-                    ),
-                    const SizedBox(width: 8),
-                    _ActionBtn(
-                      icon: Icons.delete_outline,
-                      color: AppTheme.red600,
-                      bgColor: AppTheme.red100,
-                      tooltip: 'Hapus',
-                      onTap: () => _deleteSale(sale),
-                    ),
-                  ],
-                ),
+                if (isPetani) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      _ActionBtn(
+                        icon: Icons.edit_outlined,
+                        color: AppTheme.blue600,
+                        bgColor: AppTheme.blue100,
+                        tooltip: 'Edit',
+                        onTap: () => _showSaleForm(sale: sale),
+                      ),
+                      const SizedBox(width: 8),
+                      _ActionBtn(
+                        icon: Icons.delete_outline,
+                        color: AppTheme.red600,
+                        bgColor: AppTheme.red100,
+                        tooltip: 'Hapus',
+                        onTap: () => _deleteSale(sale),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
@@ -322,7 +364,7 @@ class _SalesScreenState extends State<SalesScreen> {
   }
 
   // ── Desktop Layout ─────────────────────────────────────────────────────────
-  Widget _buildDesktopLayout() {
+  Widget _buildDesktopLayout(bool isPetani) {
     int totalPendapatan = 0;
     int sudahLunas = 0;
     int piutang = 0;
@@ -405,15 +447,15 @@ class _SalesScreenState extends State<SalesScreen> {
                     color: const Color(0xFFF9FAFB),
                     padding: const EdgeInsets.symmetric(
                         horizontal: 20, vertical: 14),
-                    child: const Row(
+                    child: Row(
                       children: [
-                        _ColHeader(text: 'TANGGAL', flex: 2),
-                        _ColHeader(text: 'PEMBELI / PRODUK', flex: 4),
-                        _ColHeader(text: 'JUMLAH', flex: 2),
-                        _ColHeader(text: 'HARGA/SATUAN', flex: 2),
-                        _ColHeader(text: 'TOTAL', flex: 3),
-                        _ColHeader(text: 'STATUS', flex: 2),
-                        _ColHeader(text: 'AKSI', flex: 2),
+                        const _ColHeader(text: 'TANGGAL', flex: 2),
+                        const _ColHeader(text: 'PEMBELI / PRODUK', flex: 4),
+                        const _ColHeader(text: 'JUMLAH', flex: 2),
+                        const _ColHeader(text: 'HARGA/SATUAN', flex: 2),
+                        const _ColHeader(text: 'TOTAL', flex: 3),
+                        const _ColHeader(text: 'STATUS', flex: 2),
+                        if (isPetani) const _ColHeader(text: 'AKSI', flex: 2),
                       ],
                     ),
                   ),
@@ -423,6 +465,11 @@ class _SalesScreenState extends State<SalesScreen> {
                     final sale = _sales[index];
                     final isLast = index == _sales.length - 1;
                     final isLunas = sale.status == 'completed';
+                    final isProcessed = sale.productType == 'processed';
+                    final typeLabel = isProcessed ? 'Produk Olahan' : 'Komoditas';
+                    final displayName = isProcessed
+                        ? (sale.productName ?? sale.commodityName ?? 'Produk Olahan')
+                        : (sale.commodityName ?? sale.productName ?? 'Bahan Baku');
 
                     return Column(
                       children: [
@@ -454,14 +501,22 @@ class _SalesScreenState extends State<SalesScreen> {
                                           fontWeight: FontWeight.w700,
                                           color: AppTheme.textPrimary),
                                     ),
-                                    if (sale.productName != null) ...[
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '$typeLabel: $displayName',
+                                      style: TextStyle(
+                                          fontSize: 12,
+                                          color: isProcessed ? const Color(0xFFC2410C) : AppTheme.green700,
+                                          fontWeight: FontWeight.w600),
+                                    ),
+                                    if (sale.farmerName != null && sale.farmerName!.isNotEmpty) ...[
                                       const SizedBox(height: 2),
                                       Text(
-                                        'Produk: ${sale.productName}',
-                                        style: const TextStyle(
+                                        'Petani: ${sale.farmerName}${sale.farmName != null && sale.farmName!.isNotEmpty ? ' (${sale.farmName})' : ''}',
+                                        style: TextStyle(
                                             fontSize: 12,
-                                            color: AppTheme.green700,
-                                            fontWeight: FontWeight.w600),
+                                            color: Colors.grey.shade600,
+                                            fontWeight: FontWeight.w500),
                                       ),
                                     ],
                                   ],
@@ -505,29 +560,30 @@ class _SalesScreenState extends State<SalesScreen> {
                                 ),
                               ),
                               // AKSI
-                              Expanded(
-                                flex: 2,
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    _ActionBtn(
-                                      icon: Icons.edit_outlined,
-                                      color: AppTheme.blue600,
-                                      bgColor: AppTheme.blue100,
-                                      tooltip: 'Edit',
-                                      onTap: () => _showSaleForm(sale: sale),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    _ActionBtn(
-                                      icon: Icons.delete_outline,
-                                      color: AppTheme.red600,
-                                      bgColor: AppTheme.red100,
-                                      tooltip: 'Hapus',
-                                      onTap: () => _deleteSale(sale),
-                                    ),
-                                  ],
+                              if (isPetani)
+                                Expanded(
+                                  flex: 2,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      _ActionBtn(
+                                        icon: Icons.edit_outlined,
+                                        color: AppTheme.blue600,
+                                        bgColor: AppTheme.blue100,
+                                        tooltip: 'Edit',
+                                        onTap: () => _showSaleForm(sale: sale),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      _ActionBtn(
+                                        icon: Icons.delete_outline,
+                                        color: AppTheme.red600,
+                                        bgColor: AppTheme.red100,
+                                        tooltip: 'Hapus',
+                                        onTap: () => _deleteSale(sale),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
                             ],
                           ),
                         ),

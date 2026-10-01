@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\FarmerCommodity;
 use App\Models\MarketPrice;
 use DomainException;
 use Illuminate\Database\Eloquent\Collection;
@@ -11,10 +12,27 @@ class MarketPriceService
     /**
      * Mencari harga pasar yang berlaku efektif untuk komoditas tertentu pada tanggal tertentu.
      * Menggunakan aturan: effective_date <= date, diurutkan dari tanggal efektif paling mendekati.
+     * Mendukung pencocokan berdasarkan jenis nama komoditas agar berlaku bagi semua petani.
      */
     public function findEffectivePrice(int $commodityId, string $date): ?MarketPrice
     {
-        return MarketPrice::effectiveForDate($commodityId, $date)->first();
+        $exact = MarketPrice::effectiveForDate($commodityId, $date)->first();
+        if ($exact) {
+            return $exact;
+        }
+
+        $targetCommodity = FarmerCommodity::find($commodityId);
+        if (!$targetCommodity) {
+            return null;
+        }
+
+        $normName = strtolower(trim($targetCommodity->name));
+        return MarketPrice::whereHas('commodity', function ($q) use ($normName) {
+            $q->whereRaw('LOWER(TRIM(name)) = ?', [$normName]);
+        })
+        ->whereDate('effective_date', '<=', $date)
+        ->orderBy('effective_date', 'desc')
+        ->first();
     }
 
     /**
@@ -22,24 +40,33 @@ class MarketPriceService
      */
     public function createMarketPrice(array $data, int $userId): MarketPrice
     {
+        $targetComm = FarmerCommodity::find($data['commodity_id']);
+        $normName = $targetComm ? strtolower(trim($targetComm->name)) : null;
+
         $existing = MarketPrice::withTrashed()
-            ->where('commodity_id', $data['commodity_id'])
+            ->where(function ($q) use ($data, $normName) {
+                $q->where('commodity_id', $data['commodity_id']);
+                if ($normName) {
+                    $q->orWhereHas('commodity', function ($sub) use ($normName) {
+                        $sub->whereRaw('LOWER(TRIM(name)) = ?', [$normName]);
+                    });
+                }
+            })
             ->whereDate('effective_date', $data['effective_date'])
             ->first();
 
         if ($existing) {
             if ($existing->trashed()) {
                 $existing->restore();
-                $existing->update([
-                    'price'      => $data['price'],
-                    'unit'       => $data['unit'] ?? $existing->unit ?? 'kg',
-                    'source'     => $data['source'] ?? 'manual',
-                    'notes'      => $data['notes'] ?? null,
-                    'created_by' => $userId,
-                ]);
-                return $existing->fresh()->load('commodity');
             }
-            throw new DomainException('Harga pasar acuan untuk komoditas dan tanggal efektif tersebut sudah ada.');
+            $existing->update([
+                'price'      => $data['price'],
+                'unit'       => $data['unit'] ?? $existing->unit ?? 'kg',
+                'source'     => $data['source'] ?? 'manual',
+                'notes'      => $data['notes'] ?? null,
+                'created_by' => $userId,
+            ]);
+            return $existing->fresh()->load('commodity');
         }
 
         return MarketPrice::create([
@@ -59,22 +86,6 @@ class MarketPriceService
      */
     public function updateMarketPrice(MarketPrice $marketPrice, array $data): MarketPrice
     {
-        if ($marketPrice->isReferenced()) {
-            $isPriceChanged = isset($data['price']) && (float) $data['price'] !== (float) $marketPrice->price;
-            $isDateChanged  = isset($data['effective_date']) && $data['effective_date'] !== $marketPrice->effective_date?->toDateString();
-            $isCommChanged  = isset($data['commodity_id']) && (int) $data['commodity_id'] !== (int) $marketPrice->commodity_id;
-
-            if ($isPriceChanged || $isDateChanged || $isCommChanged) {
-                throw new DomainException('Harga pasar tidak dapat diubah karena telah menjadi acuan pada data panen historis.');
-            }
-
-            // Jika hanya notes atau source yang diupdate
-            if (isset($data['notes'])) $marketPrice->notes = $data['notes'];
-            if (isset($data['source'])) $marketPrice->source = $data['source'];
-            $marketPrice->save();
-
-            return $marketPrice->load('commodity');
-        }
 
         if (isset($data['effective_date']) || isset($data['commodity_id'])) {
             $targetCommId = $data['commodity_id'] ?? $marketPrice->commodity_id;

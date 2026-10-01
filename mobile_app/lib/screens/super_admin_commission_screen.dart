@@ -22,8 +22,13 @@ class _SuperAdminCommissionScreenState extends State<SuperAdminCommissionScreen>
   CommissionSummary? _summary;
   String? _startDate;
   String? _endDate;
+  DateTime? _selectedDate;
   final TextEditingController _searchCtrl = TextEditingController();
   String _searchQuery = '';
+  int _currentPage = 1;
+  int _lastPage = 1;
+  int _totalItems = 0;
+  final int _perPage = 10;
 
   final _currencyFormat = NumberFormat.currency(
     locale: 'id_ID',
@@ -49,12 +54,17 @@ class _SuperAdminCommissionScreenState extends State<SuperAdminCommissionScreen>
       final result = await _apiService.getCommissions(
         startDate: _startDate,
         endDate: _endDate,
+        page: _currentPage,
+        perPage: _perPage,
       );
 
       if (mounted) {
         setState(() {
           _summary = result['summary'] as CommissionSummary?;
           _commissions = result['commissions'] as List<Commission>;
+          _totalItems = result['total'] as int? ?? _commissions.length;
+          _lastPage = result['last_page'] as int? ?? 1;
+          _currentPage = result['current_page'] as int? ?? _currentPage;
           _isLoading = false;
         });
       }
@@ -68,6 +78,51 @@ class _SuperAdminCommissionScreenState extends State<SuperAdminCommissionScreen>
         ),
       );
     }
+  }
+
+  Future<void> _pickDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate ?? now,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(now.year + 5),
+      helpText: 'Pilih Tanggal Transaksi Komisi',
+      cancelText: 'Batal',
+      confirmText: 'Terapkan',
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppTheme.green700,
+              onPrimary: Colors.white,
+              onSurface: AppTheme.textPrimary,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() {
+        _selectedDate = picked;
+        _startDate = DateFormat('yyyy-MM-dd').format(picked);
+        _endDate = DateFormat('yyyy-MM-dd').format(picked);
+        _currentPage = 1;
+      });
+      _loadData();
+    }
+  }
+
+  void _clearDateFilter() {
+    setState(() {
+      _selectedDate = null;
+      _startDate = null;
+      _endDate = null;
+      _currentPage = 1;
+    });
+    _loadData();
   }
 
   List<Commission> get _filteredCommissions {
@@ -108,7 +163,10 @@ class _SuperAdminCommissionScreenState extends State<SuperAdminCommissionScreen>
             const SizedBox(height: 20),
             if (_summary != null) _buildSummaryKpis(_summary!, isSuperAdmin),
             const SizedBox(height: 20),
-            _buildSearchBar(),
+            if (isSuperAdmin)
+              _buildSearchBar()
+            else
+              _buildDateSelector(),
             const SizedBox(height: 16),
             if (_isLoading)
               const Padding(
@@ -116,9 +174,11 @@ class _SuperAdminCommissionScreenState extends State<SuperAdminCommissionScreen>
                 child: Center(child: CircularProgressIndicator(color: AppTheme.green700)),
               )
             else if (_filteredCommissions.isEmpty)
-              _buildEmptyState()
-            else
-              _buildCommissionList(_filteredCommissions),
+              _buildEmptyState(isSuperAdmin)
+            else ...[
+              _buildCommissionList(_filteredCommissions, isSuperAdmin),
+              _buildPaginationControl(),
+            ],
           ],
         ),
       ),
@@ -342,7 +402,93 @@ class _SuperAdminCommissionScreenState extends State<SuperAdminCommissionScreen>
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildDateSelector() {
+    final hasFilter = _selectedDate != null;
+    final dateDisplay = hasFilter
+        ? DateFormat('d MMMM yyyy', 'id').format(_selectedDate!)
+        : 'Semua Tanggal Transaksi';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppTheme.cardBg,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: hasFilter ? AppTheme.green700 : AppTheme.cardBorder,
+          width: hasFilter ? 1.5 : 1.0,
+        ),
+        boxShadow: AppTheme.cardShadow,
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: hasFilter ? AppTheme.green100 : const Color(0xFFF3F4F6),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.calendar_today_rounded,
+              size: 20,
+              color: hasFilter ? AppTheme.green700 : AppTheme.textSecondary,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Cek Transaksi Tanggal',
+                  style: TextStyle(fontSize: 11, color: AppTheme.textSecondary),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  dateDisplay,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: hasFilter ? AppTheme.green800 : AppTheme.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (hasFilter) ...[
+            TextButton.icon(
+              onPressed: _clearDateFilter,
+              icon: const Icon(Icons.close_rounded, size: 16, color: AppTheme.red600),
+              label: const Text('Reset', style: TextStyle(fontSize: 12, color: AppTheme.red600)),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ),
+            const SizedBox(width: 8),
+          ],
+          ElevatedButton.icon(
+            onPressed: _pickDate,
+            icon: const Icon(Icons.edit_calendar_rounded, size: 16),
+            label: Text(hasFilter ? 'Ubah' : 'Pilih Tanggal', style: const TextStyle(fontSize: 12)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.green700,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(bool isSuperAdmin) {
+    final hasDateFilter = !isSuperAdmin && _selectedDate != null;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 20),
@@ -356,22 +502,41 @@ class _SuperAdminCommissionScreenState extends State<SuperAdminCommissionScreen>
         children: [
           Icon(Icons.receipt_long_outlined, size: 56, color: Colors.grey.shade300),
           const SizedBox(height: 16),
-          const Text(
-            'Belum ada transaksi komisi',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppTheme.textPrimary),
+          Text(
+            hasDateFilter
+                ? 'Tidak ada transaksi pada tanggal ini'
+                : 'Belum ada transaksi komisi',
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppTheme.textPrimary),
           ),
           const SizedBox(height: 6),
-          const Text(
-            'Komisi platform 10% akan otomatis dicatat setiap kali pesanan diselesaikan atau penjualan dicatat.',
+          Text(
+            hasDateFilter
+                ? 'Tidak ditemukan catatan transaksi komisi pada ${DateFormat('d MMMM yyyy', 'id').format(_selectedDate!)}.'
+                : (isSuperAdmin
+                    ? 'Komisi platform 10% akan otomatis dicatat setiap kali pesanan diselesaikan atau penjualan dicatat.'
+                    : 'Potongan komisi platform 10% akan otomatis dicatat saat produk olahan Anda terjual.'),
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+            style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary),
           ),
+          if (hasDateFilter) ...[
+            const SizedBox(height: 16),
+            OutlinedButton.icon(
+              onPressed: _clearDateFilter,
+              icon: const Icon(Icons.refresh_rounded, size: 16),
+              label: const Text('Tampilkan Semua Tanggal'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppTheme.green700,
+                side: const BorderSide(color: AppTheme.green700),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildCommissionList(List<Commission> items) {
+  Widget _buildCommissionList(List<Commission> items, bool isSuperAdmin) {
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -379,12 +544,12 @@ class _SuperAdminCommissionScreenState extends State<SuperAdminCommissionScreen>
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final item = items[index];
-        return _buildCommissionCard(item);
+        return _buildCommissionCard(item, isSuperAdmin);
       },
     );
   }
 
-  Widget _buildCommissionCard(Commission item) {
+  Widget _buildCommissionCard(Commission item, bool isSuperAdmin) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -437,7 +602,9 @@ class _SuperAdminCommissionScreenState extends State<SuperAdminCommissionScreen>
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Petani: ${item.farmerName ?? 'Mitra Tani #${item.userId}'}${item.productName != null ? ' • ${item.productName}' : ''}',
+                      isSuperAdmin
+                          ? 'Petani: ${item.farmerName ?? 'Mitra Tani #${item.userId}'}${item.productName != null ? ' • ${item.productName}' : ''}'
+                          : (item.productName != null ? 'Produk: ${item.productName}' : 'Penjualan Produk Mitra Tani'),
                       style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
                     ),
                   ],
@@ -469,10 +636,96 @@ class _SuperAdminCommissionScreenState extends State<SuperAdminCommissionScreen>
                 isBold: true,
               ),
               _buildAmountPill(
-                label: 'Penerimaan Petani (90%)',
+                label: isSuperAdmin ? 'Penerimaan Petani (90%)' : 'Penerimaan Bersih Anda (90%)',
                 amount: _currencyFormat.format(item.netFarmerAmount),
                 color: const Color(0xFF059669),
                 isBold: true,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaginationControl() {
+    if (_lastPage <= 1 && _totalItems <= _perPage) {
+      return const SizedBox.shrink();
+    }
+
+    final fromIndex = _commissions.isEmpty ? 0 : ((_currentPage - 1) * _perPage) + 1;
+    final toIndex = ((_currentPage - 1) * _perPage) + _commissions.length;
+
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppTheme.cardBg,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.cardBorder),
+        boxShadow: AppTheme.cardShadow,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            'Menampilkan $fromIndex–$toIndex dari $_totalItems transaksi',
+            style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+          ),
+          Row(
+            children: [
+              OutlinedButton.icon(
+                onPressed: _currentPage > 1 && !_isLoading
+                    ? () {
+                        setState(() => _currentPage--);
+                        _loadData();
+                      }
+                    : null,
+                icon: const Icon(Icons.chevron_left_rounded, size: 18),
+                label: const Text('Sebelumnya', style: TextStyle(fontSize: 12)),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  minimumSize: Size.zero,
+                  side: BorderSide(
+                    color: _currentPage > 1 ? AppTheme.green700 : Colors.grey.shade300,
+                  ),
+                  foregroundColor: AppTheme.green700,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppTheme.green100,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  'Hal. $_currentPage / $_lastPage',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.green800,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton.icon(
+                onPressed: _currentPage < _lastPage && !_isLoading
+                    ? () {
+                        setState(() => _currentPage++);
+                        _loadData();
+                      }
+                    : null,
+                icon: const Icon(Icons.chevron_right_rounded, size: 18),
+                label: const Text('Berikutnya', style: TextStyle(fontSize: 12)),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  minimumSize: Size.zero,
+                  side: BorderSide(
+                    color: _currentPage < _lastPage ? AppTheme.green700 : Colors.grey.shade300,
+                  ),
+                  foregroundColor: AppTheme.green700,
+                ),
               ),
             ],
           ),

@@ -12,7 +12,6 @@ import '../widgets/stat_card.dart';
 import '../widgets/dashboard_widgets.dart';
 import '../widgets/harvest_chart.dart';
 import '../widgets/charts/processed_sales_chart.dart';
-import '../widgets/app_bottom_nav.dart';
 import 'super_admin_dashboard_screen.dart';
 import '../utils/navigation_helper.dart';
 
@@ -208,11 +207,20 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildMobile(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final name = auth.user?.name ?? 'User';
+    final email = auth.user?.email ?? '';
     final initials = name.isNotEmpty ? name[0].toUpperCase() : 'U';
 
     return Scaffold(
       backgroundColor: AppTheme.pageBg,
       appBar: AppMobileAppBar(title: 'Dashboard', userInitials: initials),
+      drawer: AppDrawer(
+        userName: name,
+        userEmail: email,
+        userInitials: initials,
+        onLogout: () => _showLogoutDialog(context),
+        navItems: _buildNavItems(context, isActive: 'dashboard'),
+        secondaryItems: _buildSecondaryNavItems(context),
+      ),
       body: Column(
         children: [
           if (auth.isImpersonating) _buildImpersonationBar(auth),
@@ -226,14 +234,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: AppTheme.green700,
                     child: SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(16, 20, 16, 80),
+                      padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
                       child: _buildContent(context, isDesktop: false),
                     ),
                   ),
           ),
         ],
       ),
-      bottomNavigationBar: const AppBottomNav(currentIndex: 0),
     );
   }
 
@@ -376,7 +383,7 @@ class _HomeScreenState extends State<HomeScreen> {
         iconBg: AppTheme.blue100,
         iconColor: AppTheme.blue600,
         value: _formatCurrencyShort(rev),
-        label: 'Total Pendapatan',
+        label: 'Pendapatan Bersih',
         badgeLabel: '$txCount transaksi',
         badgeBg: AppTheme.blue100,
         badgeTextColor: AppTheme.blue600,
@@ -452,7 +459,7 @@ class _HomeScreenState extends State<HomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _financeTile(
-            label: 'Total Pendapatan',
+            label: 'Pendapatan Bersih',
             value: _formatCurrency(revenue),
             color: AppTheme.green700,
             bgColor: AppTheme.green100,

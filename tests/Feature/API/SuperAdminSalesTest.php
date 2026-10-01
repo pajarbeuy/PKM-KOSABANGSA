@@ -40,64 +40,35 @@ class SuperAdminSalesTest extends TestCase
     }
 
     /** @test */
-    public function test_farmer_cannot_create_sale(): void
+    public function test_farmer_can_record_harvest_sale(): void
     {
+        StockTransaction::addTransaction('in', 100, 'Panen', null, $this->farmer1->id);
+
         Sanctum::actingAs($this->farmer1);
 
         $response = $this->postJson('/api/sales', [
-            'buyer_name'   => 'Pembeli X',
-            'weight_kg'    => 10,
-            'price_per_kg' => 5000,
+            'product_type' => 'harvest',
+            'buyer_name'   => 'Tengkulak Beras',
+            'weight_kg'    => 40,
+            'price_per_kg' => 12000,
             'date'         => now()->toDateString(),
         ]);
 
-        $response->assertStatus(403);
+        $response->assertStatus(201)
+            ->assertJson([
+                'success' => true,
+                'data' => [
+                    'total'        => 480000,
+                    'user_id'      => $this->farmer1->id,
+                    'product_type' => 'harvest',
+                ],
+            ]);
+
+        $this->assertEquals(60.0, StockTransaction::getCurrentBalance($this->farmer1->id));
     }
 
     /** @test */
-    public function test_farmer_cannot_update_sale(): void
-    {
-        $sale = Sale::create([
-            'user_id'        => $this->farmer1->id,
-            'date'           => now()->toDateString(),
-            'buyer_name'     => 'Pembeli A',
-            'weight_kg'      => 10,
-            'price_per_kg'   => 5000,
-            'total'          => 50000,
-            'payment_status' => 'paid',
-        ]);
-
-        Sanctum::actingAs($this->farmer1);
-
-        $response = $this->putJson("/api/sales/{$sale->id}", [
-            'buyer_name' => 'Pembeli Updated',
-        ]);
-
-        $response->assertStatus(403);
-    }
-
-    /** @test */
-    public function test_farmer_cannot_delete_sale(): void
-    {
-        $sale = Sale::create([
-            'user_id'        => $this->farmer1->id,
-            'date'           => now()->toDateString(),
-            'buyer_name'     => 'Pembeli A',
-            'weight_kg'      => 10,
-            'price_per_kg'   => 5000,
-            'total'          => 50000,
-            'payment_status' => 'paid',
-        ]);
-
-        Sanctum::actingAs($this->farmer1);
-
-        $response = $this->deleteJson("/api/sales/{$sale->id}");
-
-        $response->assertStatus(403);
-    }
-
-    /** @test */
-    public function test_super_admin_can_record_harvest_sale_for_farmer(): void
+    public function test_super_admin_cannot_record_harvest_sale(): void
     {
         StockTransaction::addTransaction('in', 100, 'Panen', null, $this->farmer1->id);
 
@@ -112,18 +83,101 @@ class SuperAdminSalesTest extends TestCase
             'date'         => now()->toDateString(),
         ]);
 
-        $response->assertStatus(201)
-            ->assertJson([
-                'success' => true,
-                'data' => [
-                    'total'        => 320000,
-                    'user_id'      => $this->farmer1->id,
-                    'created_by'   => $this->superAdmin->id,
-                    'product_type' => 'harvest',
-                ],
-            ]);
+        $response->assertStatus(403);
+    }
 
-        $this->assertEquals(60.0, StockTransaction::getCurrentBalance($this->farmer1->id));
+    /** @test */
+    public function test_farmer_cannot_record_processed_product_sale(): void
+    {
+        $product = ProcessedProduct::factory()->create([
+            'owner_id' => $this->farmer1->id,
+            'name'     => 'Keripik Tempe',
+            'price'    => 15000,
+            'stock'    => 20,
+            'status'   => 'active',
+        ]);
+
+        Sanctum::actingAs($this->farmer1);
+
+        $response = $this->postJson('/api/sales', [
+            'product_type'         => 'processed',
+            'processed_product_id' => $product->id,
+            'buyer_name'           => 'Pembeli Langsung',
+            'quantity'             => 5,
+            'price_per_unit'       => 15000,
+            'date'                 => now()->toDateString(),
+        ]);
+
+        $response->assertStatus(403);
+    }
+
+    /** @test */
+    public function test_farmer_can_update_own_harvest_sale(): void
+    {
+        $sale = Sale::create([
+            'user_id'        => $this->farmer1->id,
+            'product_type'   => 'harvest',
+            'date'           => now()->toDateString(),
+            'buyer_name'     => 'Pembeli A',
+            'weight_kg'      => 10,
+            'price_per_kg'   => 5000,
+            'total'          => 50000,
+            'payment_status' => 'paid',
+        ]);
+
+        Sanctum::actingAs($this->farmer1);
+
+        $response = $this->putJson("/api/sales/{$sale->id}", [
+            'buyer_name' => 'Pembeli Updated',
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertEquals('Pembeli Updated', $sale->fresh()->buyer_name);
+    }
+
+    /** @test */
+    public function test_farmer_cannot_update_other_farmer_harvest_sale(): void
+    {
+        $sale = Sale::create([
+            'user_id'        => $this->farmer2->id,
+            'product_type'   => 'harvest',
+            'date'           => now()->toDateString(),
+            'buyer_name'     => 'Pembeli B',
+            'weight_kg'      => 10,
+            'price_per_kg'   => 5000,
+            'total'          => 50000,
+            'payment_status' => 'paid',
+        ]);
+
+        Sanctum::actingAs($this->farmer1);
+
+        $response = $this->putJson("/api/sales/{$sale->id}", [
+            'buyer_name' => 'Hacker Pembeli',
+        ]);
+
+        $response->assertStatus(403);
+    }
+
+    /** @test */
+    public function test_farmer_can_delete_own_harvest_sale(): void
+    {
+        $sale = Sale::create([
+            'user_id'        => $this->farmer1->id,
+            'product_type'   => 'harvest',
+            'date'           => now()->toDateString(),
+            'buyer_name'     => 'Pembeli A',
+            'weight_kg'      => 10,
+            'price_per_kg'   => 5000,
+            'total'          => 50000,
+            'payment_status' => 'paid',
+        ]);
+
+        Sanctum::actingAs($this->farmer1);
+
+        $response = $this->deleteJson("/api/sales/{$sale->id}");
+
+        $response->assertStatus(200);
+        $this->assertSoftDeleted('sales', ['id' => $sale->id]);
     }
 
     /** @test */

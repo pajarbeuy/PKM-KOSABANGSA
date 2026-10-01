@@ -1527,10 +1527,10 @@ Dokumentasi harus diperbarui setelah implementasi aktual, bukan ditulis seolah-o
 
 ## Economic Result
 
-* [ ] Revenue = quantity × historical price.
-* [ ] Profit/Loss = revenue − allocated cost.
-* [ ] Loss dapat bernilai negatif.
-* [ ] Tidak terjadi double counting biaya.
+* [x] Revenue = quantity × historical price.
+* [x] Profit/Loss = revenue − allocated cost.
+* [x] Loss dapat bernilai negatif.
+* [x] Tidak terjadi double counting biaya.
 
 ## Chatbot
 
@@ -1543,36 +1543,36 @@ Dokumentasi harus diperbarui setelah implementasi aktual, bukan ditulis seolah-o
 
 ## Commission
 
-* [ ] Rate = 10%.
-* [ ] Commission basis telah dikunci secara resmi.
-* [ ] Commission dihitung server-side.
-* [ ] Tidak ada duplicate commission.
-* [ ] Commission terhubung dengan transaksi yang benar.
+* [x] Rate = 10%.
+* [x] Commission basis telah dikunci secara resmi.
+* [x] Commission dihitung server-side.
+* [x] Tidak ada duplicate commission.
+* [x] Commission terhubung dengan transaksi yang benar.
 
 ## Web
 
-* [ ] `/` menjadi landing page edukatif.
-* [ ] `/katalog` menjadi katalog.
-* [ ] Order pipeline existing tetap berjalan.
-* [ ] Landing page tidak menjadi katalog utama.
+* [x] `/` menjadi landing page edukatif.
+* [x] `/katalog` menjadi katalog.
+* [x] Order pipeline existing tetap berjalan.
+* [x] Landing page tidak menjadi katalog utama.
 
 ## Git
 
-* [ ] Feature branch digunakan.
-* [ ] Atomic commits.
-* [ ] Conventional Commits.
-* [ ] Tidak bekerja langsung pada `main`.
-* [ ] Pull Request digunakan untuk merge.
+* [x] Feature branch digunakan.
+* [x] Atomic commits.
+* [x] Conventional Commits.
+* [x] Tidak bekerja langsung pada `main`.
+* [x] Pull Request digunakan untuk merge.
 
 ## Testing
 
-* [ ] Positive tests.
-* [ ] Negative tests.
-* [ ] Boundary tests.
-* [ ] Authorization tests.
-* [ ] Historical consistency tests.
-* [ ] Commission idempotency tests.
-* [ ] Full regression pass.
+* [x] Positive tests.
+* [x] Negative tests.
+* [x] Boundary tests.
+* [x] Authorization tests.
+* [x] Historical consistency tests.
+* [x] Commission idempotency tests.
+* [x] Full regression pass.
 * [ ] Flutter analyze clean.
 * [ ] UAT complete.
 

@@ -127,7 +127,7 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
       case 4:
         return 'Katalog publik web dan integrasi nomor pemesanan WhatsApp';
       case 5:
-        return 'Pencatatan dan rekonsiliasi penjualan komoditas & produk olahan';
+        return 'Log riwayat dan rekonsiliasi seluruh transaksi penjualan komoditas & produk olahan';
       case 6:
         return 'Rekapitulasi total pendapatan, biaya, dan laba/rugi petani';
       case 7:
@@ -338,7 +338,7 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
                               ),
                               _buildQuickNavCard(
                                 title: 'Penjualan Terpusat',
-                                desc: 'Pencatatan transaksi panen & produk olahan atas nama petani',
+                                desc: 'Log riwayat seluruh transaksi penjualan bahan baku petani & produk olahan',
                                 icon: Icons.point_of_sale_rounded,
                                 color: AppTheme.blue600,
                                 bg: AppTheme.blue100,
@@ -420,7 +420,7 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
                   userEmail: user?.email ?? '',
                   userInitials: initials,
                   onLogout: () => _showLogoutDialog(context),
-                  navItems: _buildDrawerNavItems(context),
+                  navItems: _buildNavItems(context),
                 ),
           body: Row(
             children: [
@@ -640,110 +640,6 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
     ];
   }
 
-  List<SidebarNavItem> _buildDrawerNavItems(BuildContext context) {
-    return [
-      SidebarNavItem(
-        icon: Icons.dashboard_rounded,
-        label: 'Dashboard',
-        isActive: _selectedIndex == 0,
-        onTap: () {
-          Navigator.pop(context);
-          setState(() => _selectedIndex = 0);
-          _loadStats();
-        },
-      ),
-      SidebarNavItem(
-        icon: Icons.receipt_long_rounded,
-        label: 'Pesanan Masuk',
-        isActive: _selectedIndex == 1,
-        onTap: () {
-          Navigator.pop(context);
-          setState(() => _selectedIndex = 1);
-        },
-      ),
-      SidebarNavItem(
-        icon: Icons.manage_accounts_rounded,
-        label: 'Kelola Pengguna',
-        isActive: _selectedIndex == 2,
-        onTap: () {
-          Navigator.pop(context);
-          setState(() => _selectedIndex = 2);
-        },
-      ),
-      SidebarNavItem(
-        icon: Icons.rate_review_rounded,
-        label: 'Saran & Masukan',
-        isActive: _selectedIndex == 3,
-        onTap: () {
-          Navigator.pop(context);
-          setState(() => _selectedIndex = 3);
-        },
-      ),
-      SidebarNavItem(
-        icon: Icons.storefront_rounded,
-        label: 'Pemasaran & Katalog',
-        isActive: _selectedIndex == 4,
-        onTap: () {
-          Navigator.pop(context);
-          setState(() => _selectedIndex = 4);
-        },
-      ),
-      SidebarNavItem(
-        icon: Icons.point_of_sale_rounded,
-        label: 'Penjualan Terpusat',
-        isActive: _selectedIndex == 5,
-        onTap: () {
-          Navigator.pop(context);
-          setState(() => _selectedIndex = 5);
-        },
-      ),
-      SidebarNavItem(
-        icon: Icons.analytics_rounded,
-        label: 'Laba/Rugi Agregat',
-        isActive: _selectedIndex == 6,
-        onTap: () {
-          Navigator.pop(context);
-          setState(() => _selectedIndex = 6);
-        },
-      ),
-      SidebarNavItem(
-        icon: Icons.smart_toy_rounded,
-        label: 'TaniBot AI',
-        isActive: _selectedIndex == 7,
-        onTap: () {
-          Navigator.pop(context);
-          setState(() => _selectedIndex = 7);
-        },
-      ),
-      SidebarNavItem(
-        icon: Icons.diversity_3_rounded,
-        label: 'Kelompok Tani',
-        isActive: _selectedIndex == 8,
-        onTap: () {
-          Navigator.pop(context);
-          setState(() => _selectedIndex = 8);
-        },
-      ),
-      SidebarNavItem(
-        icon: Icons.trending_up_rounded,
-        label: 'Harga Acuan Pasar',
-        isActive: _selectedIndex == 9,
-        onTap: () {
-          Navigator.pop(context);
-          setState(() => _selectedIndex = 9);
-        },
-      ),
-      SidebarNavItem(
-        icon: Icons.account_balance_wallet_rounded,
-        label: 'Komisi Platform (10%)',
-        isActive: _selectedIndex == 10,
-        onTap: () {
-          Navigator.pop(context);
-          setState(() => _selectedIndex = 10);
-        },
-      ),
-    ];
-  }
 
   void _showLogoutDialog(BuildContext context) {
     showDialog(

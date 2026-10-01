@@ -265,6 +265,7 @@ class _UserFormBottomSheetState extends State<UserFormBottomSheet> {
                 children: [
                   Expanded(
                     child: DropdownButtonFormField<String>(
+                      isExpanded: true,
                       initialValue: _role,
                       decoration: const InputDecoration(
                         labelText: 'Hak Akses',
@@ -279,6 +280,7 @@ class _UserFormBottomSheetState extends State<UserFormBottomSheet> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: DropdownButtonFormField<String>(
+                      isExpanded: true,
                       initialValue: _status,
                       decoration: const InputDecoration(labelText: 'Status'),
                       items: const [
@@ -300,6 +302,7 @@ class _UserFormBottomSheetState extends State<UserFormBottomSheet> {
                         ),
                       )
                     : DropdownButtonFormField<int>(
+                        isExpanded: true,
                         initialValue: _selectedFarmerGroupId,
                         decoration: const InputDecoration(
                           labelText: 'Kelompok Tani (Poktan) *',
@@ -308,7 +311,11 @@ class _UserFormBottomSheetState extends State<UserFormBottomSheet> {
                         items: _farmerGroups.map((g) {
                           return DropdownMenuItem<int>(
                             value: g.id,
-                            child: Text('${g.code} - ${g.name}', overflow: TextOverflow.ellipsis),
+                            child: Text(
+                              '${g.code} - ${g.name}',
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
                           );
                         }).toList(),
                         onChanged: (val) {

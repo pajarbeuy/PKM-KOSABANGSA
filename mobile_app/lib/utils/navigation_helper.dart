@@ -17,6 +17,7 @@ import '../screens/farmer_commodity_screen.dart';
 import '../screens/super_admin_dashboard_screen.dart';
 import '../screens/market_price_screen.dart';
 import '../screens/super_admin_commission_screen.dart';
+import '../screens/sales_screen.dart';
 
 class NavigationHelper {
   static void navigateTo(BuildContext context, Widget screen) {
@@ -49,57 +50,69 @@ class NavigationHelper {
           onTap: () => navigateTo(context, const SuperAdminDashboardScreen(initialTabIndex: 0)),
         ),
         SidebarNavItem(
+          icon: Icons.receipt_long_rounded,
+          label: 'Pesanan Masuk',
+          isActive: currentScreen == 'orders',
+          onTap: () => navigateTo(context, const SuperAdminDashboardScreen(initialTabIndex: 1)),
+        ),
+        SidebarNavItem(
           icon: Icons.manage_accounts_rounded,
           label: 'Kelola Pengguna',
-          isActive: false,
-          onTap: () => navigateTo(context, const SuperAdminDashboardScreen(initialTabIndex: 1)),
+          isActive: currentScreen == 'users',
+          onTap: () => navigateTo(context, const SuperAdminDashboardScreen(initialTabIndex: 2)),
         ),
         SidebarNavItem(
           icon: Icons.rate_review_rounded,
           label: 'Saran & Masukan',
-          isActive: false,
-          onTap: () => navigateTo(context, const SuperAdminDashboardScreen(initialTabIndex: 2)),
+          isActive: currentScreen == 'feedback_management',
+          onTap: () => navigateTo(context, const SuperAdminDashboardScreen(initialTabIndex: 3)),
         ),
         SidebarNavItem(
           icon: Icons.storefront_rounded,
           label: 'Pemasaran & Katalog',
           isActive: currentScreen == 'super_admin_marketing',
-          onTap: () => navigateTo(context, const SuperAdminDashboardScreen(initialTabIndex: 3)),
+          onTap: () => navigateTo(context, const SuperAdminDashboardScreen(initialTabIndex: 4)),
         ),
         SidebarNavItem(
           icon: Icons.point_of_sale_rounded,
           label: 'Penjualan Terpusat',
           isActive: currentScreen == 'sales',
-          onTap: () => navigateTo(context, const SuperAdminDashboardScreen(initialTabIndex: 4)),
+          onTap: () => navigateTo(context, const SuperAdminDashboardScreen(initialTabIndex: 5)),
         ),
         SidebarNavItem(
           icon: Icons.analytics_rounded,
           label: 'Laba/Rugi Agregat',
           isActive: currentScreen == 'super_admin_profit_loss',
-          onTap: () => navigateTo(context, const SuperAdminDashboardScreen(initialTabIndex: 5)),
+          onTap: () => navigateTo(context, const SuperAdminDashboardScreen(initialTabIndex: 6)),
         ),
         SidebarNavItem(
           icon: Icons.smart_toy_rounded,
           label: 'TaniBot AI',
           isActive: currentScreen == 'chatbot',
-          onTap: () => navigateTo(context, const SuperAdminDashboardScreen(initialTabIndex: 6)),
+          onTap: () => navigateTo(context, const SuperAdminDashboardScreen(initialTabIndex: 7)),
+        ),
+        SidebarNavItem(
+          icon: Icons.diversity_3_rounded,
+          label: 'Kelompok Tani',
+          isActive: currentScreen == 'farmer_groups',
+          onTap: () => navigateTo(context, const SuperAdminDashboardScreen(initialTabIndex: 8)),
         ),
         SidebarNavItem(
           icon: Icons.trending_up_rounded,
           label: 'Harga Acuan Pasar',
           isActive: currentScreen == 'market_prices',
-          onTap: () => navigateTo(context, const MarketPriceScreen()),
+          onTap: () => navigateTo(context, const SuperAdminDashboardScreen(initialTabIndex: 9)),
         ),
         SidebarNavItem(
           icon: Icons.account_balance_wallet_rounded,
           label: 'Komisi Platform (10%)',
           isActive: currentScreen == 'commissions',
-          onTap: () => navigateTo(context, const SuperAdminCommissionScreen()),
+          onTap: () => navigateTo(context, const SuperAdminDashboardScreen(initialTabIndex: 10)),
         ),
       ];
     }
 
-    // Farmer Navigation (Produk Olahan included; Penjualan and TaniBot managed centrally by Super Admin)
+    // Farmer Navigation (Produk Olahan included; Penjualan Bahan Baku recorded by Farmer)
     return [
       SidebarNavItem(
         icon: Icons.grid_view_rounded,
@@ -158,6 +171,16 @@ class NavigationHelper {
         onTap: () {
           if (currentScreen != 'stock') {
             navigateTo(context, const StockScreen());
+          }
+        },
+      ),
+      SidebarNavItem(
+        icon: Icons.point_of_sale_rounded,
+        label: 'Penjualan Bahan Baku',
+        isActive: currentScreen == 'sales',
+        onTap: () {
+          if (currentScreen != 'sales') {
+            navigateTo(context, const SalesScreen());
           }
         },
       ),

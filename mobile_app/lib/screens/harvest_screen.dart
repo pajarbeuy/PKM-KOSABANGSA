@@ -5,7 +5,6 @@ import '../models/harvest.dart';
 import '../models/economic_result.dart';
 import 'package:intl/intl.dart';
 import '../widgets/app_theme.dart';
-import '../widgets/app_bottom_nav.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/convert_harvest_dialog.dart';
 import '../widgets/integrated_economic_dialog.dart';
@@ -95,7 +94,6 @@ class _HarvestScreenState extends State<HarvestScreen> {
               ),
             ),
           ],
-          bottomNavigationBar: const AppBottomNav(currentIndex: 1),
           floatingActionButton: isDesktop
               ? null
               : FloatingActionButton.extended(

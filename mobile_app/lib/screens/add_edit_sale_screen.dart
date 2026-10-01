@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 // intl removed: date input is text-only YYYY-MM-DD
+import '../models/farmer_commodity.dart';
 import '../services/api_service.dart';
 import '../models/sale.dart';
 import '../utils/thousands_formatter.dart';
@@ -34,11 +35,18 @@ class _AddEditSaleScreenState extends State<AddEditSaleScreen> {
   Map<String, Map<String, String?>> _uniqueBuyers = {};
   List<String> _buyerNames = [];
 
+  List<FarmerCommodity> _commodities = [];
+  int? _selectedCommodityId;
+  bool _isLoadingCommodities = true;
+  int? _marketPriceRecommendation;
+  bool _isLoadingMarketPrice = false;
+
   @override
   void initState() {
     super.initState();
     _apiService = ApiService();
 
+    _selectedCommodityId = widget.sale?.commodityId;
     _dateController = TextEditingController(text: widget.sale?.saleDate ?? '');
     _buyerNameController = TextEditingController(
       text: widget.sale?.buyerName ?? '',
@@ -62,6 +70,58 @@ class _AddEditSaleScreenState extends State<AddEditSaleScreen> {
 
     _updateTotal();
     _loadBuyers();
+    _loadCommodities();
+  }
+
+  Future<void> _loadCommodities() async {
+    try {
+      final items = await _apiService.getFarmerCommodities(activeOnly: true);
+      if (mounted) {
+        setState(() {
+          _commodities = items;
+          _isLoadingCommodities = false;
+          if (_selectedCommodityId == null && items.isNotEmpty && widget.sale == null) {
+            _selectedCommodityId = items.first.id;
+            _fetchMarketPrice(items.first.id, autoFillPrice: true);
+          } else if (_selectedCommodityId != null) {
+            _fetchMarketPrice(_selectedCommodityId!, autoFillPrice: false);
+          }
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingCommodities = false);
+    }
+  }
+
+  Future<void> _fetchMarketPrice(int commodityId, {bool autoFillPrice = false}) async {
+    setState(() => _isLoadingMarketPrice = true);
+    try {
+      final mp = await _apiService.getLatestMarketPrice(commodityId);
+      if (mounted) {
+        setState(() {
+          _isLoadingMarketPrice = false;
+          if (mp != null && mp.price > 0) {
+            _marketPriceRecommendation = mp.price.round();
+            if (autoFillPrice && (_pricePerUnitController.text.isEmpty || widget.sale == null)) {
+              _pricePerUnitController.text = ThousandsFormatter.format(_marketPriceRecommendation.toString());
+              _updateTotal();
+            }
+          } else {
+            _marketPriceRecommendation = null;
+          }
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingMarketPrice = false);
+    }
+  }
+
+  void _onCommodityChanged(int? newId) {
+    if (newId == null || newId == _selectedCommodityId) return;
+    setState(() {
+      _selectedCommodityId = newId;
+    });
+    _fetchMarketPrice(newId, autoFillPrice: true);
   }
 
   Future<void> _loadBuyers() async {
@@ -203,6 +263,7 @@ class _AddEditSaleScreenState extends State<AddEditSaleScreen> {
           notes: _notesController.text.isEmpty ? null : _notesController.text,
           status: 'completed',
           paymentStatus: _paymentStatus,
+          commodityId: _selectedCommodityId,
         );
       } else {
         // Edit existing
@@ -223,6 +284,7 @@ class _AddEditSaleScreenState extends State<AddEditSaleScreen> {
           notes: _notesController.text.isEmpty ? null : _notesController.text,
           status: 'completed',
           paymentStatus: _paymentStatus,
+          commodityId: _selectedCommodityId,
         );
       }
 
@@ -331,6 +393,67 @@ class _AddEditSaleScreenState extends State<AddEditSaleScreen> {
                     ),
                     const SizedBox(height: 24),
 
+
+                    // Komoditas Bahan Baku
+                    const Text(
+                      'Komoditas Bahan Baku',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: Color(0xFF1A3428),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    _isLoadingCommodities
+                        ? Container(
+                            height: 52,
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF9FAFB),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppTheme.cardBorder),
+                            ),
+                            child: const Row(
+                              children: [
+                                SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.green700),
+                                ),
+                                SizedBox(width: 10),
+                                Text('Memuat komoditas bahan baku...', style: TextStyle(fontSize: 13, color: Colors.grey)),
+                              ],
+                            ),
+                          )
+                        : Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF9FAFB),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppTheme.cardBorder),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<int>(
+                                value: _commodities.any((c) => c.id == _selectedCommodityId)
+                                    ? _selectedCommodityId
+                                    : null,
+                                isExpanded: true,
+                                hint: const Text('Pilih jenis komoditas bahan baku...', style: TextStyle(fontSize: 14, color: Colors.grey)),
+                                icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppTheme.green700),
+                                items: _commodities.map((c) {
+                                  return DropdownMenuItem<int>(
+                                    value: c.id,
+                                    child: Text(
+                                      '${c.name} (${c.unit})',
+                                      style: const TextStyle(fontWeight: FontWeight.w600, color: AppTheme.dark900, fontSize: 14),
+                                    ),
+                                  );
+                                }).toList(),
+                                onChanged: _onCommodityChanged,
+                              ),
+                            ),
+                          ),
+                    const SizedBox(height: 20),
 
                     // Date
                     const Text(
@@ -553,6 +676,75 @@ class _AddEditSaleScreenState extends State<AddEditSaleScreen> {
                         return null;
                       },
                     ),
+                    if (_isLoadingMarketPrice) ...[
+                      const SizedBox(height: 8),
+                      const Row(
+                        children: [
+                          SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.green700),
+                          ),
+                          SizedBox(width: 8),
+                          Text('Mengecek harga pasar acuan terkini...', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        ],
+                      ),
+                    ] else if (_marketPriceRecommendation != null) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF0FDF4),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFBBF7D0)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.verified_rounded, size: 16, color: Color(0xFF16A34A)),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    'Acuan Pasar: Rp ${ThousandsFormatter.format(_marketPriceRecommendation.toString())}/kg',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF15803D),
+                                    ),
+                                  ),
+                                ),
+                                InkWell(
+                                  onTap: () {
+                                    _pricePerUnitController.text =
+                                        ThousandsFormatter.format(_marketPriceRecommendation.toString());
+                                    _updateTotal();
+                                  },
+                                  child: const Padding(
+                                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    child: Text(
+                                      'Terapkan Acuan',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF0F766E),
+                                        decoration: TextDecoration.underline,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            const Text(
+                              'Harga acuan terisi otomatis sebagai panduan. Anda tetap bebas mengubah harga sesuai kesepakatan riil.',
+                              style: TextStyle(fontSize: 11, color: Color(0xFF166534)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 20),
 
                     // Total Price Display

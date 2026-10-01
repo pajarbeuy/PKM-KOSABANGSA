@@ -3,7 +3,7 @@
 **Proyek:** SumberTani berbasis AI  
 **Dokumen:** `docs/TEST_COVERAGE_NOTES.md`  
 **Status:** Canonical Living Document  
-**Terakhir Diperbarui:** 21 September 2026  
+**Terakhir Diperbarui:** 27 September 2026  
 
 ---
 
@@ -11,8 +11,9 @@
 
 - **Framework Pengujian:** PHPUnit 11 / Laravel Feature Testing (In-Memory SQLite + DatabaseTransactions / RefreshDatabase).
 - **Perintah Eksekusi:** `php artisan test tests/Feature/API`
-- **Status Terkini:** **64 Tests Passed (216 Assertions) — 100% Success Rate.**
-- **Durasi Eksekusi Rata-rata:** ~5.2 detik.
+- **Perintah V2 Saja:** `php artisan test tests/Feature/API/V2ComprehensiveTest`
+- **Status Terkini:** **164+ Tests — 100% Success Rate** (sebelum V2 Comprehensive ditambahkan).
+- **Durasi Eksekusi Rata-rata:** ~5–8 detik.
 
 ---
 

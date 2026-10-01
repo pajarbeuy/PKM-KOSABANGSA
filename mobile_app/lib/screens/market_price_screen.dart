@@ -21,7 +21,6 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
   List<MarketPrice> _prices = [];
   List<FarmerCommodity> _commodities = [];
   bool _isLoading = true;
-  bool _isIngesting = false;
   int? _selectedCommodityId;
   String _searchQuery = '';
 
@@ -43,9 +42,19 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
         commodityId: _selectedCommodityId,
       );
 
+      // De-duplicate commodities by name so market price is per commodity type, not per farmer
+      final distinctMap = <String, FarmerCommodity>{};
+      for (final c in comms) {
+        final key = c.name.trim().toLowerCase();
+        if (!distinctMap.containsKey(key)) {
+          distinctMap[key] = c;
+        }
+      }
+      final uniqueComms = distinctMap.values.toList();
+
       if (!mounted) return;
       setState(() {
-        _commodities = comms;
+        _commodities = uniqueComms;
         _prices = priceRes['market_prices'] as List<MarketPrice>? ?? [];
         _isLoading = false;
       });
@@ -61,48 +70,6 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
     }
   }
 
-  Future<void> _triggerIngest() async {
-    setState(() => _isIngesting = true);
-    try {
-      final res = await _apiService.triggerMarketPriceIngest();
-      if (!mounted) return;
-      setState(() => _isIngesting = false);
-
-      if (res['success'] == true) {
-        final stats = res['data'] as Map<String, dynamic>? ?? {};
-        final created = stats['created'] ?? 0;
-        final updated = stats['updated'] ?? 0;
-        final skipped = stats['skipped'] ?? 0;
-        final rejected = stats['rejected'] ?? 0;
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Sinkronisasi sukses! Baru: $created, Diupdate: $updated, Lewat: $skipped, Ditolak: $rejected',
-            ),
-            backgroundColor: AppTheme.green700,
-          ),
-        );
-        _loadData();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(res['message'] ?? 'Gagal sinkronisasi harga pasar.'),
-            backgroundColor: AppTheme.red600,
-          ),
-        );
-      }
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _isIngesting = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Terjadi kesalahan: $e'),
-          backgroundColor: AppTheme.red600,
-        ),
-      );
-    }
-  }
 
   List<MarketPrice> get _filteredPrices {
     if (_searchQuery.isEmpty) return _prices;
@@ -176,7 +143,7 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
 
   Widget _buildHeader(bool isSuperAdmin) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: AppTheme.bannerGradient,
@@ -189,76 +156,68 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Wrap(
-            alignment: WrapAlignment.spaceBetween,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 14,
-            runSpacing: 14,
+          Row(
             children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.trending_up,
-                      color: Colors.white,
-                      size: 26,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Harga Acuan Pasar',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                        ),
-                      ),
-                      Text(
-                        isSuperAdmin
-                            ? 'Kelola master harga acuan komoditas (Super Admin)'
-                            : 'Pantauan harga acuan untuk estimasi nilai panen',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.white.withValues(alpha: 0.85),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.trending_up,
+                  color: Colors.white,
+                  size: 24,
+                ),
               ),
-              if (isSuperAdmin)
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Harga Acuan Pasar',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      isSuperAdmin
+                          ? 'Kelola master harga acuan pasar komoditas'
+                          : 'Pantauan harga acuan untuk estimasi nilai panen',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white.withValues(alpha: 0.85),
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              if (isSuperAdmin) ...[
+                const SizedBox(width: 8),
                 ElevatedButton.icon(
-                  onPressed: _isIngesting ? null : _triggerIngest,
+                  onPressed: () => _showAddEditPriceDialog(null),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: AppTheme.green900,
                     elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  icon: _isIngesting
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.sync, size: 18),
-                  label: Text(_isIngesting ? 'Sinkron...' : 'Sync Provider'),
+                  icon: const Icon(Icons.add, size: 16),
+                  label: const Text('Tambah', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                 ),
+              ],
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
@@ -271,7 +230,7 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
                 SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Harga acuan otomatis mengunci nilai saat panen dicatat (Snapshot permanen). Perubahan master harga di kemudian hari tidak mengubah histori panen lama.',
+                    'Harga acuan pasar diinput manual oleh Super Admin per jenis komoditas untuk dijadikan patokan estimasi nilai panen petani.',
                     style: TextStyle(color: Colors.white70, fontSize: 12),
                   ),
                 ),
@@ -302,11 +261,11 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
               ),
               const SizedBox(height: 10),
               _buildStatCard(
-                'Terkunci Panen',
+                'Dirujuk Panen',
                 '$referencedCount Record',
-                Icons.lock_clock,
-                AppTheme.amber600,
-                AppTheme.amber100,
+                Icons.verified_outlined,
+                AppTheme.green700,
+                AppTheme.green100,
               ),
               const SizedBox(height: 10),
               _buildStatCard(
@@ -334,11 +293,11 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
             const SizedBox(width: 14),
             Expanded(
               child: _buildStatCard(
-                'Terkunci Panen',
+                'Dirujuk Panen',
                 '$referencedCount Record',
-                Icons.lock_clock,
-                AppTheme.amber600,
-                AppTheme.amber100,
+                Icons.verified_outlined,
+                AppTheme.green700,
+                AppTheme.green100,
               ),
             ),
             const SizedBox(width: 14),
@@ -432,7 +391,9 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
             ),
             child: DropdownButton<int?>(
               isExpanded: isNarrow,
-              value: _selectedCommodityId,
+              value: (_selectedCommodityId != null && _commodities.any((c) => c.id == _selectedCommodityId))
+                  ? _selectedCommodityId
+                  : null,
               hint: const Text('Semua Komoditas', style: TextStyle(fontSize: 13)),
               items: [
                 const DropdownMenuItem<int?>(
@@ -621,17 +582,17 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: AppTheme.amber100,
+                          color: AppTheme.green100,
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.lock, size: 12, color: AppTheme.amber600),
+                            Icon(Icons.verified_outlined, size: 12, color: AppTheme.green700),
                             SizedBox(width: 4),
                             Text(
-                              'Terkunci Panen',
-                              style: TextStyle(fontSize: 11, color: AppTheme.amber600, fontWeight: FontWeight.w700),
+                              'Dirujuk Panen',
+                              style: TextStyle(fontSize: 11, color: AppTheme.green700, fontWeight: FontWeight.w600),
                             ),
                           ],
                         ),
@@ -700,12 +661,29 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
       return;
     }
 
-    int? selectedCommId = existing?.commodityId ?? (_commodities.isNotEmpty ? _commodities.first.id : null);
+    int? selectedCommId;
+    if (existing != null) {
+      final exactMatch = _commodities.where((c) => c.id == existing.commodityId).firstOrNull;
+      if (exactMatch != null) {
+        selectedCommId = exactMatch.id;
+      } else {
+        final nameMatch = _commodities.where(
+          (c) => c.name.trim().toLowerCase() == existing.commodityName.trim().toLowerCase(),
+        ).firstOrNull;
+        selectedCommId = nameMatch?.id ?? (_commodities.isNotEmpty ? _commodities.first.id : null);
+      }
+    } else {
+      selectedCommId = _commodities.isNotEmpty ? _commodities.first.id : null;
+    }
+
+    if (selectedCommId != null && !_commodities.any((c) => c.id == selectedCommId)) {
+      selectedCommId = _commodities.isNotEmpty ? _commodities.first.id : null;
+    }
+
     final priceCtrl = TextEditingController(text: existing != null ? existing.price.toStringAsFixed(0) : '');
     final dateCtrl = TextEditingController(text: existing?.effectiveDate ?? DateTime.now().toIso8601String().split('T')[0]);
     final notesCtrl = TextEditingController(text: existing?.notes ?? '');
-    final sourceCtrl = TextEditingController(text: existing?.source ?? 'manual');
-    final isLocked = existing?.isReferenced == true;
+    final sourceCtrl = TextEditingController(text: (existing?.source != null && existing!.source.isNotEmpty) ? existing.source : 'manual');
 
     showDialog(
       context: context,
@@ -719,28 +697,6 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (isLocked) ...[
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        margin: const EdgeInsets.only(bottom: 12),
-                        decoration: BoxDecoration(
-                          color: AppTheme.amber100,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Row(
-                          children: [
-                            Icon(Icons.warning_amber_rounded, color: AppTheme.amber600, size: 18),
-                            SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Record ini telah menjadi rujukan panen. Nilai harga & tanggal tidak dapat diubah.',
-                                style: TextStyle(fontSize: 11, color: AppTheme.amber600, fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
                     const Text('Komoditas', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                     const SizedBox(height: 6),
                     DropdownButtonFormField<int>(
@@ -749,103 +705,99 @@ class _MarketPriceScreenState extends State<MarketPriceScreen> {
                       decoration: const InputDecoration(border: OutlineInputBorder(), isDense: true),
                       items: _commodities
                           .map((c) {
-                            final farmerLabel = c.farmer?['name'] != null ? ' (${c.farmer!['name']})' : '';
                             return DropdownMenuItem(
                               value: c.id,
                               child: Text(
-                                '${c.name}$farmerLabel - ${c.unit}',
+                                '${c.name} (${c.unit})',
                                 overflow: TextOverflow.ellipsis,
                               ),
                             );
                           })
                           .toList(),
-                      onChanged: isLocked ? null : (val) => setDialogState(() => selectedCommId = val),
+                      onChanged: (val) => setDialogState(() => selectedCommId = val),
                     ),
-                const SizedBox(height: 12),
-                const Text('Harga per Satuan (Rp/kg)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: priceCtrl,
-                  keyboardType: TextInputType.number,
-                  enabled: !isLocked,
-                  decoration: const InputDecoration(
-                    prefixText: 'Rp ',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
+                    const SizedBox(height: 12),
+                    const Text('Harga per Satuan (Rp/kg)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: priceCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        prefixText: 'Rp ',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text('Tanggal Efektif Berlaku', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: dateCtrl,
+                      decoration: const InputDecoration(
+                        hintText: 'YYYY-MM-DD',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text('Sumber Acuan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: sourceCtrl,
+                      decoration: const InputDecoration(
+                        hintText: 'manual / pasar_lokal',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text('Catatan Tambahan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: notesCtrl,
+                      maxLines: 2,
+                      decoration: const InputDecoration(
+                        hintText: 'Keterangan opsional...',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 12),
-                const Text('Tanggal Efektif Berlaku', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: dateCtrl,
-                  enabled: !isLocked,
-                  decoration: const InputDecoration(
-                    hintText: 'YYYY-MM-DD',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Batal'),
                 ),
-                const SizedBox(height: 12),
-                const Text('Sumber Acuan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: sourceCtrl,
-                  decoration: const InputDecoration(
-                    hintText: 'manual / pasar_lokal / mock_feed',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Text('Catatan Tambahan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: notesCtrl,
-                  maxLines: 2,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Batal'),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.green700),
-              onPressed: () async {
-                final price = double.tryParse(priceCtrl.text) ?? 0.0;
-                if (selectedCommId == null || (price <= 0 && !isLocked)) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Komoditas dan harga valid wajib diisi!')),
-                  );
-                  return;
-                }
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: AppTheme.green700),
+                  onPressed: () async {
+                    final price = double.tryParse(priceCtrl.text) ?? 0.0;
+                    if (selectedCommId == null || price <= 0) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Komoditas dan harga valid wajib diisi!')),
+                      );
+                      return;
+                    }
 
-                Navigator.pop(ctx);
-                setState(() => _isLoading = true);
+                    Navigator.pop(ctx);
+                    setState(() => _isLoading = true);
 
-                final payload = <String, dynamic>{
-                  'notes': notesCtrl.text,
-                  'source': sourceCtrl.text,
-                };
-                if (!isLocked) {
-                  payload['commodity_id'] = selectedCommId;
-                  payload['price'] = price;
-                  payload['effective_date'] = dateCtrl.text;
-                }
+                    final payload = <String, dynamic>{
+                      'commodity_id': selectedCommId,
+                      'price': price,
+                      'effective_date': dateCtrl.text,
+                      'notes': notesCtrl.text,
+                      'source': sourceCtrl.text.isNotEmpty ? sourceCtrl.text : 'manual',
+                    };
 
-                Map<String, dynamic> result;
-                if (existing == null) {
-                  result = await _apiService.createMarketPrice(payload);
-                } else {
-                  result = await _apiService.updateMarketPrice(existing.id, payload);
-                }
+                    Map<String, dynamic> result;
+                    if (existing == null) {
+                      result = await _apiService.createMarketPrice(payload);
+                    } else {
+                      result = await _apiService.updateMarketPrice(existing.id, payload);
+                    }
 
                 if (!mounted) return;
                 setState(() => _isLoading = false);

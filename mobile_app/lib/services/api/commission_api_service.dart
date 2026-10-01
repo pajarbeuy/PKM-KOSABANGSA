@@ -35,12 +35,14 @@ class CommissionApiService {
 
       final total = (payload['commissions']['total'] as num?)?.toInt() ?? commissionsList.length;
       final lastPage = (payload['commissions']['last_page'] as num?)?.toInt() ?? 1;
+      final currentPage = (payload['commissions']['current_page'] as num?)?.toInt() ?? page;
 
       return {
         'summary': summary,
         'commissions': commissionsList,
         'total': total,
         'last_page': lastPage,
+        'current_page': currentPage,
       };
     }
 

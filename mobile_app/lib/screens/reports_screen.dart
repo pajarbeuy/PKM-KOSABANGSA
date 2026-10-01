@@ -4,7 +4,6 @@ import '../services/api_service.dart';
 import '../models/season.dart';
 import '../utils/download_helper.dart';
 import '../widgets/app_theme.dart';
-import '../widgets/app_bottom_nav.dart';
 import '../widgets/app_shell.dart';
 
 class ReportsScreen extends StatefulWidget {
@@ -214,7 +213,6 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
             onPressed: _exportPdf,
           ),
       ],
-      bottomNavigationBar: const AppBottomNav(currentIndex: 4),
       child: Column(
         children: [
           Container(
