@@ -24,6 +24,8 @@ import 'api/farmer_commodity_api_service.dart';
 import 'api/market_price_api_service.dart';
 import 'api/farmer_economic_result_api_service.dart';
 import 'api/commission_api_service.dart';
+import 'api/discount_api_service.dart';
+import 'api/news_api_service.dart';
 import '../models/processed_product.dart';
 import '../models/order_model.dart';
 import '../models/farmer_group.dart';
@@ -31,6 +33,8 @@ import '../models/farmer_commodity.dart';
 import '../models/market_price.dart';
 import '../models/economic_result.dart';
 import '../models/commission.dart';
+import '../models/processed_product_discount.dart';
+import '../models/news_article.dart';
 
 /// Facade Singleton providing a unified API interface across all domain services.
 class ApiService {
@@ -59,6 +63,8 @@ class ApiService {
   final MarketPriceApiService _marketPriceService = MarketPriceApiService();
   final FarmerEconomicResultApiService _economicResultService = FarmerEconomicResultApiService();
   final CommissionApiService _commissionService = CommissionApiService();
+  final DiscountApiService _discountService = DiscountApiService();
+  final NewsApiService _newsService = NewsApiService();
 
   // ─── Client / Token Management ─────────────────────────────────────────────
   void setAuthToken(String token) => _client.setAuthToken(token);
@@ -718,4 +724,103 @@ class ApiService {
         endDate: endDate,
         userId: userId,
       );
+
+  // ─── Processed Product Discounts ──────────────────────────────────────────
+  Future<Map<String, dynamic>> getSuperAdminDiscounts({
+    int page = 1,
+    String? status,
+    String? search,
+  }) =>
+      _discountService.getSuperAdminDiscounts(
+        page: page,
+        status: status,
+        search: search,
+      );
+
+  Future<List<ProcessedProductDiscount>> getPublicDiscounts() =>
+      _discountService.getPublicDiscounts();
+
+  Future<Map<String, dynamic>> createDiscount({
+    required int processedProductId,
+    required double discountPercentage,
+    required String startDate,
+    required String endDate,
+  }) =>
+      _discountService.createDiscount(
+        processedProductId: processedProductId,
+        discountPercentage: discountPercentage,
+        startDate: startDate,
+        endDate: endDate,
+      );
+
+  Future<Map<String, dynamic>> updateDiscount({
+    required int id,
+    required int processedProductId,
+    required double discountPercentage,
+    required String startDate,
+    required String endDate,
+  }) =>
+      _discountService.updateDiscount(
+        id: id,
+        processedProductId: processedProductId,
+        discountPercentage: discountPercentage,
+        startDate: startDate,
+        endDate: endDate,
+      );
+
+  Future<Map<String, dynamic>> deleteDiscount(int id) =>
+      _discountService.deleteDiscount(id);
+
+  // ─── News Management (Super Admin CMS) ────────────────────────────────────
+  Future<Map<String, dynamic>> getSuperAdminNews({
+    int page = 1,
+    String? status,
+    String? search,
+  }) =>
+      _newsService.getSuperAdminNews(
+        page: page,
+        status: status,
+        search: search,
+      );
+
+  Future<Map<String, dynamic>> createNews({
+    required String title,
+    String? slug,
+    required String content,
+    String status = 'draft',
+    String? publishedAt,
+    XFile? imageFile,
+  }) =>
+      _newsService.createNews(
+        title: title,
+        slug: slug,
+        content: content,
+        status: status,
+        publishedAt: publishedAt,
+        imageFile: imageFile,
+      );
+
+  Future<Map<String, dynamic>> updateNews({
+    required int id,
+    required String title,
+    String? slug,
+    required String content,
+    String status = 'draft',
+    String? publishedAt,
+    XFile? imageFile,
+  }) =>
+      _newsService.updateNews(
+        id: id,
+        title: title,
+        slug: slug,
+        content: content,
+        status: status,
+        publishedAt: publishedAt,
+        imageFile: imageFile,
+      );
+
+  Future<Map<String, dynamic>> deleteNews(int id) =>
+      _newsService.deleteNews(id);
+
 }
+

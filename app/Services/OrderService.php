@@ -63,8 +63,8 @@ class OrderService
                     throw new \DomainException("Jumlah pesanan untuk '{$product->name}' ({$quantity} unit) melebihi stok yang tersedia ({$product->stock} unit).");
                 }
 
-                // Mandatory Price Snapshot
-                $priceSnapshot = (float) $product->price;
+                // Mandatory Price Snapshot (applies active discount if present)
+                $priceSnapshot = (float) $product->effective_price;
                 $subtotal = $quantity * $priceSnapshot;
                 $totalAmount += $subtotal;
 
@@ -168,7 +168,7 @@ class OrderService
             $lockedOrder = Order::where('id', $order->id)->lockForUpdate()->firstOrFail();
 
             if ($lockedOrder->status === Order::STATUS_COMPLETED || $lockedOrder->sale()->exists()) {
-                throw new \DomainException("Pesanan {$lockedOrder->order_code} sudah pernah diselesaikan.");
+                return $lockedOrder->fresh(['items.processedProduct.owner', 'sale']);
             }
 
             // Delegate Sale creation, stock decrement, and StockTransaction strictly to SaleService

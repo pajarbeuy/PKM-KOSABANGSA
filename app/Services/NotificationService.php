@@ -55,4 +55,37 @@ class NotificationService
             ->where('is_read', false)
             ->update(['is_read' => true]);
     }
+
+    /**
+     * Create and store a notification for a specific user.
+     */
+    public function createNotification(int $userId, string $type, string $title, string $message): AppNotification
+    {
+        return AppNotification::create([
+            'user_id' => $userId,
+            'type'    => $type,
+            'title'   => $title,
+            'message' => $message,
+            'is_read' => false,
+        ]);
+    }
+
+    /**
+     * Send notification to a specific user.
+     */
+    public function notifyUser(int $userId, string $type, string $title, string $message): AppNotification
+    {
+        return $this->createNotification($userId, $type, $title, $message);
+    }
+
+    /**
+     * Broadcast notification to all Super Admins.
+     */
+    public function notifySuperAdmins(string $type, string $title, string $message): void
+    {
+        $superAdminIds = \App\Models\User::where('role', 'super_admin')->pluck('id');
+        foreach ($superAdminIds as $adminId) {
+            $this->createNotification($adminId, $type, $title, $message);
+        }
+    }
 }

@@ -190,10 +190,10 @@ class _SuperAdminCommissionScreenState extends State<SuperAdminCommissionScreen>
 
     return AppShell(
       currentRoute: 'commissions',
-      title: isSuperAdmin ? 'Komisi Platform (10%)' : 'Komisi Penjualan (10%)',
+      title: isSuperAdmin ? 'Komisi Platform (3%)' : 'Komisi Penjualan (3%)',
       subtitle: isSuperAdmin
-          ? 'Pantauan pendapatan komisi 10% platform dari setiap transaksi penjualan'
-          : 'Rincian potongan komisi platform 10% atas transaksi penjualan produk Anda',
+          ? 'Pantauan pendapatan komisi 3% platform dari setiap transaksi penjualan'
+          : 'Rincian potongan komisi platform 3% atas transaksi penjualan produk Anda',
       child: content,
     );
   }
@@ -229,14 +229,14 @@ class _SuperAdminCommissionScreenState extends State<SuperAdminCommissionScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isSuperAdmin ? 'Pendapatan Komisi Platform 10%' : 'Bagi Hasil & Komisi Platform',
+                      isSuperAdmin ? 'Pendapatan Komisi Platform 3%' : 'Bagi Hasil & Komisi Platform',
                       style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white),
                     ),
                     const SizedBox(height: 3),
                     Text(
                       isSuperAdmin
-                          ? 'Perhitungan 10% otomatis di sisi server dari nilai transaksi kotor (Gross)'
-                          : 'Potongan 10% platform untuk operasional pemasaran, katalog, dan penanganan order',
+                          ? 'Perhitungan 3% otomatis di sisi server dari nilai transaksi kotor (Gross)'
+                          : 'Potongan 3% platform untuk operasional pemasaran, katalog, dan penanganan order',
                       style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.85)),
                     ),
                   ],
@@ -257,7 +257,7 @@ class _SuperAdminCommissionScreenState extends State<SuperAdminCommissionScreen>
                 SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Aturan Baku Phase 8: Komisi 10% dihitung dari Gross Transaksi. Terisolasi dari biaya produksi petani & immutable.',
+                    'Aturan Baku: Komisi 3% dihitung dari Gross Transaksi. Terisolasi dari biaya produksi petani & immutable.',
                     style: TextStyle(color: Colors.white70, fontSize: 11),
                   ),
                 ),
@@ -290,14 +290,14 @@ class _SuperAdminCommissionScreenState extends State<SuperAdminCommissionScreen>
             bgColor: const Color(0xFFECFDF5),
           ),
           _buildKpiCard(
-            label: isSuperAdmin ? 'Pendapatan Komisi (10%)' : 'Potongan Komisi Platform (10%)',
+            label: isSuperAdmin ? 'Pendapatan Komisi (3%)' : 'Potongan Komisi Platform (3%)',
             value: _currencyFormat.format(summary.totalCommissionAmount),
             icon: Icons.pie_chart_outline,
             color: const Color(0xFFD97706),
             bgColor: const Color(0xFFFFFBEB),
           ),
           _buildKpiCard(
-            label: isSuperAdmin ? 'Penerimaan Bersih Petani (90%)' : 'Penerimaan Bersih Anda (90%)',
+            label: isSuperAdmin ? 'Penerimaan Bersih Petani (97%)' : 'Penerimaan Bersih Anda (97%)',
             value: _currencyFormat.format(summary.totalNetFarmerAmount),
             icon: Icons.agriculture_outlined,
             color: const Color(0xFF7C3AED),
@@ -513,8 +513,8 @@ class _SuperAdminCommissionScreenState extends State<SuperAdminCommissionScreen>
             hasDateFilter
                 ? 'Tidak ditemukan catatan transaksi komisi pada ${DateFormat('d MMMM yyyy', 'id').format(_selectedDate!)}.'
                 : (isSuperAdmin
-                    ? 'Komisi platform 10% akan otomatis dicatat setiap kali pesanan diselesaikan atau penjualan dicatat.'
-                    : 'Potongan komisi platform 10% akan otomatis dicatat saat produk olahan Anda terjual.'),
+                    ? 'Komisi platform 3% akan otomatis dicatat setiap kali pesanan diselesaikan atau penjualan dicatat.'
+                    : 'Potongan komisi platform 3% akan otomatis dicatat saat produk olahan Anda terjual.'),
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary),
           ),
@@ -594,7 +594,7 @@ class _SuperAdminCommissionScreenState extends State<SuperAdminCommissionScreen>
                             border: Border.all(color: const Color(0xFFFDE68A)),
                           ),
                           child: Text(
-                            'Komisi ${item.rate.toStringAsFixed(0)}%',
+                            'Komisi ${item.rate.toStringAsFixed(1).replaceAll(RegExp(r'\.0$'), '')}%',
                             style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFFB45309)),
                           ),
                         ),
@@ -630,13 +630,15 @@ class _SuperAdminCommissionScreenState extends State<SuperAdminCommissionScreen>
                 color: AppTheme.textPrimary,
               ),
               _buildAmountPill(
-                label: 'Komisi Platform (10%)',
+                label: 'Komisi Platform (${item.rate.toStringAsFixed(1).replaceAll(RegExp(r'\.0$'), '')}%)',
                 amount: _currencyFormat.format(item.commissionAmount),
                 color: const Color(0xFFD97706),
                 isBold: true,
               ),
               _buildAmountPill(
-                label: isSuperAdmin ? 'Penerimaan Petani (90%)' : 'Penerimaan Bersih Anda (90%)',
+                label: isSuperAdmin
+                    ? 'Penerimaan Petani (${(100 - item.rate).toStringAsFixed(1).replaceAll(RegExp(r'\.0$'), '')}%)'
+                    : 'Penerimaan Bersih Anda (${(100 - item.rate).toStringAsFixed(1).replaceAll(RegExp(r'\.0$'), '')}%)',
                 amount: _currencyFormat.format(item.netFarmerAmount),
                 color: const Color(0xFF059669),
                 isBold: true,

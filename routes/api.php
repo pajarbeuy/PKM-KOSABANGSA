@@ -21,6 +21,8 @@ use App\Http\Controllers\Api\FarmerCommodityController;
 use App\Http\Controllers\Api\MarketPriceController;
 use App\Http\Controllers\Api\FarmerEconomicResultController;
 use App\Http\Controllers\Api\CommissionController;
+use App\Http\Controllers\Api\ProcessedProductDiscountController;
+use App\Http\Controllers\Api\NewsController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -42,6 +44,9 @@ Route::get('/farmer-groups', [FarmerGroupController::class, 'index']);
 Route::get('/catalog/processed-products', [ProcessedProductController::class, 'publicCatalog']);
 Route::post('/catalog/orders',            [OrderController::class, 'storePublic']);
 Route::get('/catalog/orders/{code}',      [OrderController::class, 'trackPublic']);
+Route::get('/catalog/discounts',          [ProcessedProductDiscountController::class, 'index']);
+Route::get('/news',                       [NewsController::class, 'publicIndex']);
+Route::get('/news/{slug}',                [NewsController::class, 'publicShow']);
 
 // Media / Storage file serving with CORS support for mobile & web apps
 Route::get('/storage/{path}', function (string $path) {
@@ -83,6 +88,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/processed-products/{processedProduct}/convert-harvest', [ProcessedProductController::class, 'convertHarvest']);
     Route::get('/processed-products/{processedProduct}/economic-summary', [FarmerEconomicResultController::class, 'processedProductEconomicSummary']);
     Route::apiResource('commodities',        FarmerCommodityController::class)->names('api.commodities');
+    Route::apiResource('discounts',          ProcessedProductDiscountController::class)->names('api.discounts');
 
     // Market Prices (Phase 5 - Historical Market Price & Snapshot)
     Route::get('/market-prices',                      [MarketPriceController::class, 'index']);
@@ -192,6 +198,21 @@ Route::middleware('auth:sanctum')->group(function () {
         // Commodities Management & Monitoring
         Route::get('/commodities',                [FarmerCommodityController::class, 'adminIndex']);
         Route::put('/commodities/{id}',           [FarmerCommodityController::class, 'adminUpdate']);
+
+        // Processed Products Discounts Management
+        Route::get('/discounts',                  [ProcessedProductDiscountController::class, 'index']);
+        Route::post('/discounts',                 [ProcessedProductDiscountController::class, 'store']);
+        Route::get('/discounts/{id}',             [ProcessedProductDiscountController::class, 'show']);
+        Route::put('/discounts/{id}',             [ProcessedProductDiscountController::class, 'update']);
+        Route::delete('/discounts/{id}',          [ProcessedProductDiscountController::class, 'destroy']);
+
+        // News & Campaign CMS Management
+        Route::get('/news',                       [NewsController::class, 'index']);
+        Route::post('/news',                      [NewsController::class, 'store']);
+        Route::get('/news/{id}',                  [NewsController::class, 'show']);
+        Route::put('/news/{id}',                  [NewsController::class, 'update']);
+        Route::post('/news/{id}',                 [NewsController::class, 'update']);
+        Route::delete('/news/{id}',               [NewsController::class, 'destroy']);
 
         // Chatbot AI Operational Assistant
         Route::post('/chat', [ChatbotController::class, 'chat']);

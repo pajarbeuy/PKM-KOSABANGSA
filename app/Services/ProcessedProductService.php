@@ -34,7 +34,7 @@ class ProcessedProductService
      */
     public function listForSuperAdmin(array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
-        $query = ProcessedProduct::with('owner:id,name,email,phone,farm_name')->latest();
+        $query = ProcessedProduct::with(['owner:id,name,email,phone,farm_name', 'activeDiscount'])->latest();
 
         if (!empty($filters['owner_id'])) {
             $query->where('owner_id', $filters['owner_id']);
@@ -57,7 +57,7 @@ class ProcessedProductService
      */
     public function getActiveCatalog(array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
-        $query = ProcessedProduct::with('owner:id,name,farm_name,phone')
+        $query = ProcessedProduct::with(['owner:id,name,farm_name,phone', 'activeDiscount'])
             ->forCatalog()
             ->latest();
 
@@ -144,7 +144,7 @@ class ProcessedProductService
     /**
      * Decrement stock atomically when a sale is recorded by Super Admin.
      */
-    public function decrementStock(ProcessedProduct $product, int $quantity): ProcessedProduct
+    public function decrementStock(ProcessedProduct $product, float|int $quantity): ProcessedProduct
     {
         if ($quantity <= 0) {
             throw new \InvalidArgumentException('Jumlah penjualan harus lebih dari 0.');
@@ -295,6 +295,11 @@ class ProcessedProductService
             'harvest_id'             => $product->harvest_id,
             'name'                   => $product->name,
             'price'                  => (float) $product->price,
+            'original_price'         => (float) $product->price,
+            'effective_price'        => (float) $product->effective_price,
+            'discount_percentage'    => $product->discount_percentage,
+            'discount_amount'        => (float) $product->discount_amount,
+            'is_discounted'          => (bool) $product->is_discounted,
             'stock'                  => (int) $product->stock,
             'unit'                   => $product->unit ?? 'pcs',
             'raw_material_weight_kg' => (float) ($product->raw_material_weight_kg ?? 0),

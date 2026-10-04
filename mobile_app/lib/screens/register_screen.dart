@@ -225,6 +225,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   ),
                                 )
                               : DropdownButtonFormField<int>(
+                                  isExpanded: true,
                                   initialValue: _selectedFarmerGroupId,
                                   decoration: InputDecoration(
                                     labelText: 'Pilih Kelompok Tani (Poktan) *',

@@ -74,6 +74,16 @@ class SaleService
                 // Calculate and record 10% platform commission atomically
                 $this->commissionService->calculateAndRecordCommission($sale);
 
+                try {
+                    $notifService = app(\App\Services\NotificationService::class);
+                    $notifService->notifyUser(
+                        $product->owner_id,
+                        'sale',
+                        'Pesanan Selesai & Penjualan Masuk',
+                        "Pesanan #{$order->order_code} untuk {$product->name} telah selesai dan penjualan berhasil dicatat."
+                    );
+                } catch (\Throwable) {}
+
                 if (!$firstSale) {
                     $firstSale = $sale;
                 }
@@ -162,8 +172,8 @@ class SaleService
             $product = ProcessedProduct::findOrFail($normalized['processed_product_id']);
             // Owner of the processed product is the farmer
             $farmerUserId = $product->owner_id;
-            $quantity = (int) $normalized['weight_kg'];
-            $total = $quantity * $normalized['price_per_kg'];
+            $quantity = (float) $normalized['weight_kg'];
+            $total = round($quantity * (float) $normalized['price_per_kg'], 2);
 
             return DB::transaction(function () use ($normalized, $farmerUserId, $createdBy, $product, $quantity, $total) {
                 // Atomic stock decrement with state transition handling
@@ -293,7 +303,7 @@ class SaleService
                 if ($sale->product_type === 'processed' && $sale->processed_product_id) {
                     $product = ProcessedProduct::find($sale->processed_product_id);
                     if ($product) {
-                        $product->stock += (int) $difference;
+                        $product->stock += (float) $difference;
                         $product->save();
                     }
                 } else {
@@ -322,7 +332,7 @@ class SaleService
             if ($sale->product_type === 'processed' && $sale->processed_product_id) {
                 $product = ProcessedProduct::find($sale->processed_product_id);
                 if ($product) {
-                    $product->stock += (int) $oldWeight;
+                    $product->stock += (float) $oldWeight;
                     $product->save();
                 }
             } else {

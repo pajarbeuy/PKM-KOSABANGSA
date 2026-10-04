@@ -804,13 +804,13 @@ class V2ComprehensiveTest extends TestCase
         Sanctum::actingAs($this->superAdmin);
         $this->postJson("/api/super-admin/orders/{$order->id}/complete")->assertStatus(200);
 
-        // Commission harus tepat 10% dari Rp100.000 = Rp10.000
+        // Commission harus tepat 3% dari Rp100.000 = Rp3.000
         $this->assertDatabaseHas('commissions', [
             'order_id'          => $order->id,
-            'rate'              => 10.00,
+            'rate'              => 3.00,
             'base_amount'       => 100000.00,
-            'commission_amount' => 10000.00,
-            'net_farmer_amount' => 90000.00,
+            'commission_amount' => 3000.00,
+            'net_farmer_amount' => 97000.00,
             'status'            => 'calculated',
         ]);
     }
@@ -841,8 +841,8 @@ class V2ComprehensiveTest extends TestCase
         // Complete pertama
         $this->postJson("/api/super-admin/orders/{$order->id}/complete")->assertStatus(200);
 
-        // Complete kedua — idempoten, tidak boleh error & tidak boleh buat duplikat
-        $this->postJson("/api/super-admin/orders/{$order->id}/complete")->assertStatus(200);
+        // Complete kedua — idempoten, ditolak dengan 422 & tidak boleh buat duplikat
+        $this->postJson("/api/super-admin/orders/{$order->id}/complete")->assertStatus(422);
 
         // Hanya ada 1 commission untuk order ini
         $commissionCount = Commission::where('order_id', $order->id)->count();
@@ -938,10 +938,10 @@ class V2ComprehensiveTest extends TestCase
         Sanctum::actingAs($this->superAdmin);
         $this->postJson("/api/super-admin/orders/{$order->id}/complete")->assertStatus(200);
 
-        // Commission harus dihitung server-side: 10% × 75.000 = Rp7.500
+        // Commission harus dihitung server-side: 3% × 75.000 = Rp2.250
         $commission = Commission::where('order_id', $order->id)->first();
         $this->assertNotNull($commission);
-        $this->assertEquals(7500.00, (float) $commission->commission_amount,
+        $this->assertEquals(2250.00, (float) $commission->commission_amount,
             'Commission harus dihitung server-side, bukan dari client');
     }
 

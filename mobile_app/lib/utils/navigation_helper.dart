@@ -105,9 +105,21 @@ class NavigationHelper {
         ),
         SidebarNavItem(
           icon: Icons.account_balance_wallet_rounded,
-          label: 'Komisi Platform (10%)',
+          label: 'Komisi Platform (3%)',
           isActive: currentScreen == 'commissions',
           onTap: () => navigateTo(context, const SuperAdminDashboardScreen(initialTabIndex: 10)),
+        ),
+        SidebarNavItem(
+          icon: Icons.local_offer_rounded,
+          label: 'Diskon Produk',
+          isActive: currentScreen == 'discounts',
+          onTap: () => navigateTo(context, const SuperAdminDashboardScreen(initialTabIndex: 11)),
+        ),
+        SidebarNavItem(
+          icon: Icons.newspaper_rounded,
+          label: 'Manajemen Berita',
+          isActive: currentScreen == 'news',
+          onTap: () => navigateTo(context, const SuperAdminDashboardScreen(initialTabIndex: 12)),
         ),
       ];
     }

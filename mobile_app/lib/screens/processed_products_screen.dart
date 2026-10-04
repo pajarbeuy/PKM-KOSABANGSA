@@ -1030,10 +1030,41 @@ class _ProcessedProductsScreenState extends State<ProcessedProductsScreen> {
                         color: Colors.black87,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Text(
-                        '${_currencyFormat.format(product.price)} / ${product.unit}',
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
-                      ),
+                      child: product.isDiscounted
+                          ? Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  _currencyFormat.format(product.originalPrice),
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    decoration: TextDecoration.lineThrough,
+                                    color: Colors.white70,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.red600,
+                                    borderRadius: BorderRadius.circular(3),
+                                  ),
+                                  child: Text(
+                                    '-${(product.discountPercentage ?? 0).toStringAsFixed(1).replaceAll(RegExp(r'\.0$'), '')}%',
+                                    style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white),
+                                  ),
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  '${_currencyFormat.format(product.effectivePrice)} / ${product.unit}',
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF6EE7B7)),
+                                ),
+                              ],
+                            )
+                          : Text(
+                              '${_currencyFormat.format(product.price)} / ${product.unit}',
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                            ),
                     ),
                   ),
                   // Zoom icon indicator on top-left if photo exists

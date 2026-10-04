@@ -155,6 +155,35 @@ class SaleController extends Controller
 
         $sale = $this->saleService->createSale($normalized, $farmerUserId, $currentUser->id);
 
+        try {
+            $buyer = $sale->buyer_name ?: 'Pembeli';
+            $formattedTotal = 'Rp ' . number_format($sale->total, 0, ',', '.');
+            $notifService = app(\App\Services\NotificationService::class);
+
+            if ($currentUser->id === $farmerUserId) {
+                $notifService->notifyUser(
+                    $farmerUserId,
+                    'sale',
+                    'Penjualan Baru Berhasil Dicatat',
+                    "Penjualan kepada {$buyer} sebesar {$formattedTotal} berhasil disimpan ke sistem."
+                );
+                $notifService->notifySuperAdmins(
+                    'sale',
+                    'Penjualan Petani Masuk',
+                    "Petani {$currentUser->name} mencatat transaksi penjualan baru kepada {$buyer} senilai {$formattedTotal}."
+                );
+            } else {
+                $notifService->notifyUser(
+                    $farmerUserId,
+                    'sale',
+                    'Penjualan Produk Olahan Masuk',
+                    "Transaksi penjualan produk olahan sebesar {$formattedTotal} ({$buyer}) telah dicatat oleh Admin."
+                );
+            }
+        } catch (\Throwable $e) {
+            // Non-blocking notification dispatch
+        }
+
         return $this->successResponse(
             $this->saleService->formatSale($sale, 'created'),
             'Penjualan berhasil dicatat.',

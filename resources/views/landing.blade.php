@@ -123,6 +123,7 @@
                     <span class="text-[9px] bg-emerald-600 text-white px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Toko</span>
                 </a>
                 <a href="#cara-kerja" class="nav-link hover:text-white transition rounded-full px-3 py-1.5 hover:bg-white/10">Cara Kerja</a>
+                <a href="#berita" class="nav-link hover:text-white transition rounded-full px-3 py-1.5 hover:bg-white/10">Berita</a>
                 <a href="#tentang" class="nav-link hover:text-white transition rounded-full px-3 py-1.5 hover:bg-white/10">Tentang SumberTani</a>
             </div>
 
@@ -157,6 +158,7 @@
                 <span class="text-[9px] bg-emerald-600 text-white px-2 py-0.5 rounded-full font-bold uppercase">Buka Toko ➔</span>
             </a>
             <a href="#cara-kerja" class="mobile-nav-link px-3 py-2 rounded-lg hover:bg-white/10 transition">Cara Kerja</a>
+            <a href="#berita" class="mobile-nav-link px-3 py-2 rounded-lg hover:bg-white/10 transition">Berita & Publikasi</a>
             <a href="#tentang" class="mobile-nav-link px-3 py-2 rounded-lg hover:bg-white/10 transition">Tentang SumberTani</a>
         </div>
     </nav>
@@ -415,9 +417,21 @@
                                         </h4>
                                     </div>
                                     <div class="pt-3 mt-3 border-t border-gray-100 flex items-center justify-between">
-                                        <span class="text-sm font-extrabold text-primary">
-                                            Rp {{ number_format($item->price, 0, ',', '.') }}
-                                        </span>
+                                        <div>
+                                            @if($item->is_discounted)
+                                                <div class="flex items-center gap-1.5 mb-0.5">
+                                                    <span class="text-[10px] text-gray-400 line-through">Rp {{ number_format($item->original_price, 0, ',', '.') }}</span>
+                                                    <span class="text-[9px] font-extrabold bg-red-100 text-red-600 px-1.5 py-0.5 rounded">-{{ (float) $item->discount_percentage }}%</span>
+                                                </div>
+                                                <span class="text-sm font-extrabold text-red-600">
+                                                    Rp {{ number_format($item->effective_price, 0, ',', '.') }}
+                                                </span>
+                                            @else
+                                                <span class="text-sm font-extrabold text-primary">
+                                                    Rp {{ number_format($item->price, 0, ',', '.') }}
+                                                </span>
+                                            @endif
+                                        </div>
                                         <a href="{{ route('catalog') }}" class="text-xs font-bold text-[#391F18] bg-[#e3cba8] hover:bg-white px-2.5 py-1 rounded-lg border border-[#391F18] transition">
                                             Detail ➔
                                         </a>
@@ -743,7 +757,68 @@
         </div>
     </section>
 
-    <!-- 7. CTA SECTION -->
+    <!-- 7. BERITA & PUBLIKASI TANI SECTION -->
+    <section id="berita" class="w-full bg-transparent py-20 px-4 text-white">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-14">
+                <div class="inline-flex items-center gap-1.5 px-4 py-1.5 bg-[#e3cba8] border-2 border-[#391F18] shadow-[2px_2px_0px_0px_#391F18] rounded-full text-xs font-bold text-[#391F18] uppercase tracking-wide mb-4">
+                    📰 Berita & Publikasi Terkini
+                </div>
+                <h2 class="text-4xl md:text-5xl font-heading font-black text-[#e3cba8]">Kabar Tani & Promo Unggulan</h2>
+                <p class="mt-3 text-white/80 max-w-2xl mx-auto text-base">
+                    Ikuti pengumuman resmi, kegiatan kelompok tani mitra, informasi kampanye hilirisasi, serta promo diskon produk olahan terbaru.
+                </p>
+            </div>
+
+            @if(isset($latestNews) && count($latestNews) > 0)
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
+                    @foreach($latestNews as $news)
+                        <div class="bg-white rounded-3xl border-2 border-[#391F18] shadow-[6px_6px_0px_0px_#391F18] overflow-hidden flex flex-col justify-between hover:-translate-y-1.5 transition-all text-gray-900 group">
+                            <div>
+                                <div class="w-full h-48 bg-gray-100 overflow-hidden border-b-2 border-[#391F18] relative">
+                                    @if(!empty($news->image_url))
+                                        <img src="{{ $news->image_url }}" alt="{{ $news->title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                    @else
+                                        <div class="w-full h-full bg-gradient-to-br from-emerald-100 to-green-50 flex items-center justify-center">
+                                            <span class="text-4xl">🌾</span>
+                                        </div>
+                                    @endif
+                                    <div class="absolute top-3 left-3 bg-[#391F18] text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow">
+                                        {{ $news->published_at ? \Carbon\Carbon::parse($news->published_at)->isoFormat('D MMMM Y') : 'Terbaru' }}
+                                    </div>
+                                </div>
+                                <div class="p-6">
+                                    <div class="flex items-center gap-2 text-xs text-gray-500 mb-2">
+                                        <span class="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
+                                            {{ $news->author?->name ?? 'Admin SumberTani' }}
+                                        </span>
+                                    </div>
+                                    <h3 class="text-lg font-bold text-gray-900 group-hover:text-primary transition-colors leading-snug mb-3">
+                                        {{ $news->title }}
+                                    </h3>
+                                    <p class="text-gray-600 text-xs leading-relaxed line-clamp-3">
+                                        {{ Str::limit(strip_tags($news->content), 140) }}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="px-6 pb-6 pt-2">
+                                <button type="button" onclick="openNewsDetailModal({{ $news->id }}, '{{ addslashes($news->title) }}', '{{ $news->published_at ? \Carbon\Carbon::parse($news->published_at)->isoFormat('D MMMM Y') : 'Terbaru' }}', '{{ addslashes($news->author?->name ?? 'Admin SumberTani') }}', '{{ $news->image_url ?? '' }}', {{ json_encode($news->content) }})" class="w-full py-2.5 px-4 bg-[#e3cba8] hover:bg-white text-[#391F18] font-bold text-xs rounded-xl border-2 border-[#391F18] shadow-[2px_2px_0px_0px_#391F18] hover:shadow-[4px_4px_0px_0px_#391F18] transition-all flex items-center justify-center gap-1.5">
+                                    <span>Baca Selengkapnya</span>
+                                    <span>➔</span>
+                                </button>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="bg-white/10 backdrop-blur-md rounded-2xl border-2 border-[#e3cba8]/30 p-10 text-center max-w-lg mx-auto">
+                    <p class="text-white/80 text-sm">Belum ada artikel berita yang dipublikasikan saat ini. Kunjungi kembali dalam waktu dekat!</p>
+                </div>
+            @endif
+        </div>
+    </section>
+
+    <!-- 8. CTA SECTION -->
     <section class="w-full bg-transparent py-20 px-4">
         <div class="max-w-4xl mx-auto bg-[#895A42] rounded-3xl border-2 border-[#391F18] p-10 md:p-16 text-center text-white shadow-[12px_12px_0px_0px_#391F18] relative overflow-hidden">
             <!-- Decorative circle -->
@@ -800,6 +875,7 @@
                 <a href="#hilirisasi" class="hover:text-white transition">Hilirisasi</a>
                 <a href="{{ route('catalog') }}" class="hover:text-[#e3cba8] transition font-bold">Katalog Produk</a>
                 <a href="#cara-kerja" class="hover:text-white transition">Cara Kerja</a>
+                <a href="#berita" class="hover:text-white transition">Berita</a>
                 <a href="#tentang" class="hover:text-white transition">Tentang SumberTani</a>
             </div>
             
@@ -1181,6 +1257,29 @@
                 container.innerHTML = '<div class="text-center py-6 text-red-600 text-xs">Gagal memuat status: ' + e.message + '</div>';
             }
         }
+
+        // ─── News Detail Modal Logic ───────────────────────────────────────
+        function openNewsDetailModal(id, title, date, author, image, content) {
+            document.getElementById('news-detail-title').textContent = title;
+            document.getElementById('news-detail-date').textContent = '📅 ' + date;
+            document.getElementById('news-detail-author').textContent = '✍️ Oleh: ' + author;
+            document.getElementById('news-detail-content').textContent = content;
+
+            var imgContainer = document.getElementById('news-detail-image-container');
+            var imgEl = document.getElementById('news-detail-image');
+            if (image && image.trim() !== '') {
+                imgEl.src = image;
+                imgContainer.classList.remove('hidden');
+            } else {
+                imgContainer.classList.add('hidden');
+            }
+
+            document.getElementById('modal-news-detail').classList.remove('hidden');
+        }
+
+        function closeNewsDetailModal() {
+            document.getElementById('modal-news-detail').classList.add('hidden');
+        }
     </script>
 
     <!-- MODAL 1: CHECKOUT PESANAN PRODUK OLAHAN -->
@@ -1283,6 +1382,36 @@
 
             <div id="tracking-content" class="p-6 overflow-y-auto space-y-4">
                 <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: BACA BERITA DETAIL (NEWS DETAIL MODAL) -->
+    <div id="modal-news-detail" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div class="bg-white text-gray-900 w-full max-w-2xl rounded-3xl border-2 border-[#391F18] shadow-[10px_10px_0px_0px_#391F18] overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="bg-[#391F18] text-[#e3cba8] px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-emerald-400"></span>
+                    <h3 class="font-bold text-base">Berita & Informasi Tani</h3>
+                </div>
+                <button type="button" onclick="closeNewsDetailModal()" class="text-white/70 hover:text-white text-lg font-bold">✕</button>
+            </div>
+
+            <div class="p-6 md:p-8 overflow-y-auto space-y-4">
+                <div id="news-detail-image-container" class="hidden w-full h-64 rounded-2xl overflow-hidden mb-4 border border-gray-200">
+                    <img id="news-detail-image" src="" alt="Foto Berita" class="w-full h-full object-cover">
+                </div>
+                <div class="flex items-center gap-3 text-xs text-gray-500">
+                    <span id="news-detail-date" class="font-semibold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-md"></span>
+                    <span id="news-detail-author" class="font-medium text-gray-600"></span>
+                </div>
+                <h2 id="news-detail-title" class="text-2xl font-extrabold text-gray-900 leading-snug"></h2>
+                <div id="news-detail-content" class="text-gray-700 text-sm leading-relaxed whitespace-pre-line pt-2 border-t border-gray-100"></div>
+                <div class="pt-4 flex justify-end">
+                    <button type="button" onclick="closeNewsDetailModal()" class="px-5 py-2.5 bg-[#e3cba8] hover:bg-white text-[#391F18] font-bold text-xs rounded-xl border-2 border-[#391F18] shadow-sm transition">
+                        Tutup Artikel
+                    </button>
+                </div>
             </div>
         </div>
     </div>

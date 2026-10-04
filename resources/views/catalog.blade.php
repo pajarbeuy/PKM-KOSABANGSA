@@ -182,6 +182,14 @@
                                     </span>
                                 @endif
                             </div>
+
+                            @if($product->is_discounted)
+                                <div class="absolute top-3 left-3">
+                                    <span class="inline-flex items-center gap-1 bg-red-600 text-white text-[11px] font-black px-2.5 py-1 rounded-full shadow-md animate-pulse">
+                                        DISKON {{ (float) $product->discount_percentage }}%
+                                    </span>
+                                </div>
+                            @endif
                         </div>
 
                         <!-- Card Body -->
@@ -201,7 +209,7 @@
                                 </div>
 
                                 <!-- Product Title -->
-                                <h2 class="text-lg font-bold text-gray-900 leading-snug mb-1.5 group-hover:text-primary transition-colors cursor-pointer" onclick="openDetailModal({{ $product->id }}, '{{ addslashes($product->name) }}', {{ (float) $product->price }}, {{ (int) $product->stock }}, '{{ addslashes($farmerDisplayName) }}', '{{ addslashes($product->description ?? '') }}', '{{ $product->photo_url ?? '' }}', '{{ $product->unit ?? 'unit' }}')">
+                                <h2 class="text-lg font-bold text-gray-900 leading-snug mb-1.5 group-hover:text-primary transition-colors cursor-pointer" onclick="openDetailModal({{ $product->id }}, '{{ addslashes($product->name) }}', {{ (float) $product->effective_price }}, {{ (int) $product->stock }}, '{{ addslashes($farmerDisplayName) }}', '{{ addslashes($product->description ?? '') }}', '{{ $product->photo_url ?? '' }}', '{{ $product->unit ?? 'unit' }}')">
                                     {{ $product->name }}
                                 </h2>
 
@@ -215,14 +223,24 @@
                             <div class="pt-3 border-t border-gray-100 flex items-center justify-between mt-auto">
                                 <div>
                                     <span class="text-[10px] text-gray-400 block font-medium uppercase">Harga</span>
-                                    <span class="text-base sm:text-lg font-extrabold text-[#2d6a4f]">
-                                        Rp {{ number_format($product->price, 0, ',', '.') }}
-                                    </span>
+                                    @if($product->is_discounted)
+                                        <div class="flex items-center gap-1.5 mb-0.5">
+                                            <span class="text-[11px] text-gray-400 line-through">Rp {{ number_format($product->original_price, 0, ',', '.') }}</span>
+                                            <span class="text-[9px] font-extrabold bg-red-100 text-red-600 px-1.5 py-0.5 rounded">-{{ (float) $product->discount_percentage }}%</span>
+                                        </div>
+                                        <span class="text-base sm:text-lg font-extrabold text-[#2d6a4f]">
+                                            Rp {{ number_format($product->effective_price, 0, ',', '.') }}
+                                        </span>
+                                    @else
+                                        <span class="text-base sm:text-lg font-extrabold text-[#2d6a4f]">
+                                            Rp {{ number_format($product->price, 0, ',', '.') }}
+                                        </span>
+                                    @endif
                                 </div>
 
                                 <div class="flex items-center gap-1.5">
                                     <!-- Detail Button -->
-                                    <button type="button" onclick="openDetailModal({{ $product->id }}, '{{ addslashes($product->name) }}', {{ (float) $product->price }}, {{ (int) $product->stock }}, '{{ addslashes($farmerDisplayName) }}', '{{ addslashes($product->description ?? '') }}', '{{ $product->photo_url ?? '' }}', '{{ $product->unit ?? 'unit' }}')" class="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 transition" title="Lihat Rincian Produk">
+                                    <button type="button" onclick="openDetailModal({{ $product->id }}, '{{ addslashes($product->name) }}', {{ (float) $product->effective_price }}, {{ (int) $product->stock }}, '{{ addslashes($farmerDisplayName) }}', '{{ addslashes($product->description ?? '') }}', '{{ $product->photo_url ?? '' }}', '{{ $product->unit ?? 'unit' }}')" class="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 transition" title="Lihat Rincian Produk">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -235,7 +253,7 @@
                                             Habis
                                         </button>
                                     @else
-                                        <button type="button" onclick="openOrderModal({{ $product->id }}, '{{ addslashes($product->name) }}', {{ (float) $product->price }}, {{ (int) $product->stock }}, '{{ addslashes($farmerDisplayName) }}')" class="inline-flex items-center gap-1 bg-[#25D366] hover:bg-[#20ba59] text-white text-xs font-bold px-3 sm:px-3.5 py-2 rounded-xl border-2 border-[#1E3A2A] shadow-[2px_2px_0px_0px_#1E3A2A] hover:shadow-[3px_3px_0px_0px_#1E3A2A] hover:-translate-y-0.5 transition-all">
+                                        <button type="button" onclick="openOrderModal({{ $product->id }}, '{{ addslashes($product->name) }}', {{ (float) $product->effective_price }}, {{ (int) $product->stock }}, '{{ addslashes($farmerDisplayName) }}')" class="inline-flex items-center gap-1 bg-[#25D366] hover:bg-[#20ba59] text-white text-xs font-bold px-3 sm:px-3.5 py-2 rounded-xl border-2 border-[#1E3A2A] shadow-[2px_2px_0px_0px_#1E3A2A] hover:shadow-[3px_3px_0px_0px_#1E3A2A] hover:-translate-y-0.5 transition-all">
                                             <span>Pesan</span>
                                         </button>
                                     @endif

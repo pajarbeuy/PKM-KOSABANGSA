@@ -88,5 +88,38 @@ class DatabaseSeeder extends Seeder
         foreach ($menus as $menu) {
             DashboardMenu::create($menu);
         }
+
+        // Seed initial published news for the web landing page
+        if (\App\Models\News::count() === 0) {
+            $superAdminUser = User::where('role', 'super_admin')->first();
+            $authorId = $superAdminUser ? $superAdminUser->id : 1;
+
+            \App\Models\News::create([
+                'title' => 'Program Hilirisasi Pertanian Berbasis Inovasi Teknologi 2026',
+                'slug' => 'program-hilirisasi-pertanian-inovasi-2026',
+                'content' => '<p>Program hilirisasi pertanian SumberTani resmi diluncurkan guna meningkatkan nilai tambah komoditas lokal dan memperkuat daya saing produk olahan petani di pasar nasional.</p><p>Melalui kemitraan strategis dengan kelompok tani binaan, platform digital ini memfasilitasi integrasi rantai pasok mulai dari pencatatan panen, standardisasi mutu, hingga pemasaran digital.</p>',
+                'status' => 'published',
+                'published_at' => now()->subDays(2),
+                'created_by' => $authorId,
+            ]);
+
+            \App\Models\News::create([
+                'title' => 'Pelatihan Digitalisasi Pencatatan Hasil Panen dan Finansial Petani',
+                'slug' => 'pelatihan-digitalisasi-pencatatan-panen-finansial',
+                'content' => '<p>Ratusan petani dari berbagai Poktan antusias mengikuti workshop pencatatan komoditas digital dan manajemen keuangan mandiri bersama tim pendamping SumberTani.</p><p>Digitalisasi ini terbukti memangkas selisih penimbangan hingga 0% dan meningkatkan transparansi bagi hasil antar kelompok secara signifikan.</p>',
+                'status' => 'published',
+                'published_at' => now()->subDays(5),
+                'created_by' => $authorId,
+            ]);
+
+            \App\Models\News::create([
+                'title' => 'Promo Diskon Spesial Produk Olahan Unggulan Petani Mitra',
+                'slug' => 'promo-diskon-spesial-produk-olahan-unggulan',
+                'content' => '<p>Dukung produk petani lokal dengan menikmati diskon spesial hingga 25% untuk aneka produk olahan pilihan di katalog SumberTani sepanjang bulan ini.</p><p>Setiap transaksi langsung berkontribusi pada peningkatan pendapatan keluarga tani dan keberlanjutan pertanian ramah lingkungan.</p>',
+                'status' => 'published',
+                'published_at' => now()->subDay(),
+                'created_by' => $authorId,
+            ]);
+        }
     }
 }

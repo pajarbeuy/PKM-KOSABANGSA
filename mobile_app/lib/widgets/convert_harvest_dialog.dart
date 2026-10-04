@@ -337,7 +337,7 @@ class _ConvertHarvestDialogState extends State<ConvertHarvestDialog> {
                               )
                             else
                               DropdownButtonFormField<Harvest>(
-                                value: _selectedHarvest,
+                                initialValue: _selectedHarvest,
                                 isExpanded: true,
                                 decoration: InputDecoration(
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -384,7 +384,7 @@ class _ConvertHarvestDialogState extends State<ConvertHarvestDialog> {
                               )
                             else
                               DropdownButtonFormField<ProcessedProduct>(
-                                value: _selectedProduct,
+                                initialValue: _selectedProduct,
                                 isExpanded: true,
                                 decoration: InputDecoration(
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -546,7 +546,7 @@ class _ConvertHarvestDialogState extends State<ConvertHarvestDialog> {
                                 shrinkWrap: true,
                                 physics: const NeverScrollableScrollPhysics(),
                                 itemCount: _costItems.length,
-                                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                                separatorBuilder: (_, index) => const SizedBox(height: 10),
                                 itemBuilder: (context, idx) {
                                   final item = _costItems[idx];
                                   return Container(
@@ -577,7 +577,7 @@ class _ConvertHarvestDialogState extends State<ConvertHarvestDialog> {
                                             Expanded(
                                               flex: 2,
                                               child: DropdownButtonFormField<String>(
-                                                value: item.category,
+                                                initialValue: item.category,
                                                 isExpanded: true,
                                                 decoration: const InputDecoration(
                                                   labelText: 'Kategori',

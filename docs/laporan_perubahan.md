@@ -47,6 +47,7 @@
 18. [Phase 8: Platform Commission (10%) Implementation](#18-phase-8-platform-commission-10-implementation)
 19. [Phase 9: Pemisahan Platform Landing Page & Katalog Publik (/ vs /katalog)](#19-phase-9-pemisahan-platform-landing-page--katalog-publik--vs-katalog)
 20. [Perhitungan Modal Produk Olahan & Analisis Laba/Rugi Agribisnis Terpadu](#20-perhitungan-modal-produk-olahan--analisis-labarugi-agribisnis-terpadu-hulu-kebun--hilir-olahan)
+21. [Version 2.2.0: Diskon Produk Olahan, CMS Berita Web, Revitalisasi Notifikasi, Komisi 3% & Skalabilitas](#21-version-220---2026-10-04-diskon-produk-olahan-cms-berita-web-revitalisasi-notifikasi-komisi-3--skalabilitas)
 
 ---
 
@@ -1409,4 +1410,87 @@ Fitur telah terhubung langsung ke antarmuka aplikasi dengan komponen interaktif:
      - Tag khusus oranye: `Bahan Baku Panen: X kg` jika produk dialihkan dari hasil panen.
      - Kotak metrik ekonomi: Menampilkan `Modal: Rp ...` dan status `Laba: +Rp ...` (hijau) atau `Rugi: -Rp ...` (merah).
      - Tombol `Analisis` di dalam kartu produk untuk langsung membuka rincian ekonomi produk tersebut.
+
+---
+
+## 21. [Version 2.2.0] - 2026-10-04: Diskon Produk Olahan, CMS Berita Web, Revitalisasi Notifikasi, Komisi 3% & Skalabilitas
+
+### A. Ringkasan Eksekutif
+Pembaruan ini mencakup 5 pilar utama kebutuhan operasional ekosistem SumberTani:
+1. **Manajemen Diskon Produk Olahan:** Super Admin dapat mengonfigurasi promosi diskon persentase desimal (5%, 7.5%, 12.5%, 25%) dengan proteksi tumpang tindih (*anti-overlap*), preservasi harga asli (*non-destructive*), dan integrasi otomatis ke katalog publik web.
+2. **Manajemen Berita (CMS) & Publikasi Web:** Super Admin mengelola berita melalui panel Flutter, sementara publikasi resmi dan promo ditayangkan eksklusif di Web Landing Page (`landing.blade.php`), lengkap dengan modal baca selengkapnya dan toleransi zona waktu (WIB vs UTC).
+3. **Revitalisasi Notifikasi Real-Time & Pembersihan Log:** Eliminasi timer polling 15 detik yang membebani server, disertai pengaktifan notifikasi transaksional otomatis saat ada penjualan baru, pesanan katalog masuk, pembaruan status pesanan, panen masuk gudang, dan pendaftaran petani.
+4. **Penyesuaian Komisi Platform (10% -> 3%):** Pembaruan nilai baku komisi platform menjadi 3.00% (`Commission::DEFAULT_RATE = 3.00`), petani menerima 97% pendapatan bersih, dengan pemeliharaan data snapshot historis transaksi masa lalu.
+5. **Skalabilitas & Integritas Data (>= 600 Petani & Kuantitas Besar):** Akurasi bobot desimal (mencegah pemotongan integer), indeks performa database untuk ribuan transaksi, serta pemotongan stok atomik dengan *row-level locking* (`lockForUpdate`).
+6. **Responsivitas Antarmuka:** Perbaikan horizontal overflow RenderFlex pada dropdown kelompok tani (`register_screen.dart`).
+
+### B. Fitur 1: Manajemen Diskon Produk Olahan
+1. **Database & Model:**
+   - Migration: `database/migrations/2026_10_04_000001_create_processed_product_discounts_table.php`.
+   - Model: [`app/Models/ProcessedProductDiscount.php`](file:///d:/laragon/www/PKM/app/Models/ProcessedProductDiscount.php).
+   - Relasi & Aksesor pada [`app/Models/ProcessedProduct.php`](file:///d:/laragon/www/PKM/app/Models/ProcessedProduct.php):
+     - `discounts()` (HasMany) & `activeDiscount()` (HasOne berfilter rentang tanggal hari ini).
+     - Accessor: `original_price`, `effective_price`, `has_active_discount`, `discount_percentage`, `discount_amount`.
+2. **Business Logic & Validasi Anti-Overlap:**
+   - [`app/Services/ProcessedProductDiscountService.php`](file:///d:/laragon/www/PKM/app/Services/ProcessedProductDiscountService.php):
+     - Validasi ketat penolakan diskon bertumpukan (`hasOverlap`) pada produk yang sama.
+     - Dukungan filter status (`active`, `upcoming`, `expired`) dan pencarian nama produk (`whereHas`).
+3. **API & Adaptor Respon:**
+   - [`app/Http/Controllers/Api/ProcessedProductDiscountController.php`](file:///d:/laragon/www/PKM/app/Http/Controllers/Api/ProcessedProductDiscountController.php): CRUD Super Admin lengkap dengan respon terstruktur `discounts` dan `pagination`.
+4. **Frontend Flutter & Web:**
+   - [`mobile_app/lib/screens/discount_management_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/discount_management_screen.dart): Tab ke-11 Super Admin Dashboard dengan simulator harga dinamis dan penanganan error validasi bertumpuk.
+   - [`resources/views/catalog.blade.php`](file:///d:/laragon/www/PKM/resources/views/catalog.blade.php) & [`resources/views/landing.blade.php`](file:///d:/laragon/www/PKM/resources/views/landing.blade.php): Badge diskon merah, harga coret, harga terdiskon, dan kalkulasi otomatis modal pesanan.
+
+### C. Fitur 2: Manajemen Berita (CMS) & Penayangan Web Landing Page
+1. **Database & Model:**
+   - Migration: `database/migrations/2026_10_04_000002_create_news_table.php`.
+   - Model: [`app/Models/News.php`](file:///d:/laragon/www/PKM/app/Models/News.php) dengan scope `published` yang dilengkapi toleransi *timezone offset* (WIB vs UTC).
+2. **Business Service & API:**
+   - [`app/Services/NewsService.php`](file:///d:/laragon/www/PKM/app/Services/NewsService.php): Normalisasi waktu terbit lokal klien ke `now()` server saat berstatus *Published*.
+   - [`app/Http/Controllers/Api/NewsController.php`](file:///d:/laragon/www/PKM/app/Http/Controllers/Api/NewsController.php): Endpoint publik `/api/news` & admin `/api/super-admin/news` dengan respon terstruktur `news` dan `pagination`.
+3. **Penyajian Web Landing Page:**
+   - [`resources/views/landing.blade.php`](file:///d:/laragon/www/PKM/resources/views/landing.blade.php): Section 7 (`#berita` - Kabar Tani & Promo Unggulan) menyajikan kartu berita interaktif, thumbnail gambar, tanggal terbit, nama penulis, cuplikan konten, dan modal pop-up baca artikel lengkap.
+4. **Panel Admin Flutter:**
+   - [`mobile_app/lib/screens/news_management_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/news_management_screen.dart): Tab ke-12 Super Admin Dashboard untuk input artikel, upload gambar, dan toggle draft/published.
+   - Sesuai arahan pengguna, tampilan berita di halaman onboarding Flutter dihapus agar fokus pada autentikasi aplikasi.
+
+### D. Fitur 3: Revitalisasi Notifikasi Real-Time & Eliminasi Polling Spam
+1. **Pembersihan Background Polling:**
+   - Menghapus `Timer.periodic` interval 15 detik pada `_AppHeaderState` dan `_AppMobileAppBarState` di [`mobile_app/lib/widgets/app_header.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/widgets/app_header.dart), sehingga terminal log server bebas dari spam request berulang.
+2. **Pemicu Notifikasi Bisnis Otomatis ([`app/Services/NotificationService.php`](file:///d:/laragon/www/PKM/app/Services/NotificationService.php)):**
+   - **Penjualan Komoditas:** Notifikasi masuk ke Petani (konfirmasi penjualan tersimpan) dan Super Admin (laporan penjualan petani baru masuk).
+   - **Pesanan Katalog:** Notifikasi pesanan baru masuk ke Petani pemilik produk dan Super Admin, serta notifikasi saat status pesanan diubah/dibatalkan.
+   - **Pesanan Selesai:** Notifikasi pesanan selesai dan pencatatan penjualan bersih bagi hasil.
+   - **Diskon Produk:** Notifikasi kepada petani bahwa produk olahannya dipromosikan diskon oleh Super Admin.
+   - **Panen Masuk:** Notifikasi konfirmasi bobot panen masuk gudang.
+   - **Registrasi Akun:** Notifikasi petani baru mendaftar ke Super Admin.
+3. **Antarmuka Header Flutter:**
+   - Memuat unread count saat layar dibuka (*on-mount*) dan memuat ulang instan saat ikon lonceng diklik.
+   - Ikon kontekstual: Keranjang belanja (`sale`), resi (`order`), label diskon (`discount`), tanaman (`harvest`), akun (`user`), dan stok menipis (`low_stock`).
+
+### E. Fitur 4: Komisi Platform (10% -> 3%)
+1. **Single Source of Truth:**
+   - [`app/Models/Commission.php`](file:///d:/laragon/www/PKM/app/Models/Commission.php): `const DEFAULT_RATE = 3.00;`.
+2. **Kalkulasi & Snapshot Finansial:**
+   - [`app/Services/SaleService.php`](file:///d:/laragon/www/PKM/app/Services/SaleService.php) & [`app/Services/CommissionService.php`](file:///d:/laragon/www/PKM/app/Services/CommissionService.php): Memotong 3% komisi platform dan mendistribusikan 97% pendapatan bersih ke petani. Transaksi masa lalu mempertahankan snapshot komisi masing-masing tanpa retroaktif.
+3. **Frontend Flutter:**
+   - [`mobile_app/lib/screens/super_admin_commission_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/super_admin_commission_screen.dart) & [`mobile_app/lib/screens/super_admin_dashboard_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/super_admin_dashboard_screen.dart): Menampilkan indikator komisi 3% dan bagi hasil bersih 97%.
+
+### F. Fitur 5: Skalabilitas & Integritas Stok (>= 600 Petani)
+1. **Database Indexing:**
+   - Migration: `database/migrations/2026_10_04_000003_add_performance_and_scalability_indexes.php`.
+   - Menambahkan indeks komposit pada `sales`, `orders`, `harvests`, `processed_products`, dan `processed_product_discounts`.
+2. **Presisi Desimal Bobot & Locking Stok:**
+   - Penggunaan tipe desimal untuk kuantitas panen dan olahan (mencegah pemotongan integer).
+   - Pengurangan stok atomik via `lockForUpdate()` di `ProcessedProductService::decrementStock` untuk mencegah *race condition* pada pembelian bersamaan.
+
+### G. Pengujian Otomatis
+- Seluruh 84 test case API dan fitur Laravel berhasil lulus dengan status hijau (100% pass):
+  - `tests/Feature/API/ProcessedProductDiscountTest.php` (12 test passed)
+  - `tests/Feature/API/NewsTest.php` (7 test passed)
+  - `tests/Feature/API/CommissionTest.php` (9 test passed)
+  - `tests/Feature/API/OrderTest.php` (12 test passed)
+  - `tests/Feature/API/SuperAdminSalesTest.php` (12 test passed)
+  - `tests/Feature/API/ComprehensiveApiTest.php` (12 test passed)
+  - `tests/Feature/API/ProcessedProductTest.php` (20 test passed)
 

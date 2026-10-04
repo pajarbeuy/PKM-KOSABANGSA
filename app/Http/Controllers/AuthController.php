@@ -27,6 +27,15 @@ class AuthController extends Controller
 
             $user = $this->authService->createUser($validated);
 
+            try {
+                $notifService = app(\App\Services\NotificationService::class);
+                $notifService->notifySuperAdmins(
+                    'user',
+                    'Pendaftaran Petani Baru',
+                    "Petani {$user->name} ({$user->farm_name}) telah mendaftar ke dalam sistem."
+                );
+            } catch (\Throwable $e) {}
+
             return $this->successResponse([
                 'id'              => $user->id,
                 'email'           => $user->email,

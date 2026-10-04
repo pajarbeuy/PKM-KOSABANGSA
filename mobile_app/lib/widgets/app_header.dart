@@ -44,15 +44,10 @@ class _AppHeaderState extends State<AppHeader> {
   void initState() {
     super.initState();
     _fetchNotifications();
-    _pollTimer = Timer.periodic(
-      const Duration(seconds: 15),
-      (_) => _fetchNotifications(),
-    );
   }
 
   @override
   void dispose() {
-    _pollTimer?.cancel();
     super.dispose();
   }
 
@@ -102,7 +97,16 @@ class _AppHeaderState extends State<AppHeader> {
       case 'low_stock':
         return Icons.inventory_2_outlined;
       case 'new_sale':
+      case 'sale':
         return Icons.shopping_cart_outlined;
+      case 'order':
+        return Icons.receipt_long_outlined;
+      case 'discount':
+        return Icons.local_offer_outlined;
+      case 'harvest':
+        return Icons.eco_outlined;
+      case 'user':
+        return Icons.person_outline_rounded;
       default:
         return Icons.notifications_outlined;
     }
@@ -206,6 +210,7 @@ class _AppHeaderState extends State<AppHeader> {
   }
 
   void _showNotifications(BuildContext context) {
+    _fetchNotifications();
     showDialog(
       context: context,
       builder: (ctx) {
@@ -433,15 +438,10 @@ class _AppMobileAppBarState extends State<AppMobileAppBar> {
   void initState() {
     super.initState();
     _fetchNotifications();
-    _pollTimer = Timer.periodic(
-      const Duration(seconds: 15),
-      (_) => _fetchNotifications(),
-    );
   }
 
   @override
   void dispose() {
-    _pollTimer?.cancel();
     super.dispose();
   }
 
@@ -491,13 +491,23 @@ class _AppMobileAppBarState extends State<AppMobileAppBar> {
       case 'low_stock':
         return Icons.inventory_2_outlined;
       case 'new_sale':
+      case 'sale':
         return Icons.shopping_cart_outlined;
+      case 'order':
+        return Icons.receipt_long_outlined;
+      case 'discount':
+        return Icons.local_offer_outlined;
+      case 'harvest':
+        return Icons.eco_outlined;
+      case 'user':
+        return Icons.person_outline_rounded;
       default:
         return Icons.notifications_outlined;
     }
   }
 
   void _showNotifications(BuildContext context) {
+    _fetchNotifications();
     showDialog(
       context: context,
       builder: (ctx) {
