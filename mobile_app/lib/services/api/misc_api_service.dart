@@ -232,15 +232,30 @@ class MiscApiService {
 
   // ==================== CHATBOT ====================
 
-  Future<Map<String, dynamic>> sendChatMessage(String message) async {
+  Future<Map<String, dynamic>> sendChatMessage(
+    String message, {
+    String? roleContext,
+    List<Map<String, String>>? history,
+  }) async {
     try {
+      final endpoint = (roleContext == 'farmer')
+          ? '${ApiConfig.baseUrl}/farmer/chat'
+          : '${ApiConfig.baseUrl}/super-admin/chat';
+
+      final Map<String, dynamic> payload = {
+        'message': message,
+      };
+      if (history != null && history.isNotEmpty) {
+        payload['history'] = history;
+      }
+
       final response = await http
           .post(
-            Uri.parse('${ApiConfig.baseUrl}/chat'),
-            headers: _client.getHeaders(includeAuth: false),
-            body: jsonEncode({'message': message}),
+            Uri.parse(endpoint),
+            headers: _client.getHeaders(includeAuth: true),
+            body: jsonEncode(payload),
           )
-          .timeout(const Duration(seconds: 30));
+          .timeout(const Duration(seconds: 45));
 
       final data = jsonDecode(response.body);
 
@@ -248,11 +263,13 @@ class MiscApiService {
         return {
           'success': true,
           'reply': data['reply'] ?? 'Maaf, terjadi kesalahan.',
+          'source': data['source'],
+          'model': data['model'],
         };
       } else {
         return {
           'success': false,
-          'reply': data['reply'] ?? 'Maaf, terjadi kesalahan.',
+          'reply': data['reply'] ?? data['message'] ?? 'Maaf, terjadi kesalahan.',
         };
       }
     } catch (e) {

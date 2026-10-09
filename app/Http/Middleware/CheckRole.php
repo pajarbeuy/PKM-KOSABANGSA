@@ -12,7 +12,7 @@ class CheckRole
     /**
      * Handle an incoming request.
      */
-    public function handle(Request $request, Closure $next, string $role): Response
+    public function handle(Request $request, Closure $next, string ...$roles): Response
     {
         if (!Auth::check()) {
             return response()->json([
@@ -21,10 +21,21 @@ class CheckRole
             ], 401);
         }
 
-        if (Auth::user()->role !== $role) {
+        $userRole = Auth::user()->role;
+        $allowedRoles = [];
+        foreach ($roles as $r) {
+            foreach (explode(',', $r) as $sub) {
+                $trimmed = trim($sub);
+                if ($trimmed !== '') {
+                    $allowedRoles[] = $trimmed;
+                }
+            }
+        }
+
+        if (!in_array($userRole, $allowedRoles, true)) {
             return response()->json([
                 'success' => false,
-                'message' => "Forbidden - Requires {$role} role",
+                'message' => 'Forbidden - Requires ' . implode(' or ', $allowedRoles) . ' role',
             ], 403);
         }
 

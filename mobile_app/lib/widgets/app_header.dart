@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -35,7 +34,6 @@ class AppHeader extends StatefulWidget {
 }
 
 class _AppHeaderState extends State<AppHeader> {
-  Timer? _pollTimer;
   List<Map<String, dynamic>> _notifications = [];
   int _unread = 0;
   final ApiService _api = ApiService();
@@ -430,7 +428,6 @@ class AppMobileAppBar extends StatefulWidget implements PreferredSizeWidget {
 
 class _AppMobileAppBarState extends State<AppMobileAppBar> {
   final ApiService _api = ApiService();
-  Timer? _pollTimer;
   List<Map<String, dynamic>> _notifications = [];
   int _unread = 0;
 

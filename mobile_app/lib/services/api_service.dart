@@ -34,7 +34,6 @@ import '../models/market_price.dart';
 import '../models/economic_result.dart';
 import '../models/commission.dart';
 import '../models/processed_product_discount.dart';
-import '../models/news_article.dart';
 
 /// Facade Singleton providing a unified API interface across all domain services.
 class ApiService {
@@ -467,8 +466,16 @@ class ApiService {
   Future<Map<String, dynamic>> sendFeedback(String message) =>
       _miscService.sendFeedback(message);
 
-  Future<Map<String, dynamic>> sendChatMessage(String message) =>
-      _miscService.sendChatMessage(message);
+  Future<Map<String, dynamic>> sendChatMessage(
+    String message, {
+    String? roleContext,
+    List<Map<String, String>>? history,
+  }) =>
+      _miscService.sendChatMessage(
+        message,
+        roleContext: roleContext,
+        history: history,
+      );
 
   // ─── Processed Products ─────────────────────────────────────────────────────
   Future<List<ProcessedProduct>> getFarmerProcessedProducts({

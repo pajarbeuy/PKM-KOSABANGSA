@@ -106,9 +106,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/farmer/economic-summary',             [FarmerEconomicResultController::class, 'farmerEconomicSummary']);
     Route::get('/farmer/integrated-economic-summary',  [FarmerEconomicResultController::class, 'integratedEconomicSummary']);
 
-    // Platform Commissions (Phase 8 - Commission 10%)
+    // Platform Commissions (Phase 8 - Commission 3% & 97% Farmer Net)
     Route::get('/commissions',         [CommissionController::class, 'index']);
     Route::get('/commissions/summary', [CommissionController::class, 'summary']);
+
+    // Farmer Chatbot (Phase 7 - Agricultural Assistant)
+    Route::middleware('role:user,farmer')->post('/farmer/chat', [ChatbotController::class, 'farmerChat']);
 
     // Stock (custom routes — not a standard CRUD resource)
     Route::get('/stock',                      [StockController::class, 'index']);
@@ -214,10 +217,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/news/{id}',                 [NewsController::class, 'update']);
         Route::delete('/news/{id}',               [NewsController::class, 'destroy']);
 
-        // Chatbot AI Operational Assistant
-        Route::post('/chat', [ChatbotController::class, 'chat']);
+        // Chatbot AI Operational Assistant (BUMDes / Super Admin)
+        Route::post('/chat', [ChatbotController::class, 'superAdminChat']);
     });
 
     // Chatbot endpoint protected for Super Admin
-    Route::middleware('role:super_admin')->post('/chat', [ChatbotController::class, 'chat']);
+    Route::middleware('role:super_admin')->post('/chat', [ChatbotController::class, 'superAdminChat']);
 });

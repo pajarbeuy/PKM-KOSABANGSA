@@ -48,6 +48,7 @@
 19. [Phase 9: Pemisahan Platform Landing Page & Katalog Publik (/ vs /katalog)](#19-phase-9-pemisahan-platform-landing-page--katalog-publik--vs-katalog)
 20. [Perhitungan Modal Produk Olahan & Analisis Laba/Rugi Agribisnis Terpadu](#20-perhitungan-modal-produk-olahan--analisis-labarugi-agribisnis-terpadu-hulu-kebun--hilir-olahan)
 21. [Version 2.2.0: Diskon Produk Olahan, CMS Berita Web, Revitalisasi Notifikasi, Komisi 3% & Skalabilitas](#21-version-220---2026-10-04-diskon-produk-olahan-cms-berita-web-revitalisasi-notifikasi-komisi-3--skalabilitas)
+22. [Version 2.3.0: Penguatan Asisten AI (TaniBot), Integrasi Data Pasar Resmi, & Penegasan Guardrails Bisnis](#22-version-230---2026-10-09-penguatan-asisten-ai-tanibot-integrasi-data-pasar-resmi--penegasan-guardrails-bisnis)
 
 ---
 
@@ -1493,4 +1494,56 @@ Pembaruan ini mencakup 5 pilar utama kebutuhan operasional ekosistem SumberTani:
   - `tests/Feature/API/SuperAdminSalesTest.php` (12 test passed)
   - `tests/Feature/API/ComprehensiveApiTest.php` (12 test passed)
   - `tests/Feature/API/ProcessedProductTest.php` (20 test passed)
+
+---
+
+## 22. [Version 2.3.0] - 2026-10-09: Penguatan Asisten AI (TaniBot), Integrasi Data Pasar Resmi, & Penegasan Guardrails Bisnis
+
+Pembaruan Versi 2.3.0 memfokuskan peningkatan kualitas ekosistem kecerdasan buatan **TaniBot** pada platform SumberTani (PKM-Kosabangsa), baik untuk akun **Petani** maupun **Super Admin (Pengurus BUMDes)**.
+
+### A. Latar Belakang & Masalah yang Diselesaikan
+1. **Error Validasi Riwayat Panjang (HTTP 422 Unprocessable Content):**
+   - Pada sesi obrolan yang panjang, respons AI yang komprehensif melebihi batas validasi ketat `history.*.content` (sebelumnya `max:2000`). Ketika percakapan terus berlangsung, klien Flutter mengirim riwayat tersebut sehingga server menolak dengan HTTP 422.
+2. **Loop Sambutan Default pada Pertanyaan Harga Super Admin:**
+   - Pencarian harga acuan pasar komoditas sebelumnya hanya dipetakan untuk peran petani. Ketika Super Admin menanyakan *"analisis harga pasar"* atau *"harga acuan"*, sistem tidak mengenali intent tersebut dan jatuh ke salam pembuka awal (*greeting loop*).
+3. **Penyusupan Output Kode Pemrograman & Permintaan Di Luar Konteks:**
+   - Pengguna menguji respons bot dengan menyertakan instruksi pemrograman (*"buatkan kode python"*). TaniBot adalah asisten agribisnis dan BUMDes, bukan coding assistant, sehingga perlu batasan tegas (*guardrails*) untuk menolak pembuatan kode teknis sekaligus tetap menjawab substansi analisis bisnisnya secara proporsional.
+
+### B. Implementasi & Solusi Arsitektural
+
+#### 1. Toleransi Validasi & Pemotongan Riwayat Aman
+- **Frontend Flutter ([`mobile_app/lib/screens/chatbot_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/chatbot_screen.dart)):**
+  - Riwayat percakapan yang dikirim ke API dipotong secara aman maksimal 1.500 karakter per pesan sebelum transmisi jaringan, menjaga efisiensi payload HTTP dan mencegah request ditolak.
+- **Backend Laravel ([`app/Http/Controllers/Api/ChatbotController.php`](file:///d:/laragon/www/PKM/app/Http/Controllers/Api/ChatbotController.php)):**
+  - Menaikkan batas validasi `history.*.content` menjadi `max:10000` karakter untuk memberikan toleransi atas respon panjang sebelumnya, lalu melakukan normalisasi `mb_substr(..., 0, 1500)` sebelum disuntikkan ke prompt LLM.
+
+#### 2. Integrasi Data Harga Pasar Resmi BUMDes (Ground Truth)
+- **Data Query Service ([`app/Services/ChatbotDataQueryService.php`](file:///d:/laragon/www/PKM/app/Services/ChatbotDataQueryService.php)):**
+  - Menambahkan intent pencarian harga acuan pasar untuk Super Admin (`querySuperAdminData`).
+  - Sistem secara otomatis menarik harga acuan aktif dari database (contoh: *Padi: Rp 14.500/kg*, *Jamur: Rp 28.000/kg*) dan menyajikannya secara akurat dan resmi.
+
+#### 3. Penegasan Batasan Konteks (No-Code & Out-of-Context Handling)
+- **Larangan Total Script Kode Pemrograman:**
+  - Menghapus seluruh blok skrip kode (Python/pandas) dari knowledge base dan instruksi prompt model AI.
+- **Pemisahan Konteks Campuran (*Mixed Context*):**
+  - Jika pengguna mengirim pertanyaan campuran (misal: *"analisis harga pasar komoditas buatkan kode python"*), TaniBot secara cerdas memisahkan konteks:
+    1. Menyertakan catatan sopan bahwa pembuatan kode script berada di luar cakupan TaniBot.
+    2. Tetap menyajikan data harga riil dan analisis agribisnis BUMDes secara mendalam dan naratif tanpa kode apa pun.
+- **Penolakan Konteks Murni di Luar Agribisnis (*Pure Out-of-Context*):**
+  - Jika pengguna meminta script kode umum (misal: *"buatkan script python kalkulator"*), sistem memberikan pemberitahuan cakupan TaniBot yang terarah dan menjelaskan logika perhitungan bisnis (HPP, margin, komisi 3%) secara naratif jika relevan.
+- **System Prompt & Guardrails Konfigurasi ([`config/chatbot.php`](file:///d:/laragon/www/PKM/config/chatbot.php) & [`app/Services/OpenRouterService.php`](file:///d:/laragon/www/PKM/app/Services/OpenRouterService.php)):**
+  - Menegaskan guardrails peran bisnis Super Admin dan larangan memuat kode teknis pada semua level model LLM.
+
+#### 4. Optimasi Kapasitas Token & Waktu Eksekusi
+- **OpenRouter Service ([`app/Services/OpenRouterService.php`](file:///d:/laragon/www/PKM/app/Services/OpenRouterService.php)):**
+  - Menaikkan `max_tokens` ke `2500` (sebelumnya `1200`) dan menyesuaikan per-request timeout (18s) serta total execution budget (25s) agar analisis data yang mendalam tidak terputus di tengah jalan.
+  - Failover teratur: jika model cloud lambat/gagal, sistem beralih ke *local fallback* cerdas yang menggabungkan fakta database resmi dengan modul pengetahuan operasional BUMDes.
+
+### C. Status Verifikasi Pengujian
+- **Pengujian Backend:** 20/20 test cases lulus (100% pass):
+  - `tests/Feature/API/ChatbotAuditRefactorTest.php` (13 unit/feature tests)
+  - `tests/Feature/API/ChatbotSuperAdminTest.php` (7 feature tests)
+- **Pengujian Frontend:** `flutter analyze` menghasilkan **0 errors / No issues found**.
+- **Pengujian Skenario:** Berhasil memvalidasi 3 skenario: *Mixed-Context*, *In-Context*, dan *Out-of-Context*.
+
 
