@@ -23,6 +23,7 @@ use App\Http\Controllers\Api\FarmerEconomicResultController;
 use App\Http\Controllers\Api\CommissionController;
 use App\Http\Controllers\Api\ProcessedProductDiscountController;
 use App\Http\Controllers\Api\NewsController;
+use App\Http\Controllers\Api\PasswordResetRequestController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -38,6 +39,11 @@ Route::post('/auth/login',    [AuthController::class, 'login']);
 
 Route::post('/auth/forgot-password', [PasswordResetController::class, 'sendResetLinkEmailApi']);
 Route::post('/auth/reset-password',  [PasswordResetController::class, 'resetPasswordApi']);
+
+// Password Recovery via Super Admin Verification & 5-Minute Token
+Route::post('/password-reset-requests',         [PasswordResetRequestController::class, 'store'])->middleware('throttle:10,1');
+Route::post('/password-reset/confirm',          [PasswordResetRequestController::class, 'confirm'])->middleware('throttle:10,1');
+Route::post('/password-reset-requests/confirm', [PasswordResetRequestController::class, 'confirm'])->middleware('throttle:10,1');
 
 Route::get('/landing',  [SuperAdminController::class, 'getLanding']);
 Route::get('/farmer-groups', [FarmerGroupController::class, 'index']);
@@ -219,8 +225,24 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Chatbot AI Operational Assistant (BUMDes / Super Admin)
         Route::post('/chat', [ChatbotController::class, 'superAdminChat']);
+
+        // Password Reset Requests Verification & Token Generation
+        Route::get('/password-reset-requests',                      [PasswordResetRequestController::class, 'index']);
+        Route::get('/password-reset-requests/{id}',                 [PasswordResetRequestController::class, 'show']);
+        Route::post('/password-reset-requests/{id}/approve',        [PasswordResetRequestController::class, 'approve']);
+        Route::post('/password-reset-requests/{id}/reject',         [PasswordResetRequestController::class, 'reject']);
+        Route::post('/password-reset-requests/{id}/generate-token', [PasswordResetRequestController::class, 'generateToken'])->middleware('throttle:20,1');
     });
 
     // Chatbot endpoint protected for Super Admin
     Route::middleware('role:super_admin')->post('/chat', [ChatbotController::class, 'superAdminChat']);
+
+    // Admin alias for Password Reset Requests
+    Route::middleware('role:super_admin')->prefix('admin')->group(function () {
+        Route::get('/password-reset-requests',                      [PasswordResetRequestController::class, 'index']);
+        Route::get('/password-reset-requests/{id}',                 [PasswordResetRequestController::class, 'show']);
+        Route::post('/password-reset-requests/{id}/approve',        [PasswordResetRequestController::class, 'approve']);
+        Route::post('/password-reset-requests/{id}/reject',         [PasswordResetRequestController::class, 'reject']);
+        Route::post('/password-reset-requests/{id}/generate-token', [PasswordResetRequestController::class, 'generateToken'])->middleware('throttle:20,1');
+    });
 });

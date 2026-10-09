@@ -100,6 +100,28 @@ class ApiService {
   Future<Map<String, dynamic>> sendPasswordResetLink(String email) =>
       _authService.sendPasswordResetLink(email);
 
+  Future<Map<String, dynamic>> createPasswordResetRequest({
+    required String name,
+    String? farmerGroup,
+    String? contactInfo,
+  }) =>
+      _authService.createPasswordResetRequest(
+        name: name,
+        farmerGroup: farmerGroup,
+        contactInfo: contactInfo,
+      );
+
+  Future<Map<String, dynamic>> confirmPasswordResetWithToken({
+    required String token,
+    required String password,
+    required String passwordConfirmation,
+  }) =>
+      _authService.confirmPasswordResetWithToken(
+        token: token,
+        password: password,
+        passwordConfirmation: passwordConfirmation,
+      );
+
   Future<Map<String, dynamic>> resetPassword({
     required String email,
     required String token,
@@ -407,6 +429,29 @@ class ApiService {
 
   Future<Map<String, dynamic>> deleteFeedback(int id) =>
       _superAdminService.deleteFeedback(id);
+
+  Future<Map<String, dynamic>> getPasswordResetRequests({
+    String? status,
+    String? search,
+    int page = 1,
+  }) =>
+      _superAdminService.getPasswordResetRequests(
+        status: status,
+        search: search,
+        page: page,
+      );
+
+  Future<Map<String, dynamic>?> getPasswordResetRequestDetail(int id) =>
+      _superAdminService.getPasswordResetRequestDetail(id);
+
+  Future<Map<String, dynamic>> approvePasswordResetRequest(int id, {int? userId}) =>
+      _superAdminService.approvePasswordResetRequest(id, userId: userId);
+
+  Future<Map<String, dynamic>> rejectPasswordResetRequest(int id, {String? reason}) =>
+      _superAdminService.rejectPasswordResetRequest(id, reason: reason);
+
+  Future<Map<String, dynamic>> generatePasswordResetToken(int id) =>
+      _superAdminService.generatePasswordResetToken(id);
 
   // ─── Settings, Notifications, Feedback, Chatbot ────────────────────────────
   Future<Map<String, dynamic>?> getSettings() => _miscService.getSettings();

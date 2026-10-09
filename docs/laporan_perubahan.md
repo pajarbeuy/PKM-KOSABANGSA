@@ -49,6 +49,7 @@
 20. [Perhitungan Modal Produk Olahan & Analisis Laba/Rugi Agribisnis Terpadu](#20-perhitungan-modal-produk-olahan--analisis-labarugi-agribisnis-terpadu-hulu-kebun--hilir-olahan)
 21. [Version 2.2.0: Diskon Produk Olahan, CMS Berita Web, Revitalisasi Notifikasi, Komisi 3% & Skalabilitas](#21-version-220---2026-10-04-diskon-produk-olahan-cms-berita-web-revitalisasi-notifikasi-komisi-3--skalabilitas)
 22. [Version 2.3.0: Penguatan Asisten AI (TaniBot), Integrasi Data Pasar Resmi, & Penegasan Guardrails Bisnis](#22-version-230---2026-10-09-penguatan-asisten-ai-tanibot-integrasi-data-pasar-resmi--penegasan-guardrails-bisnis)
+23. [Version 2.4.0: Sistem Pemulihan Akun Verifikasi Lapangan & Persetujuan Super Admin (Dual-Track Password Recovery)](#23-version-240---2026-10-09-sistem-pemulihan-akun-verifikasi-lapangan--persetujuan-super-admin-dual-track-password-recovery)
 
 ---
 
@@ -1545,5 +1546,92 @@ Pembaruan Versi 2.3.0 memfokuskan peningkatan kualitas ekosistem kecerdasan buat
   - `tests/Feature/API/ChatbotSuperAdminTest.php` (7 feature tests)
 - **Pengujian Frontend:** `flutter analyze` menghasilkan **0 errors / No issues found**.
 - **Pengujian Skenario:** Berhasil memvalidasi 3 skenario: *Mixed-Context*, *In-Context*, dan *Out-of-Context*.
+
+---
+
+## 23. [Version 2.4.0] - 2026-10-09: Sistem Pemulihan Akun Verifikasi Lapangan & Persetujuan Super Admin (Dual-Track Password Recovery)
+
+Pembaruan Versi 2.4.0 menghadirkan arsitektur pemulihan akun ganda (*Dual-Track Password Recovery*) yang dirancang khusus untuk mengatasi kesenjangan literasi digital dan keterbatasan akses email bagi petani di lapangan.
+
+### A. Latar Belakang & Kebutuhan Petani Lapangan
+1. **Keterbatasan Akses Email Mandiri (Self-Service Reset):**
+   - Mayoritas petani di pedesaan seringkali lupa password email, jarang memeriksa inbox, atau tidak memiliki koneksi internet yang stabil saat memerlukan reset kata sandi aplikasi.
+   - Mengandalkan 100% email OTP menyebabkan akun terkunci permanen dan intervensi manual teknis yang membebani tim pengembang.
+2. **Kebutuhan Jalur Verifikasi Lapangan Berbasis Komunitas (Poktan / BUMDes):**
+   - Petani membutuhkan opsi pengajuan reset kata sandi langsung kepada pengurus BUMDes (Super Admin) dengan identitas lapangan (Nama Lengkap, Nomor HP/WhatsApp aktif, dan Alasan/Catatan).
+   - Super Admin dapat memverifikasi keabsahan identitas petani secara tatap muka atau komunikasi langsung, kemudian menyetujui permohonan dengan menerbitkan token pemulihan satu kali pakai (*one-time recovery token*) atau melakukan reset password langsung secara aman.
+
+### B. Implementasi & Arsitektur Solusi (Dual-Track Architecture)
+
+#### 1. Perancangan Skema Database & Migrasi
+- **File:** [`database/migrations/2026_10_09_000001_create_password_reset_requests_tables.php`](file:///d:/laragon/www/PKM/database/migrations/2026_10_09_000001_create_password_reset_requests_tables.php)
+  - **Tabel `password_reset_requests`:**
+    - `user_id`: Foreign key opsional ke `users` (dapat dicocokkan otomatis via email/nomor telepon).
+    - `identifier`: Email atau nomor HP yang diajukan pemohon.
+    - `name`: Nama lengkap petani/pemohon.
+    - `phone`: Kontak telepon/WhatsApp aktif untuk verifikasi lapangan.
+    - `reason`: Alasan pengajuan (misal: "Lupa kata sandi & email tidak aktif").
+    - `status`: Enum (`pending`, `approved`, `completed`, `rejected`).
+    - `admin_notes`: Catatan audit penanganan dari Super Admin.
+    - `handled_by`: User ID Super Admin yang memproses permohonan.
+    - `handled_at`: Timestamp waktu penanganan.
+  - **Tabel `password_reset_request_tokens`:**
+    - `request_id`: Foreign key ke `password_reset_requests`.
+    - `token_hash`: Hash kriptografis SHA-256 dari token sekali pakai untuk mencegah kebocoran data di database.
+    - `expires_at`: Batas kedaluwarsa token (default: 24 jam).
+    - `used_at`: Timestamp penanda token telah digunakan (mencegah *token replay attack*).
+
+#### 2. Model & Relasi Eloquent
+- [`app/Models/PasswordResetRequest.php`](file:///d:/laragon/www/PKM/app/Models/PasswordResetRequest.php):
+  - Relasi `user()`, `handler()`, dan `tokens()`.
+  - Scopes: `pending()`, `approved()`, `completed()`, `rejected()`.
+- [`app/Models/PasswordResetRequestToken.php`](file:///d:/laragon/www/PKM/app/Models/PasswordResetRequestToken.php):
+  - Logika verifikasi hash token dan validasi kedaluwarsa.
+- [`app/Models/User.php`](file:///d:/laragon/www/PKM/app/Models/User.php):
+  - Relasi `passwordResetRequests()`.
+
+#### 3. Service Layer & Keamanan Kriptografis
+- [`app/Services/PasswordResetRequestService.php`](file:///d:/laragon/www/PKM/app/Services/PasswordResetRequestService.php):
+  - `submitRequest(array $data)`: Mencegah *request flooding* (maksimal 1 permohonan pending per user/identifier).
+  - `getPaginatedRequests(array $filters)`: Mendukung filtering status dan pencarian keyword (nama, telepon, identifier).
+  - `approveRequest(int $id, int $adminId, ?string $notes)`: Menyetujui permohonan dan menghasilkan token acak aman (8 karakter alfanumerik) yang di-hash SHA-256.
+  - `rejectRequest(int $id, int $adminId, string $reason)`: Menolak permohonan dengan catatan audit wajib.
+  - `completeResetWithToken(string $token, string $newPassword)`: Memvalidasi token aktif, memperbarui hash password baru pengguna, mencabut seluruh session/token aktif, dan menandai status `completed`.
+  - `directResetByAdmin(int $id, int $adminId, string $newPassword)`: Memungkinkan Super Admin mereset password secara langsung atas permintaan tatap muka/lapangan.
+
+#### 4. RESTful API Endpoints & Otorisasi
+- [`app/Http/Controllers/Api/PasswordResetRequestController.php`](file:///d:/laragon/www/PKM/app/Http/Controllers/Api/PasswordResetRequestController.php):
+  - **Endpoint Publik (Akses Petani):**
+    - `POST /api/password-reset-requests`: Pengajuan permohonan baru.
+    - `GET /api/password-reset-requests/status`: Pengecekan status pengajuan berdasarkan kontak/email.
+    - `POST /api/password-reset-requests/complete-token`: Eksekusi reset password menggunakan token yang telah disetujui.
+  - **Endpoint Super Admin (Sanctum + Role Guard):**
+    - `GET /api/super-admin/password-reset-requests`: Monitoring & filter permohonan reset sandi.
+    - `POST /api/super-admin/password-reset-requests/{id}/approve`: Persetujuan & penerbitan token.
+    - `POST /api/super-admin/password-reset-requests/{id}/reject`: Penolakan permohonan.
+    - `POST /api/super-admin/password-reset-requests/{id}/direct-reset`: Reset langsung password oleh admin.
+- [`routes/api.php`](file:///d:/laragon/www/PKM/routes/api.php): Pendaftaran seluruh routing di atas.
+
+#### 5. Pengalaman Pengguna Mobile Client (Flutter UI/UX)
+- **Layar Lupa Sandi Dual-Track ([`mobile_app/lib/screens/forgot_password_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/forgot_password_screen.dart)):**
+  - **Tab 1 (Email Mandiri):** Alur standar OTP/email dengan pencegahan *email enumeration*.
+  - **Tab 2 (Verifikasi Lapangan / Bantuan Admin):** Form pengajuan terstruktur dengan input Nama Lengkap, Nomor HP/WhatsApp aktif, dan Alasan permohonan.
+  - **Status Tracker & Input Token Interaktif:** Petani dapat memantau status pengajuannya secara langsung dan memasukkan token pemulihan begitu disetujui oleh pengurus BUMDes.
+- **Panel Manajemen Reset Sandi Super Admin ([`mobile_app/lib/screens/password_reset_management_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/password_reset_management_screen.dart)):**
+  - Menampilkan daftar permohonan masuk secara real-time dengan filter status (*Semua, Menunggu, Disetujui, Selesai, Ditolak*).
+  - Integrasi WhatsApp cepat untuk menghubungi nomor petani langsung dari aplikasi.
+  - Opsi tindakan: **Setujui Permohonan** (otomatis salin token pemulihan ke clipboard), **Reset Langsung** (masukkan password baru instan), atau **Tolak**.
+- **Integrasi Menu Dashboard Super Admin ([`mobile_app/lib/screens/super_admin_dashboard_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/super_admin_dashboard_screen.dart)):**
+  - Ditambahkan menu navigasi dan shortcut terintegrasi menuju panel Kelola Reset Sandi.
+- **API Client Service ([`mobile_app/lib/services/api/auth_api_service.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/services/api/auth_api_service.dart), [`mobile_app/lib/services/api/super_admin_api_service.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/services/api/super_admin_api_service.dart), [`mobile_app/lib/services/api_service.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/services/api_service.dart)):**
+  - Penambahan method terisolasi dan strongly-typed untuk seluruh alur pemulihan akun manual.
+
+### C. Status Verifikasi Pengujian
+- **Pengujian Backend:** 14/14 test cases baru lulus (100% pass, 56 assertions):
+  - `tests/Feature/API/PasswordResetManualVerificationTest.php`
+- **Pengujian Regresi Keamanan:**
+  - `tests/Feature/API/PasswordResetSecurityTest.php` tetap lulus 100% tanpa regresi.
+- **Pengujian Frontend:** `flutter analyze` menghasilkan **0 errors / No issues found**.
+
 
 

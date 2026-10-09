@@ -20,6 +20,7 @@ import 'market_price_screen.dart';
 import 'super_admin_commission_screen.dart';
 import 'discount_management_screen.dart';
 import 'news_management_screen.dart';
+import 'password_reset_management_screen.dart';
 import '../widgets/charts/monthly_product_bar_chart.dart';
 import '../widgets/charts/cumulative_revenue_line_chart.dart';
 
@@ -115,6 +116,8 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
         return 'Diskon Produk Olahan';
       case 12:
         return 'Manajemen Berita & Publikasi';
+      case 13:
+        return 'Verifikasi Pemulihan Akun';
       default:
         return 'Super Admin Panel';
     }
@@ -148,6 +151,8 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
         return 'Kelola persentase diskon promosi produk olahan dan periode berlaku';
       case 12:
         return 'Publikasi artikel, kampanye produk, edukasi tani, dan pengumuman platform';
+      case 13:
+        return 'Verifikasi permohonan reset password petani & buat token 5 menit';
       default:
         return '';
     }
@@ -418,6 +423,15 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
                                 width: mWidth,
                                 onTap: () => setState(() => _selectedIndex = 12),
                               ),
+                              _buildQuickNavCard(
+                                title: 'Pemulihan Akun (Reset Password)',
+                                desc: 'Verifikasi permintaan reset petani & buat token 5 menit',
+                                icon: Icons.lock_reset_rounded,
+                                color: const Color(0xFF7C3AED),
+                                bg: const Color(0xFFF3E8FF),
+                                width: mWidth,
+                                onTap: () => setState(() => _selectedIndex = 13),
+                              ),
                             ],
                           );
                         },
@@ -520,6 +534,10 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
                           ),
                           NewsManagementScreen(
                             key: ValueKey('news_${_refreshTick}_${_selectedIndex == 12}'),
+                            isEmbedded: true,
+                          ),
+                          PasswordResetManagementScreen(
+                            key: ValueKey('pwd_reset_${_refreshTick}_${_selectedIndex == 13}'),
                             isEmbedded: true,
                           ),
                         ],
@@ -684,6 +702,12 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
         label: 'Manajemen Berita',
         isActive: _selectedIndex == 12,
         onTap: () => setState(() => _selectedIndex = 12),
+      ),
+      SidebarNavItem(
+        icon: Icons.lock_reset_rounded,
+        label: 'Pemulihan Akun',
+        isActive: _selectedIndex == 13,
+        onTap: () => setState(() => _selectedIndex = 13),
       ),
     ];
   }

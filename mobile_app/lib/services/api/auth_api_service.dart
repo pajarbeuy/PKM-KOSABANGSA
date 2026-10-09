@@ -226,6 +226,91 @@ class AuthApiService {
     }
   }
 
+  Future<Map<String, dynamic>> createPasswordResetRequest({
+    required String name,
+    String? farmerGroup,
+    String? contactInfo,
+  }) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('${ApiConfig.baseUrl}/password-reset-requests'),
+            headers: _client.getHeaders(includeAuth: false),
+            body: jsonEncode({
+              'name': name,
+              if (farmerGroup != null && farmerGroup.isNotEmpty) 'farmer_group': farmerGroup,
+              if (contactInfo != null && contactInfo.isNotEmpty) 'contact_info': contactInfo,
+            }),
+          )
+          .timeout(const Duration(seconds: 30));
+
+      final data = jsonDecode(response.body);
+      String message = data['message'] ?? 'Permintaan pemulihan akun berhasil diajukan.';
+      if (data['errors'] != null && data['errors'] is Map) {
+        final errMap = data['errors'] as Map;
+        final list = <String>[];
+        errMap.forEach((_, v) {
+          if (v is List) {
+            list.addAll(v.map((e) => e.toString()));
+          } else {
+            list.add(v.toString());
+          }
+        });
+        if (list.isNotEmpty) message = list.join('\n');
+      }
+
+      return {
+        'success': (response.statusCode == 200 || response.statusCode == 201) && data['success'] == true,
+        'message': message,
+        'data': data['data'],
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Terjadi kesalahan jaringan: ${e.toString()}'};
+    }
+  }
+
+  Future<Map<String, dynamic>> confirmPasswordResetWithToken({
+    required String token,
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('${ApiConfig.baseUrl}/password-reset/confirm'),
+            headers: _client.getHeaders(includeAuth: false),
+            body: jsonEncode({
+              'token': token,
+              'password': password,
+              'password_confirmation': passwordConfirmation,
+            }),
+          )
+          .timeout(const Duration(seconds: 30));
+
+      final data = jsonDecode(response.body);
+      String message = data['message'] ?? 'Gagal memperbarui password.';
+      if (data['errors'] != null && data['errors'] is Map) {
+        final errMap = data['errors'] as Map;
+        final list = <String>[];
+        errMap.forEach((_, v) {
+          if (v is List) {
+            list.addAll(v.map((e) => e.toString()));
+          } else {
+            list.add(v.toString());
+          }
+        });
+        if (list.isNotEmpty) message = list.join('\n');
+      }
+
+      return {
+        'success': response.statusCode == 200 && data['success'] == true,
+        'message': message,
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Terjadi kesalahan jaringan: ${e.toString()}'};
+    }
+  }
+
   Future<DashboardData?> getDashboard() async {
     try {
       final response = await http
@@ -247,3 +332,4 @@ class AuthApiService {
     }
   }
 }
+
