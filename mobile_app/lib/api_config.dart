@@ -18,7 +18,7 @@ class ApiConfig {
 
   static String port = envPort;
 
-  static String get baseUrl => 'http://$serverIp:$port/api';
+  static String get baseUrl => 'https://crusher-vaguely-tyke.ngrok-free.dev/api';
 
   // Endpoint helpers
   static String get loginEndpoint => '$baseUrl/auth/login';
