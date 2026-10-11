@@ -16,6 +16,11 @@ class ProcessedProduct {
   final double? totalProcessingCost;
   final double? totalSalesRevenue;
   final double? profitLoss;
+  final double? originalPrice;
+  final double? effectivePrice;
+  final double? discountPercentage;
+  final double? discountAmount;
+  final bool isDiscounted;
   final String? createdAt;
   final String? updatedAt;
 
@@ -37,6 +42,11 @@ class ProcessedProduct {
     this.totalProcessingCost,
     this.totalSalesRevenue,
     this.profitLoss,
+    this.originalPrice,
+    this.effectivePrice,
+    this.discountPercentage,
+    this.discountAmount,
+    this.isDiscounted = false,
     this.createdAt,
     this.updatedAt,
   });
@@ -44,6 +54,7 @@ class ProcessedProduct {
   bool get isActive => status == 'active';
   bool get isOutOfStock => status == 'out_of_stock' || stock <= 0;
   bool get isInactive => status == 'inactive';
+  double get displayPrice => (isDiscounted && effectivePrice != null) ? effectivePrice! : price;
 
   factory ProcessedProduct.fromJson(Map<String, dynamic> json) {
     final parsedStock = int.tryParse(json['stock']?.toString() ?? '') ?? 0;
@@ -70,6 +81,11 @@ class ProcessedProduct {
       totalProcessingCost: double.tryParse(json['total_processing_cost']?.toString() ?? ''),
       totalSalesRevenue: double.tryParse(json['total_sales_revenue']?.toString() ?? ''),
       profitLoss: double.tryParse(json['profit_loss']?.toString() ?? ''),
+      originalPrice: double.tryParse(json['original_price']?.toString() ?? ''),
+      effectivePrice: double.tryParse(json['effective_price']?.toString() ?? ''),
+      discountPercentage: double.tryParse(json['discount_percentage']?.toString() ?? ''),
+      discountAmount: double.tryParse(json['discount_amount']?.toString() ?? ''),
+      isDiscounted: json['is_discounted'] == true || (double.tryParse(json['discount_percentage']?.toString() ?? '') ?? 0) > 0,
       createdAt: json['created_at']?.toString(),
       updatedAt: json['updated_at']?.toString(),
     );

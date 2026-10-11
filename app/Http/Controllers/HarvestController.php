@@ -87,6 +87,17 @@ class HarvestController extends Controller
             $request->hasFile('photo') ? $request->file('photo') : null
         );
 
+        try {
+            $notifService = app(\App\Services\NotificationService::class);
+            $commName = $harvest->commodity?->name ?? 'Hasil Panen';
+            $notifService->notifyUser(
+                $request->user()->id,
+                'harvest',
+                'Panen Berhasil Disimpan',
+                "Pencatatan panen {$commName} seberat {$harvest->weight_kg} Kg berhasil masuk ke gudang."
+            );
+        } catch (\Throwable $e) {}
+
         $formatted               = $this->harvestService->formatHarvest($harvest, $season->name);
         $formatted['created_at'] = $harvest->created_at->toIso8601String();
 

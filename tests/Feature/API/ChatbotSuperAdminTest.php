@@ -27,6 +27,8 @@ class ChatbotSuperAdminTest extends TestCase
             'role' => 'user',
             'name' => 'Petani Satu',
         ]);
+
+        \Illuminate\Support\Facades\Config::set('chatbot.openrouter.api_key', '');
     }
 
     /** @test */

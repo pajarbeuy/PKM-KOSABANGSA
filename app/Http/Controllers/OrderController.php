@@ -40,6 +40,30 @@ class OrderController extends Controller
 
             $order = $this->orderService->createPublicOrder($validated);
 
+            try {
+                $notifService = app(\App\Services\NotificationService::class);
+                $formattedTotal = 'Rp ' . number_format($order->total_price, 0, ',', '.');
+
+                // Notify Super Admins
+                $notifService->notifySuperAdmins(
+                    'order',
+                    'Pesanan Baru dari Katalog',
+                    "Pesanan baru #{$order->order_code} ({$formattedTotal}) diterima dari {$order->customer_name}."
+                );
+
+                // Notify product owners (farmers)
+                $order->loadMissing('items.processedProduct');
+                $ownerIds = $order->items->pluck('processedProduct.owner_id')->filter()->unique();
+                foreach ($ownerIds as $ownerId) {
+                    $notifService->notifyUser(
+                        $ownerId,
+                        'order',
+                        'Pesanan Produk Olahan Masuk',
+                        "Produk olahan Anda dipesan oleh {$order->customer_name} (Pesanan #{$order->order_code})."
+                    );
+                }
+            } catch (\Throwable $e) {}
+
             return $this->successResponse([
                 'order'      => $this->orderService->formatPublicTracking($order),
                 'order_code' => $order->order_code,
@@ -134,6 +158,20 @@ class OrderController extends Controller
         try {
             $updated = $this->orderService->updateStatus($order, $validated['status']);
 
+            try {
+                $notifService = app(\App\Services\NotificationService::class);
+                $updated->loadMissing('items.processedProduct');
+                $ownerIds = $updated->items->pluck('processedProduct.owner_id')->filter()->unique();
+                foreach ($ownerIds as $ownerId) {
+                    $notifService->notifyUser(
+                        $ownerId,
+                        'order',
+                        'Status Pesanan Diperbarui',
+                        "Status pesanan #{$updated->order_code} kini telah diubah menjadi: {$validated['status']}."
+                    );
+                }
+            } catch (\Throwable $e) {}
+
             return $this->successResponse(
                 $this->orderService->formatOrderForAdmin($updated),
                 'Status pesanan berhasil diperbarui menjadi ' . $validated['status'] . '.'
@@ -180,6 +218,20 @@ class OrderController extends Controller
 
         try {
             $cancelled = $this->orderService->cancelOrder($order);
+
+            try {
+                $notifService = app(\App\Services\NotificationService::class);
+                $cancelled->loadMissing('items.processedProduct');
+                $ownerIds = $cancelled->items->pluck('processedProduct.owner_id')->filter()->unique();
+                foreach ($ownerIds as $ownerId) {
+                    $notifService->notifyUser(
+                        $ownerId,
+                        'order',
+                        'Pesanan Dibatalkan',
+                        "Pesanan #{$cancelled->order_code} telah dibatalkan."
+                    );
+                }
+            } catch (\Throwable $e) {}
 
             return $this->successResponse(
                 $this->orderService->formatOrderForAdmin($cancelled),

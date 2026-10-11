@@ -29,7 +29,7 @@ class Commission extends Model
         'net_farmer_amount' => 'decimal:2',
     ];
 
-    public const DEFAULT_RATE = 10.00;
+    public const DEFAULT_RATE = 3.00;
 
     /**
      * Confirmed sale this commission originates from.

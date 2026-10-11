@@ -18,6 +18,9 @@ import 'chatbot_screen.dart';
 import 'farmer_group_management_screen.dart';
 import 'market_price_screen.dart';
 import 'super_admin_commission_screen.dart';
+import 'discount_management_screen.dart';
+import 'news_management_screen.dart';
+import 'password_reset_management_screen.dart';
 import '../widgets/charts/monthly_product_bar_chart.dart';
 import '../widgets/charts/cumulative_revenue_line_chart.dart';
 
@@ -108,7 +111,13 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
       case 9:
         return 'Harga Acuan Pasar';
       case 10:
-        return 'Komisi Platform (10%)';
+        return 'Komisi Platform (3%)';
+      case 11:
+        return 'Diskon Produk Olahan';
+      case 12:
+        return 'Manajemen Berita & Publikasi';
+      case 13:
+        return 'Verifikasi Pemulihan Akun';
       default:
         return 'Super Admin Panel';
     }
@@ -137,7 +146,13 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
       case 9:
         return 'Kelola master harga pasar acuan komoditas dan sinkronisasi feed harga';
       case 10:
-        return 'Pantauan pendapatan komisi 10% platform dari setiap transaksi penjualan';
+        return 'Pantauan pendapatan komisi 3% platform dari setiap transaksi penjualan';
+      case 11:
+        return 'Kelola persentase diskon promosi produk olahan dan periode berlaku';
+      case 12:
+        return 'Publikasi artikel, kampanye produk, edukasi tani, dan pengumuman platform';
+      case 13:
+        return 'Verifikasi permohonan reset password petani & buat token 5 menit';
       default:
         return '';
     }
@@ -382,13 +397,40 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
                                 onTap: () => setState(() => _selectedIndex = 9),
                               ),
                               _buildQuickNavCard(
-                                title: 'Komisi Platform (10%)',
-                                desc: 'Pantau total pendapatan bagi hasil 10% dan rincian penerimaan bersih petani',
+                                title: 'Komisi Platform (3%)',
+                                desc: 'Pantau total pendapatan bagi hasil 3% dan rincian penerimaan bersih petani',
                                 icon: Icons.account_balance_wallet_rounded,
                                 color: const Color(0xFF0F766E),
                                 bg: const Color(0xFFCCFBF1),
                                 width: mWidth,
                                 onTap: () => setState(() => _selectedIndex = 10),
+                              ),
+                              _buildQuickNavCard(
+                                title: 'Diskon Produk',
+                                desc: 'Atur promosi diskon produk olahan (5%, 7.5%, 12.5%, 25%)',
+                                icon: Icons.local_offer_rounded,
+                                color: const Color(0xFFDC2626),
+                                bg: const Color(0xFFFFE4E6),
+                                width: mWidth,
+                                onTap: () => setState(() => _selectedIndex = 11),
+                              ),
+                              _buildQuickNavCard(
+                                title: 'Manajemen Berita',
+                                desc: 'Tulis dan publikasikan berita, pengumuman, dan artikel promosi',
+                                icon: Icons.newspaper_rounded,
+                                color: const Color(0xFF2563EB),
+                                bg: const Color(0xFFEFF6FF),
+                                width: mWidth,
+                                onTap: () => setState(() => _selectedIndex = 12),
+                              ),
+                              _buildQuickNavCard(
+                                title: 'Pemulihan Akun (Reset Password)',
+                                desc: 'Verifikasi permintaan reset petani & buat token 5 menit',
+                                icon: Icons.lock_reset_rounded,
+                                color: const Color(0xFF7C3AED),
+                                bg: const Color(0xFFF3E8FF),
+                                width: mWidth,
+                                onTap: () => setState(() => _selectedIndex = 13),
                               ),
                             ],
                           );
@@ -484,6 +526,18 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
                           ),
                           SuperAdminCommissionScreen(
                             key: ValueKey('commissions_${_refreshTick}_${_selectedIndex == 10}'),
+                            isEmbedded: true,
+                          ),
+                          DiscountManagementScreen(
+                            key: ValueKey('discounts_${_refreshTick}_${_selectedIndex == 11}'),
+                            isEmbedded: true,
+                          ),
+                          NewsManagementScreen(
+                            key: ValueKey('news_${_refreshTick}_${_selectedIndex == 12}'),
+                            isEmbedded: true,
+                          ),
+                          PasswordResetManagementScreen(
+                            key: ValueKey('pwd_reset_${_refreshTick}_${_selectedIndex == 13}'),
                             isEmbedded: true,
                           ),
                         ],
@@ -633,9 +687,27 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
       ),
       SidebarNavItem(
         icon: Icons.account_balance_wallet_rounded,
-        label: 'Komisi Platform (10%)',
+        label: 'Komisi Platform (3%)',
         isActive: _selectedIndex == 10,
         onTap: () => setState(() => _selectedIndex = 10),
+      ),
+      SidebarNavItem(
+        icon: Icons.local_offer_rounded,
+        label: 'Diskon Produk',
+        isActive: _selectedIndex == 11,
+        onTap: () => setState(() => _selectedIndex = 11),
+      ),
+      SidebarNavItem(
+        icon: Icons.newspaper_rounded,
+        label: 'Manajemen Berita',
+        isActive: _selectedIndex == 12,
+        onTap: () => setState(() => _selectedIndex = 12),
+      ),
+      SidebarNavItem(
+        icon: Icons.lock_reset_rounded,
+        label: 'Pemulihan Akun',
+        isActive: _selectedIndex == 13,
+        onTap: () => setState(() => _selectedIndex = 13),
       ),
     ];
   }

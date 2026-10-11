@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\News;
 use App\Models\ProcessedProduct;
 use App\Models\User;
 use App\Services\ProcessedProductService;
@@ -24,15 +25,24 @@ class WebController extends Controller
     public function landing()
     {
         $featuredProducts = collect();
+        $latestNews = collect();
         $superAdminPhone = '6281234567890';
 
         try {
             if (Schema::hasTable('processed_products')) {
-                // Get 4 featured active products for the landing page teaser section
-                $featuredProducts = ProcessedProduct::with('owner:id,name,farm_name')
+                // Get 4 featured active products with active discounts for teaser
+                $featuredProducts = ProcessedProduct::with(['owner:id,name,farm_name', 'activeDiscount'])
                     ->where('status', 'active')
                     ->latest()
                     ->take(4)
+                    ->get();
+            }
+
+            if (Schema::hasTable('news')) {
+                $latestNews = News::published()
+                    ->with('author:id,name')
+                    ->latest('published_at')
+                    ->take(6)
                     ->get();
             }
 
@@ -48,7 +58,7 @@ class WebController extends Controller
             // Graceful fallback if database is not reachable during early setups
         }
 
-        return view('landing', compact('featuredProducts', 'superAdminPhone'));
+        return view('landing', compact('featuredProducts', 'superAdminPhone', 'latestNews'));
     }
 
     /**
@@ -72,7 +82,7 @@ class WebController extends Controller
                     $filters['status'] = $statusFilter;
                 }
 
-                $query = ProcessedProduct::with('owner:id,name,farm_name,phone')
+                $query = ProcessedProduct::with(['owner:id,name,farm_name,phone', 'activeDiscount'])
                     ->forCatalog()
                     ->latest();
 

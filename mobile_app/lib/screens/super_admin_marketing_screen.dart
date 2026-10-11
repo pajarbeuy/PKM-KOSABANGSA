@@ -357,15 +357,41 @@ class _SuperAdminMarketingScreenState extends State<SuperAdminMarketingScreen> {
                   style: TextStyle(fontSize: 12, color: Colors.grey[600], fontWeight: FontWeight.w500),
                 ),
                 const SizedBox(height: 4),
-                Row(
+                Wrap(
+                  spacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
+                    if (p.isDiscounted) ...[
+                      Text(
+                        _currencyFormat.format(p.originalPrice),
+                        style: const TextStyle(
+                          fontSize: 11,
+                          decoration: TextDecoration.lineThrough,
+                          color: AppTheme.textMuted,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: AppTheme.red100,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '-${(p.discountPercentage ?? 0).toStringAsFixed(1).replaceAll(RegExp(r'\.0$'), '')}%',
+                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.red600),
+                        ),
+                      ),
+                      Text(
+                        '${_currencyFormat.format(p.effectivePrice)} / ${p.unit}',
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.green700),
+                      ),
+                    ] else
+                      Text(
+                        '${_currencyFormat.format(p.price)} / ${p.unit}',
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.green700),
+                      ),
                     Text(
-                      '${_currencyFormat.format(p.price)} / ${p.unit}',
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.green700),
-                    ),
-                    const SizedBox(width: 16),
-                    Text(
-                      'Sisa Stok: ${p.stock} ${p.unit}',
+                      '• Sisa Stok: ${p.stock} ${p.unit}',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:provider/provider.dart';
 import '../services/api_service.dart';
 import '../providers/auth_provider.dart';
@@ -24,12 +25,23 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   final List<Map<String, dynamic>> _messages = [];
   bool _isTyping = false;
 
-  final List<String> _quickQuestions = [
-    'Bagaimana cara manajemen pemasaran produk olahan?',
-    'Bagaimana alur pemesanan via WhatsApp?',
-    'Cara mencatat penjualan terpusat',
-    'Cara melihat laporan agregat laba/rugi',
-  ];
+  List<String> _getQuickQuestions(BuildContext context) {
+    final role = Provider.of<AuthProvider>(context, listen: false).user?.role;
+    if (role == 'farmer' || role == 'user') {
+      return [
+        'Cara mengatasi hawar daun / busuk daun tanaman kentang',
+        'Racikan pupuk organik cair (POC) penekan biaya modal',
+        'Konversi panen ke olahan bebas biaya ganda (Rp 0 kas)',
+        'Cara sterilisasi baglog jamur tiram anti kontaminasi',
+      ];
+    }
+    return [
+      'Strategi penetrasi pasar produk olahan desa & kemasan',
+      'Manajemen kapasitas gudang desa & susut panen raya',
+      'Alur pemrosesan pesanan katalog via WhatsApp & SLA',
+      'Analisis keuangan komisi platform 3% & alokasi PADes',
+    ];
+  }
 
   @override
   void dispose() {
@@ -51,8 +63,30 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   }
 
   Future<void> _handleSend(String text) async {
+    if (_isTyping) return;
+
     final cleanText = text.trim();
     if (cleanText.isEmpty) return;
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final role = authProvider.user?.role;
+    final roleContext = (role == 'farmer' || role == 'user') ? 'farmer' : 'super_admin';
+
+    // Susun riwayat percakapan valid untuk dikirim ke backend (max 8 turn)
+    final List<Map<String, String>> historyPayload = _messages
+        .where((m) => m['text'] != null && (m['text'] as String).trim().isNotEmpty && m['source'] != 'error')
+        .map((m) {
+          final text = (m['text'] as String).trim();
+          final safeContent = text.length > 1500 ? text.substring(0, 1500) : text;
+          return {
+            'role': (m['isUser'] == true) ? 'user' : 'assistant',
+            'content': safeContent,
+          };
+        })
+        .toList();
+    final recentHistory = historyPayload.length > 8
+        ? historyPayload.sublist(historyPayload.length - 8)
+        : historyPayload;
 
     _messageController.clear();
 
@@ -67,26 +101,42 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     _scrollToBottom();
 
     try {
-      final response = await _apiService.sendChatMessage(cleanText);
+      final response = await _apiService.sendChatMessage(
+        cleanText,
+        roleContext: roleContext,
+        history: recentHistory,
+      );
+
+      if (!mounted) return;
+
       setState(() {
-        _isTyping = false;
         _messages.add({
           'text': response['reply'] ?? 'Maaf, terjadi kesalahan.',
           'isUser': false,
           'timestamp': DateTime.now(),
+          'source': response['source'],
+          'model': response['model'],
         });
       });
     } catch (e) {
+      if (!mounted) return;
+
       setState(() {
-        _isTyping = false;
         _messages.add({
           'text': 'Gagal mengirim pesan. Silakan periksa koneksi internet Anda.',
           'isUser': false,
           'timestamp': DateTime.now(),
+          'source': 'error',
         });
       });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isTyping = false;
+        });
+        _scrollToBottom();
+      }
     }
-    _scrollToBottom();
   }
 
   void _showLogoutDialog(BuildContext context) {
@@ -134,6 +184,11 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     final name = user?.name ?? 'Super Admin';
     final email = user?.email ?? '';
     final initials = name.isNotEmpty ? name[0].toUpperCase() : 'S';
+    final isFarmer = user?.role == 'farmer' || user?.role == 'user';
+    final chatTitle = isFarmer ? 'TaniBot Pertanian' : 'TaniBot Bisnis (BUMDes)';
+    final chatSubtitle = isFarmer
+        ? 'Asisten budidaya tanaman, penanganan hama & penyakit, pupuk, dan modal kebun'
+        : 'Konsultan bisnis produk olahan, serapan panen, manajemen katalog, dan komisi platform 3%';
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -144,7 +199,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           appBar: isDesktop
               ? null
               : AppMobileAppBar(
-                  title: 'TaniBot AI',
+                  title: chatTitle,
                   userInitials: initials,
                   onNotificationTap: () {},
                 ),
@@ -174,8 +229,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                   children: [
                     if (isDesktop)
                       AppHeader(
-                        title: 'TaniBot AI',
-                        subtitle: 'Asisten cerdas kecerdasan buatan operasional Super Admin SumberTani berbasis AI',
+                        title: chatTitle,
+                        subtitle: chatSubtitle,
                         userInitials: initials,
                         actions: [
                           if (_messages.isNotEmpty)
@@ -215,24 +270,40 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: AppTheme.green500.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: const Text('🌾', style: TextStyle(fontSize: 50)),
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            'Halo! Saya TaniBot 👋',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.green700),
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'Asisten pintar Anda untuk manajemen hasil panen, stok gudang, penjualan, dan budidaya hasil tani. Silakan tanyakan apa saja kepada saya!',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 14, color: AppTheme.textSecondary, height: 1.5),
+          Builder(
+            builder: (ctx) {
+              final role = Provider.of<AuthProvider>(ctx, listen: false).user?.role;
+              final isFarmer = role == 'farmer' || role == 'user';
+              final iconEmoji = isFarmer ? '🌱' : '💼';
+              final greetingTitle = isFarmer ? 'Halo! Saya TaniBot Pertanian 🌱' : 'Halo! Saya TaniBot Bisnis & BUMDes 💼';
+              final desc = isFarmer
+                  ? 'Pakar cerdas budidaya tanaman, penanganan hama & penyakit, efisiensi pupuk, dan kalkulasi modal kebun.'
+                  : 'Konsultan cerdas bisnis agribisnis desa, strategi pemasaran olahan, serapan panen Poktan, dan komisi platform 3%.';
+
+              return Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: AppTheme.green500.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(iconEmoji, style: const TextStyle(fontSize: 50)),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    greetingTitle,
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.green700),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    desc,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 14, color: AppTheme.textSecondary, height: 1.5),
+                  ),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 36),
           const Row(
@@ -246,38 +317,43 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: _quickQuestions.length,
-            itemBuilder: (context, index) {
-              final question = _quickQuestions[index];
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 10.0),
-                child: InkWell(
-                  onTap: () => _handleSend(question),
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
+          Builder(
+            builder: (ctx) {
+              final questions = _getQuickQuestions(ctx);
+              return ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: questions.length,
+                itemBuilder: (context, index) {
+                  final question = questions[index];
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 10.0),
+                    child: InkWell(
+                      onTap: () => _handleSend(question),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppTheme.cardBorder),
-                      boxShadow: AppTheme.cardShadow,
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            question,
-                            style: const TextStyle(fontSize: 13, color: AppTheme.textPrimary, fontWeight: FontWeight.w500),
-                          ),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppTheme.cardBorder),
+                          boxShadow: AppTheme.cardShadow,
                         ),
-                        const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppTheme.green500),
-                      ],
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                question,
+                                style: const TextStyle(fontSize: 13, color: AppTheme.textPrimary, fontWeight: FontWeight.w500),
+                              ),
+                            ),
+                            const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppTheme.green500),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                ),
+                  );
+                },
               );
             },
           ),
@@ -300,28 +376,39 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   }
 
   Widget _buildChatBubble(String text, bool isUser) {
+    final role = Provider.of<AuthProvider>(context, listen: false).user?.role;
+    final isFarmer = role == 'farmer' || role == 'user';
+    final botIcon = isFarmer ? '🌱' : '💼';
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
+      padding: const EdgeInsets.only(bottom: 14.0),
       child: Row(
         mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!isUser) ...[
             Container(
-              margin: const EdgeInsets.only(right: 8.0, top: 4.0),
-              width: 32,
-              height: 32,
+              margin: const EdgeInsets.only(right: 10.0, top: 2.0),
+              width: 34,
+              height: 34,
               decoration: BoxDecoration(
-                color: AppTheme.green500.withValues(alpha: 0.1),
+                color: isFarmer
+                    ? AppTheme.green500.withValues(alpha: 0.12)
+                    : Colors.blue.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
+                border: Border.all(
+                  color: isFarmer
+                      ? AppTheme.green500.withValues(alpha: 0.3)
+                      : Colors.blue.withValues(alpha: 0.3),
+                ),
               ),
               alignment: Alignment.center,
-              child: const Text('🌾', style: TextStyle(fontSize: 16)),
+              child: Text(botIcon, style: const TextStyle(fontSize: 16)),
             ),
           ],
           Flexible(
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
               decoration: BoxDecoration(
                 color: isUser ? AppTheme.green700 : Colors.white,
                 borderRadius: BorderRadius.only(
@@ -333,14 +420,86 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                 border: isUser ? null : Border.all(color: AppTheme.cardBorder),
                 boxShadow: AppTheme.cardShadow,
               ),
-              child: Text(
-                text,
-                style: TextStyle(
-                  color: isUser ? Colors.white : AppTheme.textPrimary,
-                  fontSize: 14,
-                  height: 1.4,
-                ),
-              ),
+              child: isUser
+                  ? Text(
+                      text,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        height: 1.45,
+                      ),
+                    )
+                  : MarkdownBody(
+                      data: text,
+                      selectable: true,
+                      styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
+                        p: const TextStyle(
+                          color: AppTheme.textPrimary,
+                          fontSize: 14,
+                          height: 1.5,
+                        ),
+                        h1: const TextStyle(
+                          color: AppTheme.green800,
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          height: 1.4,
+                        ),
+                        h2: const TextStyle(
+                          color: AppTheme.green800,
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          height: 1.4,
+                        ),
+                        h3: const TextStyle(
+                          color: AppTheme.green700,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          height: 1.4,
+                        ),
+                        strong: const TextStyle(
+                          color: AppTheme.textPrimary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        tableBody: const TextStyle(
+                          color: AppTheme.textPrimary,
+                          fontSize: 12.5,
+                        ),
+                        tableHead: const TextStyle(
+                          color: AppTheme.green800,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12.5,
+                        ),
+                        tableBorder: TableBorder.all(
+                          color: AppTheme.cardBorder,
+                          width: 1,
+                        ),
+                        tableColumnWidth: const IntrinsicColumnWidth(),
+                        tableCellsPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        tableCellsDecoration: const BoxDecoration(
+                          color: Color(0xFFF9FBF9),
+                        ),
+                        horizontalRuleDecoration: const BoxDecoration(
+                          border: Border(
+                            top: BorderSide(color: AppTheme.cardBorder, width: 1),
+                          ),
+                        ),
+                        listBullet: const TextStyle(
+                          color: AppTheme.green700,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        code: TextStyle(
+                          backgroundColor: Colors.grey.shade100,
+                          color: AppTheme.green800,
+                          fontSize: 13,
+                          fontFamily: 'monospace',
+                        ),
+                        codeblockDecoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppTheme.cardBorder),
+                        ),
+                      ),
+                    ),
             ),
           ),
         ],
@@ -428,11 +587,11 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           ),
           const SizedBox(width: 10),
           GestureDetector(
-            onTap: () => _handleSend(_messageController.text),
+            onTap: _isTyping ? null : () => _handleSend(_messageController.text),
             child: Container(
               padding: const EdgeInsets.all(12),
-              decoration: const BoxDecoration(
-                color: AppTheme.green700,
+              decoration: BoxDecoration(
+                color: _isTyping ? Colors.grey.shade400 : AppTheme.green700,
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.send_rounded, color: Colors.white, size: 20),

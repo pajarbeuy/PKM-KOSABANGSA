@@ -21,6 +21,9 @@ use App\Http\Controllers\Api\FarmerCommodityController;
 use App\Http\Controllers\Api\MarketPriceController;
 use App\Http\Controllers\Api\FarmerEconomicResultController;
 use App\Http\Controllers\Api\CommissionController;
+use App\Http\Controllers\Api\ProcessedProductDiscountController;
+use App\Http\Controllers\Api\NewsController;
+use App\Http\Controllers\Api\PasswordResetRequestController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -37,11 +40,19 @@ Route::post('/auth/login',    [AuthController::class, 'login']);
 Route::post('/auth/forgot-password', [PasswordResetController::class, 'sendResetLinkEmailApi']);
 Route::post('/auth/reset-password',  [PasswordResetController::class, 'resetPasswordApi']);
 
+// Password Recovery via Super Admin Verification & 5-Minute Token
+Route::post('/password-reset-requests',         [PasswordResetRequestController::class, 'store'])->middleware('throttle:10,1');
+Route::post('/password-reset/confirm',          [PasswordResetRequestController::class, 'confirm'])->middleware('throttle:10,1');
+Route::post('/password-reset-requests/confirm', [PasswordResetRequestController::class, 'confirm'])->middleware('throttle:10,1');
+
 Route::get('/landing',  [SuperAdminController::class, 'getLanding']);
 Route::get('/farmer-groups', [FarmerGroupController::class, 'index']);
 Route::get('/catalog/processed-products', [ProcessedProductController::class, 'publicCatalog']);
 Route::post('/catalog/orders',            [OrderController::class, 'storePublic']);
 Route::get('/catalog/orders/{code}',      [OrderController::class, 'trackPublic']);
+Route::get('/catalog/discounts',          [ProcessedProductDiscountController::class, 'index']);
+Route::get('/news',                       [NewsController::class, 'publicIndex']);
+Route::get('/news/{slug}',                [NewsController::class, 'publicShow']);
 
 // Media / Storage file serving with CORS support for mobile & web apps
 Route::get('/storage/{path}', function (string $path) {
@@ -83,6 +94,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/processed-products/{processedProduct}/convert-harvest', [ProcessedProductController::class, 'convertHarvest']);
     Route::get('/processed-products/{processedProduct}/economic-summary', [FarmerEconomicResultController::class, 'processedProductEconomicSummary']);
     Route::apiResource('commodities',        FarmerCommodityController::class)->names('api.commodities');
+    Route::apiResource('discounts',          ProcessedProductDiscountController::class)->names('api.discounts');
 
     // Market Prices (Phase 5 - Historical Market Price & Snapshot)
     Route::get('/market-prices',                      [MarketPriceController::class, 'index']);
@@ -100,9 +112,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/farmer/economic-summary',             [FarmerEconomicResultController::class, 'farmerEconomicSummary']);
     Route::get('/farmer/integrated-economic-summary',  [FarmerEconomicResultController::class, 'integratedEconomicSummary']);
 
-    // Platform Commissions (Phase 8 - Commission 10%)
+    // Platform Commissions (Phase 8 - Commission 3% & 97% Farmer Net)
     Route::get('/commissions',         [CommissionController::class, 'index']);
     Route::get('/commissions/summary', [CommissionController::class, 'summary']);
+
+    // Farmer Chatbot (Phase 7 - Agricultural Assistant)
+    Route::middleware('role:user,farmer')->post('/farmer/chat', [ChatbotController::class, 'farmerChat']);
 
     // Stock (custom routes — not a standard CRUD resource)
     Route::get('/stock',                      [StockController::class, 'index']);
@@ -193,10 +208,41 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/commodities',                [FarmerCommodityController::class, 'adminIndex']);
         Route::put('/commodities/{id}',           [FarmerCommodityController::class, 'adminUpdate']);
 
-        // Chatbot AI Operational Assistant
-        Route::post('/chat', [ChatbotController::class, 'chat']);
+        // Processed Products Discounts Management
+        Route::get('/discounts',                  [ProcessedProductDiscountController::class, 'index']);
+        Route::post('/discounts',                 [ProcessedProductDiscountController::class, 'store']);
+        Route::get('/discounts/{id}',             [ProcessedProductDiscountController::class, 'show']);
+        Route::put('/discounts/{id}',             [ProcessedProductDiscountController::class, 'update']);
+        Route::delete('/discounts/{id}',          [ProcessedProductDiscountController::class, 'destroy']);
+
+        // News & Campaign CMS Management
+        Route::get('/news',                       [NewsController::class, 'index']);
+        Route::post('/news',                      [NewsController::class, 'store']);
+        Route::get('/news/{id}',                  [NewsController::class, 'show']);
+        Route::put('/news/{id}',                  [NewsController::class, 'update']);
+        Route::post('/news/{id}',                 [NewsController::class, 'update']);
+        Route::delete('/news/{id}',               [NewsController::class, 'destroy']);
+
+        // Chatbot AI Operational Assistant (BUMDes / Super Admin)
+        Route::post('/chat', [ChatbotController::class, 'superAdminChat']);
+
+        // Password Reset Requests Verification & Token Generation
+        Route::get('/password-reset-requests',                      [PasswordResetRequestController::class, 'index']);
+        Route::get('/password-reset-requests/{id}',                 [PasswordResetRequestController::class, 'show']);
+        Route::post('/password-reset-requests/{id}/approve',        [PasswordResetRequestController::class, 'approve']);
+        Route::post('/password-reset-requests/{id}/reject',         [PasswordResetRequestController::class, 'reject']);
+        Route::post('/password-reset-requests/{id}/generate-token', [PasswordResetRequestController::class, 'generateToken'])->middleware('throttle:20,1');
     });
 
     // Chatbot endpoint protected for Super Admin
-    Route::middleware('role:super_admin')->post('/chat', [ChatbotController::class, 'chat']);
+    Route::middleware('role:super_admin')->post('/chat', [ChatbotController::class, 'superAdminChat']);
+
+    // Admin alias for Password Reset Requests
+    Route::middleware('role:super_admin')->prefix('admin')->group(function () {
+        Route::get('/password-reset-requests',                      [PasswordResetRequestController::class, 'index']);
+        Route::get('/password-reset-requests/{id}',                 [PasswordResetRequestController::class, 'show']);
+        Route::post('/password-reset-requests/{id}/approve',        [PasswordResetRequestController::class, 'approve']);
+        Route::post('/password-reset-requests/{id}/reject',         [PasswordResetRequestController::class, 'reject']);
+        Route::post('/password-reset-requests/{id}/generate-token', [PasswordResetRequestController::class, 'generateToken'])->middleware('throttle:20,1');
+    });
 });

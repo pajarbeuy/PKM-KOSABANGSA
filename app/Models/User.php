@@ -46,5 +46,13 @@ class User extends Authenticatable
     {
         return $this->hasMany(FarmerCommodity::class, 'user_id');
     }
+
+    /**
+     * Password reset requests associated with this user.
+     */
+    public function passwordResetRequests()
+    {
+        return $this->hasMany(PasswordResetRequest::class, 'user_id');
+    }
 }
 

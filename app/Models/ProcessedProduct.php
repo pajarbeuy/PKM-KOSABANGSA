@@ -34,6 +34,11 @@ class ProcessedProduct extends Model
         'total_processing_cost',
         'total_sales_revenue',
         'profit_loss',
+        'original_price',
+        'effective_price',
+        'discount_percentage',
+        'discount_amount',
+        'is_discounted',
     ];
 
     protected static function booted(): void
@@ -76,6 +81,61 @@ class ProcessedProduct extends Model
     public function sales()
     {
         return $this->hasMany(Sale::class, 'processed_product_id');
+    }
+
+    public function discounts()
+    {
+        return $this->hasMany(ProcessedProductDiscount::class, 'processed_product_id');
+    }
+
+    public function activeDiscount()
+    {
+        return $this->hasOne(ProcessedProductDiscount::class, 'processed_product_id')
+            ->whereDate('start_date', '<=', now()->toDateString())
+            ->whereDate('end_date', '>=', now()->toDateString())
+            ->latest('id');
+    }
+
+    public function getOriginalPriceAttribute(): float
+    {
+        return (float) $this->price;
+    }
+
+    public function getEffectivePriceAttribute(): float
+    {
+        $discount = $this->relationLoaded('activeDiscount')
+            ? $this->activeDiscount
+            : ($this->relationLoaded('discounts')
+                ? $this->discounts->first(fn($d) => $d->start_date <= now()->toDateString() && $d->end_date >= now()->toDateString())
+                : $this->activeDiscount()->first());
+
+        if ($discount && (float) $discount->discount_percentage > 0) {
+            $discountAmount = round((float) $this->price * ((float) $discount->discount_percentage / 100), 2);
+            return max(0.0, round((float) $this->price - $discountAmount, 2));
+        }
+
+        return (float) $this->price;
+    }
+
+    public function getDiscountPercentageAttribute(): ?float
+    {
+        $discount = $this->relationLoaded('activeDiscount')
+            ? $this->activeDiscount
+            : ($this->relationLoaded('discounts')
+                ? $this->discounts->first(fn($d) => $d->start_date <= now()->toDateString() && $d->end_date >= now()->toDateString())
+                : $this->activeDiscount()->first());
+
+        return $discount ? (float) $discount->discount_percentage : null;
+    }
+
+    public function getDiscountAmountAttribute(): float
+    {
+        return round($this->original_price - $this->effective_price, 2);
+    }
+
+    public function getIsDiscountedAttribute(): bool
+    {
+        return $this->discount_percentage !== null && $this->discount_percentage > 0;
     }
 
     public function getTotalProcessingCostAttribute(): float

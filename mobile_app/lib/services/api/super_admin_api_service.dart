@@ -345,4 +345,131 @@ class SuperAdminApiService {
       return null;
     }
   }
+
+  /// Get Password Reset Requests list for Super Admin
+  Future<Map<String, dynamic>> getPasswordResetRequests({
+    String? status,
+    String? search,
+    int page = 1,
+  }) async {
+    try {
+      final queryParams = <String, String>{'page': page.toString()};
+      if (status != null && status.isNotEmpty && status != 'all') {
+        queryParams['status'] = status;
+      }
+      if (search != null && search.isNotEmpty) {
+        queryParams['search'] = search;
+      }
+
+      final uri = Uri.parse('${ApiConfig.baseUrl}/super-admin/password-reset-requests')
+          .replace(queryParameters: queryParams);
+
+      final response = await http
+          .get(uri, headers: _client.getHeaders())
+          .timeout(const Duration(seconds: 15));
+
+      final data = jsonDecode(response.body);
+      return {
+        'success': response.statusCode == 200 && data['success'] == true,
+        'data': data['data'] is List ? data['data'] : [],
+        'pagination': data['pagination'],
+        'message': data['message'],
+      };
+    } catch (e) {
+      return {'success': false, 'data': [], 'message': e.toString()};
+    }
+  }
+
+  /// Get detail of a single Password Reset Request
+  Future<Map<String, dynamic>?> getPasswordResetRequestDetail(int id) async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse('${ApiConfig.baseUrl}/super-admin/password-reset-requests/$id'),
+            headers: _client.getHeaders(),
+          )
+          .timeout(const Duration(seconds: 15));
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 && data['success'] == true) {
+        return data['data'] as Map<String, dynamic>?;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Approve Password Reset Request
+  Future<Map<String, dynamic>> approvePasswordResetRequest(int id, {int? userId}) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('${ApiConfig.baseUrl}/super-admin/password-reset-requests/$id/approve'),
+            headers: _client.getHeaders(),
+            body: jsonEncode({
+              'user_id': ?userId,
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
+
+      final data = jsonDecode(response.body);
+      return {
+        'success': response.statusCode == 200 && data['success'] == true,
+        'message': data['message'] ?? 'Permintaan berhasil disetujui',
+        'data': data['data'],
+      };
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  /// Reject Password Reset Request
+  Future<Map<String, dynamic>> rejectPasswordResetRequest(int id, {String? reason}) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('${ApiConfig.baseUrl}/super-admin/password-reset-requests/$id/reject'),
+            headers: _client.getHeaders(),
+            body: jsonEncode({
+              if (reason != null && reason.isNotEmpty) 'reason': reason,
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
+
+      final data = jsonDecode(response.body);
+      return {
+        'success': response.statusCode == 200 && data['success'] == true,
+        'message': data['message'] ?? 'Permintaan berhasil ditolak',
+        'data': data['data'],
+      };
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  /// Generate 5-minute cryptographic token for approved request
+  Future<Map<String, dynamic>> generatePasswordResetToken(int id) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('${ApiConfig.baseUrl}/super-admin/password-reset-requests/$id/generate-token'),
+            headers: _client.getHeaders(),
+          )
+          .timeout(const Duration(seconds: 15));
+
+      final data = jsonDecode(response.body);
+      return {
+        'success': response.statusCode == 200 && data['success'] == true,
+        'message': data['message'] ?? 'Token berhasil dibuat',
+        'token': data['data']?['token'],
+        'expires_at': data['data']?['expires_at'],
+        'validity_seconds': data['data']?['validity_seconds'] ?? 300,
+        'user_name': data['data']?['user_name'],
+      };
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
 }
+

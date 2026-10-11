@@ -282,7 +282,7 @@ class ComprehensiveApiTest extends TestCase
     /** @test */
     public function test_sale_rejects_when_insufficient_stock_and_succeeds_when_available(): void
     {
-        $user = User::factory()->create(['role' => 'super_admin']);
+        $user = User::factory()->create(['role' => 'user']);
         $season = Season::factory()->create(['user_id' => $user->id]);
 
         Sanctum::actingAs($user);

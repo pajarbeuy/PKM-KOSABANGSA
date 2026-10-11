@@ -47,6 +47,9 @@
 18. [Phase 8: Platform Commission (10%) Implementation](#18-phase-8-platform-commission-10-implementation)
 19. [Phase 9: Pemisahan Platform Landing Page & Katalog Publik (/ vs /katalog)](#19-phase-9-pemisahan-platform-landing-page--katalog-publik--vs-katalog)
 20. [Perhitungan Modal Produk Olahan & Analisis Laba/Rugi Agribisnis Terpadu](#20-perhitungan-modal-produk-olahan--analisis-labarugi-agribisnis-terpadu-hulu-kebun--hilir-olahan)
+21. [Version 2.2.0: Diskon Produk Olahan, CMS Berita Web, Revitalisasi Notifikasi, Komisi 3% & Skalabilitas](#21-version-220---2026-10-04-diskon-produk-olahan-cms-berita-web-revitalisasi-notifikasi-komisi-3--skalabilitas)
+22. [Version 2.3.0: Penguatan Asisten AI (TaniBot), Integrasi Data Pasar Resmi, & Penegasan Guardrails Bisnis](#22-version-230---2026-10-09-penguatan-asisten-ai-tanibot-integrasi-data-pasar-resmi--penegasan-guardrails-bisnis)
+23. [Version 2.4.0: Sistem Pemulihan Akun Verifikasi Lapangan & Persetujuan Super Admin (Dual-Track Password Recovery)](#23-version-240---2026-10-09-sistem-pemulihan-akun-verifikasi-lapangan--persetujuan-super-admin-dual-track-password-recovery)
 
 ---
 
@@ -1409,4 +1412,226 @@ Fitur telah terhubung langsung ke antarmuka aplikasi dengan komponen interaktif:
      - Tag khusus oranye: `Bahan Baku Panen: X kg` jika produk dialihkan dari hasil panen.
      - Kotak metrik ekonomi: Menampilkan `Modal: Rp ...` dan status `Laba: +Rp ...` (hijau) atau `Rugi: -Rp ...` (merah).
      - Tombol `Analisis` di dalam kartu produk untuk langsung membuka rincian ekonomi produk tersebut.
+
+---
+
+## 21. [Version 2.2.0] - 2026-10-04: Diskon Produk Olahan, CMS Berita Web, Revitalisasi Notifikasi, Komisi 3% & Skalabilitas
+
+### A. Ringkasan Eksekutif
+Pembaruan ini mencakup 5 pilar utama kebutuhan operasional ekosistem SumberTani:
+1. **Manajemen Diskon Produk Olahan:** Super Admin dapat mengonfigurasi promosi diskon persentase desimal (5%, 7.5%, 12.5%, 25%) dengan proteksi tumpang tindih (*anti-overlap*), preservasi harga asli (*non-destructive*), dan integrasi otomatis ke katalog publik web.
+2. **Manajemen Berita (CMS) & Publikasi Web:** Super Admin mengelola berita melalui panel Flutter, sementara publikasi resmi dan promo ditayangkan eksklusif di Web Landing Page (`landing.blade.php`), lengkap dengan modal baca selengkapnya dan toleransi zona waktu (WIB vs UTC).
+3. **Revitalisasi Notifikasi Real-Time & Pembersihan Log:** Eliminasi timer polling 15 detik yang membebani server, disertai pengaktifan notifikasi transaksional otomatis saat ada penjualan baru, pesanan katalog masuk, pembaruan status pesanan, panen masuk gudang, dan pendaftaran petani.
+4. **Penyesuaian Komisi Platform (10% -> 3%):** Pembaruan nilai baku komisi platform menjadi 3.00% (`Commission::DEFAULT_RATE = 3.00`), petani menerima 97% pendapatan bersih, dengan pemeliharaan data snapshot historis transaksi masa lalu.
+5. **Skalabilitas & Integritas Data (>= 600 Petani & Kuantitas Besar):** Akurasi bobot desimal (mencegah pemotongan integer), indeks performa database untuk ribuan transaksi, serta pemotongan stok atomik dengan *row-level locking* (`lockForUpdate`).
+6. **Responsivitas Antarmuka:** Perbaikan horizontal overflow RenderFlex pada dropdown kelompok tani (`register_screen.dart`).
+
+### B. Fitur 1: Manajemen Diskon Produk Olahan
+1. **Database & Model:**
+   - Migration: `database/migrations/2026_10_04_000001_create_processed_product_discounts_table.php`.
+   - Model: [`app/Models/ProcessedProductDiscount.php`](file:///d:/laragon/www/PKM/app/Models/ProcessedProductDiscount.php).
+   - Relasi & Aksesor pada [`app/Models/ProcessedProduct.php`](file:///d:/laragon/www/PKM/app/Models/ProcessedProduct.php):
+     - `discounts()` (HasMany) & `activeDiscount()` (HasOne berfilter rentang tanggal hari ini).
+     - Accessor: `original_price`, `effective_price`, `has_active_discount`, `discount_percentage`, `discount_amount`.
+2. **Business Logic & Validasi Anti-Overlap:**
+   - [`app/Services/ProcessedProductDiscountService.php`](file:///d:/laragon/www/PKM/app/Services/ProcessedProductDiscountService.php):
+     - Validasi ketat penolakan diskon bertumpukan (`hasOverlap`) pada produk yang sama.
+     - Dukungan filter status (`active`, `upcoming`, `expired`) dan pencarian nama produk (`whereHas`).
+3. **API & Adaptor Respon:**
+   - [`app/Http/Controllers/Api/ProcessedProductDiscountController.php`](file:///d:/laragon/www/PKM/app/Http/Controllers/Api/ProcessedProductDiscountController.php): CRUD Super Admin lengkap dengan respon terstruktur `discounts` dan `pagination`.
+4. **Frontend Flutter & Web:**
+   - [`mobile_app/lib/screens/discount_management_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/discount_management_screen.dart): Tab ke-11 Super Admin Dashboard dengan simulator harga dinamis dan penanganan error validasi bertumpuk.
+   - [`resources/views/catalog.blade.php`](file:///d:/laragon/www/PKM/resources/views/catalog.blade.php) & [`resources/views/landing.blade.php`](file:///d:/laragon/www/PKM/resources/views/landing.blade.php): Badge diskon merah, harga coret, harga terdiskon, dan kalkulasi otomatis modal pesanan.
+
+### C. Fitur 2: Manajemen Berita (CMS) & Penayangan Web Landing Page
+1. **Database & Model:**
+   - Migration: `database/migrations/2026_10_04_000002_create_news_table.php`.
+   - Model: [`app/Models/News.php`](file:///d:/laragon/www/PKM/app/Models/News.php) dengan scope `published` yang dilengkapi toleransi *timezone offset* (WIB vs UTC).
+2. **Business Service & API:**
+   - [`app/Services/NewsService.php`](file:///d:/laragon/www/PKM/app/Services/NewsService.php): Normalisasi waktu terbit lokal klien ke `now()` server saat berstatus *Published*.
+   - [`app/Http/Controllers/Api/NewsController.php`](file:///d:/laragon/www/PKM/app/Http/Controllers/Api/NewsController.php): Endpoint publik `/api/news` & admin `/api/super-admin/news` dengan respon terstruktur `news` dan `pagination`.
+3. **Penyajian Web Landing Page:**
+   - [`resources/views/landing.blade.php`](file:///d:/laragon/www/PKM/resources/views/landing.blade.php): Section 7 (`#berita` - Kabar Tani & Promo Unggulan) menyajikan kartu berita interaktif, thumbnail gambar, tanggal terbit, nama penulis, cuplikan konten, dan modal pop-up baca artikel lengkap.
+4. **Panel Admin Flutter:**
+   - [`mobile_app/lib/screens/news_management_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/news_management_screen.dart): Tab ke-12 Super Admin Dashboard untuk input artikel, upload gambar, dan toggle draft/published.
+   - Sesuai arahan pengguna, tampilan berita di halaman onboarding Flutter dihapus agar fokus pada autentikasi aplikasi.
+
+### D. Fitur 3: Revitalisasi Notifikasi Real-Time & Eliminasi Polling Spam
+1. **Pembersihan Background Polling:**
+   - Menghapus `Timer.periodic` interval 15 detik pada `_AppHeaderState` dan `_AppMobileAppBarState` di [`mobile_app/lib/widgets/app_header.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/widgets/app_header.dart), sehingga terminal log server bebas dari spam request berulang.
+2. **Pemicu Notifikasi Bisnis Otomatis ([`app/Services/NotificationService.php`](file:///d:/laragon/www/PKM/app/Services/NotificationService.php)):**
+   - **Penjualan Komoditas:** Notifikasi masuk ke Petani (konfirmasi penjualan tersimpan) dan Super Admin (laporan penjualan petani baru masuk).
+   - **Pesanan Katalog:** Notifikasi pesanan baru masuk ke Petani pemilik produk dan Super Admin, serta notifikasi saat status pesanan diubah/dibatalkan.
+   - **Pesanan Selesai:** Notifikasi pesanan selesai dan pencatatan penjualan bersih bagi hasil.
+   - **Diskon Produk:** Notifikasi kepada petani bahwa produk olahannya dipromosikan diskon oleh Super Admin.
+   - **Panen Masuk:** Notifikasi konfirmasi bobot panen masuk gudang.
+   - **Registrasi Akun:** Notifikasi petani baru mendaftar ke Super Admin.
+3. **Antarmuka Header Flutter:**
+   - Memuat unread count saat layar dibuka (*on-mount*) dan memuat ulang instan saat ikon lonceng diklik.
+   - Ikon kontekstual: Keranjang belanja (`sale`), resi (`order`), label diskon (`discount`), tanaman (`harvest`), akun (`user`), dan stok menipis (`low_stock`).
+
+### E. Fitur 4: Komisi Platform (10% -> 3%)
+1. **Single Source of Truth:**
+   - [`app/Models/Commission.php`](file:///d:/laragon/www/PKM/app/Models/Commission.php): `const DEFAULT_RATE = 3.00;`.
+2. **Kalkulasi & Snapshot Finansial:**
+   - [`app/Services/SaleService.php`](file:///d:/laragon/www/PKM/app/Services/SaleService.php) & [`app/Services/CommissionService.php`](file:///d:/laragon/www/PKM/app/Services/CommissionService.php): Memotong 3% komisi platform dan mendistribusikan 97% pendapatan bersih ke petani. Transaksi masa lalu mempertahankan snapshot komisi masing-masing tanpa retroaktif.
+3. **Frontend Flutter:**
+   - [`mobile_app/lib/screens/super_admin_commission_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/super_admin_commission_screen.dart) & [`mobile_app/lib/screens/super_admin_dashboard_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/super_admin_dashboard_screen.dart): Menampilkan indikator komisi 3% dan bagi hasil bersih 97%.
+
+### F. Fitur 5: Skalabilitas & Integritas Stok (>= 600 Petani)
+1. **Database Indexing:**
+   - Migration: `database/migrations/2026_10_04_000003_add_performance_and_scalability_indexes.php`.
+   - Menambahkan indeks komposit pada `sales`, `orders`, `harvests`, `processed_products`, dan `processed_product_discounts`.
+2. **Presisi Desimal Bobot & Locking Stok:**
+   - Penggunaan tipe desimal untuk kuantitas panen dan olahan (mencegah pemotongan integer).
+   - Pengurangan stok atomik via `lockForUpdate()` di `ProcessedProductService::decrementStock` untuk mencegah *race condition* pada pembelian bersamaan.
+
+### G. Pengujian Otomatis
+- Seluruh 84 test case API dan fitur Laravel berhasil lulus dengan status hijau (100% pass):
+  - `tests/Feature/API/ProcessedProductDiscountTest.php` (12 test passed)
+  - `tests/Feature/API/NewsTest.php` (7 test passed)
+  - `tests/Feature/API/CommissionTest.php` (9 test passed)
+  - `tests/Feature/API/OrderTest.php` (12 test passed)
+  - `tests/Feature/API/SuperAdminSalesTest.php` (12 test passed)
+  - `tests/Feature/API/ComprehensiveApiTest.php` (12 test passed)
+  - `tests/Feature/API/ProcessedProductTest.php` (20 test passed)
+
+---
+
+## 22. [Version 2.3.0] - 2026-10-09: Penguatan Asisten AI (TaniBot), Integrasi Data Pasar Resmi, & Penegasan Guardrails Bisnis
+
+Pembaruan Versi 2.3.0 memfokuskan peningkatan kualitas ekosistem kecerdasan buatan **TaniBot** pada platform SumberTani (PKM-Kosabangsa), baik untuk akun **Petani** maupun **Super Admin (Pengurus BUMDes)**.
+
+### A. Latar Belakang & Masalah yang Diselesaikan
+1. **Error Validasi Riwayat Panjang (HTTP 422 Unprocessable Content):**
+   - Pada sesi obrolan yang panjang, respons AI yang komprehensif melebihi batas validasi ketat `history.*.content` (sebelumnya `max:2000`). Ketika percakapan terus berlangsung, klien Flutter mengirim riwayat tersebut sehingga server menolak dengan HTTP 422.
+2. **Loop Sambutan Default pada Pertanyaan Harga Super Admin:**
+   - Pencarian harga acuan pasar komoditas sebelumnya hanya dipetakan untuk peran petani. Ketika Super Admin menanyakan *"analisis harga pasar"* atau *"harga acuan"*, sistem tidak mengenali intent tersebut dan jatuh ke salam pembuka awal (*greeting loop*).
+3. **Penyusupan Output Kode Pemrograman & Permintaan Di Luar Konteks:**
+   - Pengguna menguji respons bot dengan menyertakan instruksi pemrograman (*"buatkan kode python"*). TaniBot adalah asisten agribisnis dan BUMDes, bukan coding assistant, sehingga perlu batasan tegas (*guardrails*) untuk menolak pembuatan kode teknis sekaligus tetap menjawab substansi analisis bisnisnya secara proporsional.
+
+### B. Implementasi & Solusi Arsitektural
+
+#### 1. Toleransi Validasi & Pemotongan Riwayat Aman
+- **Frontend Flutter ([`mobile_app/lib/screens/chatbot_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/chatbot_screen.dart)):**
+  - Riwayat percakapan yang dikirim ke API dipotong secara aman maksimal 1.500 karakter per pesan sebelum transmisi jaringan, menjaga efisiensi payload HTTP dan mencegah request ditolak.
+- **Backend Laravel ([`app/Http/Controllers/Api/ChatbotController.php`](file:///d:/laragon/www/PKM/app/Http/Controllers/Api/ChatbotController.php)):**
+  - Menaikkan batas validasi `history.*.content` menjadi `max:10000` karakter untuk memberikan toleransi atas respon panjang sebelumnya, lalu melakukan normalisasi `mb_substr(..., 0, 1500)` sebelum disuntikkan ke prompt LLM.
+
+#### 2. Integrasi Data Harga Pasar Resmi BUMDes (Ground Truth)
+- **Data Query Service ([`app/Services/ChatbotDataQueryService.php`](file:///d:/laragon/www/PKM/app/Services/ChatbotDataQueryService.php)):**
+  - Menambahkan intent pencarian harga acuan pasar untuk Super Admin (`querySuperAdminData`).
+  - Sistem secara otomatis menarik harga acuan aktif dari database (contoh: *Padi: Rp 14.500/kg*, *Jamur: Rp 28.000/kg*) dan menyajikannya secara akurat dan resmi.
+
+#### 3. Penegasan Batasan Konteks (No-Code & Out-of-Context Handling)
+- **Larangan Total Script Kode Pemrograman:**
+  - Menghapus seluruh blok skrip kode (Python/pandas) dari knowledge base dan instruksi prompt model AI.
+- **Pemisahan Konteks Campuran (*Mixed Context*):**
+  - Jika pengguna mengirim pertanyaan campuran (misal: *"analisis harga pasar komoditas buatkan kode python"*), TaniBot secara cerdas memisahkan konteks:
+    1. Menyertakan catatan sopan bahwa pembuatan kode script berada di luar cakupan TaniBot.
+    2. Tetap menyajikan data harga riil dan analisis agribisnis BUMDes secara mendalam dan naratif tanpa kode apa pun.
+- **Penolakan Konteks Murni di Luar Agribisnis (*Pure Out-of-Context*):**
+  - Jika pengguna meminta script kode umum (misal: *"buatkan script python kalkulator"*), sistem memberikan pemberitahuan cakupan TaniBot yang terarah dan menjelaskan logika perhitungan bisnis (HPP, margin, komisi 3%) secara naratif jika relevan.
+- **System Prompt & Guardrails Konfigurasi ([`config/chatbot.php`](file:///d:/laragon/www/PKM/config/chatbot.php) & [`app/Services/OpenRouterService.php`](file:///d:/laragon/www/PKM/app/Services/OpenRouterService.php)):**
+  - Menegaskan guardrails peran bisnis Super Admin dan larangan memuat kode teknis pada semua level model LLM.
+
+#### 4. Optimasi Kapasitas Token & Waktu Eksekusi
+- **OpenRouter Service ([`app/Services/OpenRouterService.php`](file:///d:/laragon/www/PKM/app/Services/OpenRouterService.php)):**
+  - Menaikkan `max_tokens` ke `2500` (sebelumnya `1200`) dan menyesuaikan per-request timeout (18s) serta total execution budget (25s) agar analisis data yang mendalam tidak terputus di tengah jalan.
+  - Failover teratur: jika model cloud lambat/gagal, sistem beralih ke *local fallback* cerdas yang menggabungkan fakta database resmi dengan modul pengetahuan operasional BUMDes.
+
+### C. Status Verifikasi Pengujian
+- **Pengujian Backend:** 20/20 test cases lulus (100% pass):
+  - `tests/Feature/API/ChatbotAuditRefactorTest.php` (13 unit/feature tests)
+  - `tests/Feature/API/ChatbotSuperAdminTest.php` (7 feature tests)
+- **Pengujian Frontend:** `flutter analyze` menghasilkan **0 errors / No issues found**.
+- **Pengujian Skenario:** Berhasil memvalidasi 3 skenario: *Mixed-Context*, *In-Context*, dan *Out-of-Context*.
+
+---
+
+## 23. [Version 2.4.0] - 2026-10-09: Sistem Pemulihan Akun Verifikasi Lapangan & Persetujuan Super Admin (Dual-Track Password Recovery)
+
+Pembaruan Versi 2.4.0 menghadirkan arsitektur pemulihan akun ganda (*Dual-Track Password Recovery*) yang dirancang khusus untuk mengatasi kesenjangan literasi digital dan keterbatasan akses email bagi petani di lapangan.
+
+### A. Latar Belakang & Kebutuhan Petani Lapangan
+1. **Keterbatasan Akses Email Mandiri (Self-Service Reset):**
+   - Mayoritas petani di pedesaan seringkali lupa password email, jarang memeriksa inbox, atau tidak memiliki koneksi internet yang stabil saat memerlukan reset kata sandi aplikasi.
+   - Mengandalkan 100% email OTP menyebabkan akun terkunci permanen dan intervensi manual teknis yang membebani tim pengembang.
+2. **Kebutuhan Jalur Verifikasi Lapangan Berbasis Komunitas (Poktan / BUMDes):**
+   - Petani membutuhkan opsi pengajuan reset kata sandi langsung kepada pengurus BUMDes (Super Admin) dengan identitas lapangan (Nama Lengkap, Nomor HP/WhatsApp aktif, dan Alasan/Catatan).
+   - Super Admin dapat memverifikasi keabsahan identitas petani secara tatap muka atau komunikasi langsung, kemudian menyetujui permohonan dengan menerbitkan token pemulihan satu kali pakai (*one-time recovery token*) atau melakukan reset password langsung secara aman.
+
+### B. Implementasi & Arsitektur Solusi (Dual-Track Architecture)
+
+#### 1. Perancangan Skema Database & Migrasi
+- **File:** [`database/migrations/2026_10_09_000001_create_password_reset_requests_tables.php`](file:///d:/laragon/www/PKM/database/migrations/2026_10_09_000001_create_password_reset_requests_tables.php)
+  - **Tabel `password_reset_requests`:**
+    - `user_id`: Foreign key opsional ke `users` (dapat dicocokkan otomatis via email/nomor telepon).
+    - `identifier`: Email atau nomor HP yang diajukan pemohon.
+    - `name`: Nama lengkap petani/pemohon.
+    - `phone`: Kontak telepon/WhatsApp aktif untuk verifikasi lapangan.
+    - `reason`: Alasan pengajuan (misal: "Lupa kata sandi & email tidak aktif").
+    - `status`: Enum (`pending`, `approved`, `completed`, `rejected`).
+    - `admin_notes`: Catatan audit penanganan dari Super Admin.
+    - `handled_by`: User ID Super Admin yang memproses permohonan.
+    - `handled_at`: Timestamp waktu penanganan.
+  - **Tabel `password_reset_request_tokens`:**
+    - `request_id`: Foreign key ke `password_reset_requests`.
+    - `token_hash`: Hash kriptografis SHA-256 dari token sekali pakai untuk mencegah kebocoran data di database.
+    - `expires_at`: Batas kedaluwarsa token (default: 24 jam).
+    - `used_at`: Timestamp penanda token telah digunakan (mencegah *token replay attack*).
+
+#### 2. Model & Relasi Eloquent
+- [`app/Models/PasswordResetRequest.php`](file:///d:/laragon/www/PKM/app/Models/PasswordResetRequest.php):
+  - Relasi `user()`, `handler()`, dan `tokens()`.
+  - Scopes: `pending()`, `approved()`, `completed()`, `rejected()`.
+- [`app/Models/PasswordResetRequestToken.php`](file:///d:/laragon/www/PKM/app/Models/PasswordResetRequestToken.php):
+  - Logika verifikasi hash token dan validasi kedaluwarsa.
+- [`app/Models/User.php`](file:///d:/laragon/www/PKM/app/Models/User.php):
+  - Relasi `passwordResetRequests()`.
+
+#### 3. Service Layer & Keamanan Kriptografis
+- [`app/Services/PasswordResetRequestService.php`](file:///d:/laragon/www/PKM/app/Services/PasswordResetRequestService.php):
+  - `submitRequest(array $data)`: Mencegah *request flooding* (maksimal 1 permohonan pending per user/identifier).
+  - `getPaginatedRequests(array $filters)`: Mendukung filtering status dan pencarian keyword (nama, telepon, identifier).
+  - `approveRequest(int $id, int $adminId, ?string $notes)`: Menyetujui permohonan dan menghasilkan token acak aman (8 karakter alfanumerik) yang di-hash SHA-256.
+  - `rejectRequest(int $id, int $adminId, string $reason)`: Menolak permohonan dengan catatan audit wajib.
+  - `completeResetWithToken(string $token, string $newPassword)`: Memvalidasi token aktif, memperbarui hash password baru pengguna, mencabut seluruh session/token aktif, dan menandai status `completed`.
+  - `directResetByAdmin(int $id, int $adminId, string $newPassword)`: Memungkinkan Super Admin mereset password secara langsung atas permintaan tatap muka/lapangan.
+
+#### 4. RESTful API Endpoints & Otorisasi
+- [`app/Http/Controllers/Api/PasswordResetRequestController.php`](file:///d:/laragon/www/PKM/app/Http/Controllers/Api/PasswordResetRequestController.php):
+  - **Endpoint Publik (Akses Petani):**
+    - `POST /api/password-reset-requests`: Pengajuan permohonan baru.
+    - `GET /api/password-reset-requests/status`: Pengecekan status pengajuan berdasarkan kontak/email.
+    - `POST /api/password-reset-requests/complete-token`: Eksekusi reset password menggunakan token yang telah disetujui.
+  - **Endpoint Super Admin (Sanctum + Role Guard):**
+    - `GET /api/super-admin/password-reset-requests`: Monitoring & filter permohonan reset sandi.
+    - `POST /api/super-admin/password-reset-requests/{id}/approve`: Persetujuan & penerbitan token.
+    - `POST /api/super-admin/password-reset-requests/{id}/reject`: Penolakan permohonan.
+    - `POST /api/super-admin/password-reset-requests/{id}/direct-reset`: Reset langsung password oleh admin.
+- [`routes/api.php`](file:///d:/laragon/www/PKM/routes/api.php): Pendaftaran seluruh routing di atas.
+
+#### 5. Pengalaman Pengguna Mobile Client (Flutter UI/UX)
+- **Layar Lupa Sandi Dual-Track ([`mobile_app/lib/screens/forgot_password_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/forgot_password_screen.dart)):**
+  - **Tab 1 (Email Mandiri):** Alur standar OTP/email dengan pencegahan *email enumeration*.
+  - **Tab 2 (Verifikasi Lapangan / Bantuan Admin):** Form pengajuan terstruktur dengan input Nama Lengkap, Nomor HP/WhatsApp aktif, dan Alasan permohonan.
+  - **Status Tracker & Input Token Interaktif:** Petani dapat memantau status pengajuannya secara langsung dan memasukkan token pemulihan begitu disetujui oleh pengurus BUMDes.
+- **Panel Manajemen Reset Sandi Super Admin ([`mobile_app/lib/screens/password_reset_management_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/password_reset_management_screen.dart)):**
+  - Menampilkan daftar permohonan masuk secara real-time dengan filter status (*Semua, Menunggu, Disetujui, Selesai, Ditolak*).
+  - Integrasi WhatsApp cepat untuk menghubungi nomor petani langsung dari aplikasi.
+  - Opsi tindakan: **Setujui Permohonan** (otomatis salin token pemulihan ke clipboard), **Reset Langsung** (masukkan password baru instan), atau **Tolak**.
+- **Integrasi Menu Dashboard Super Admin ([`mobile_app/lib/screens/super_admin_dashboard_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/super_admin_dashboard_screen.dart)):**
+  - Ditambahkan menu navigasi dan shortcut terintegrasi menuju panel Kelola Reset Sandi.
+- **API Client Service ([`mobile_app/lib/services/api/auth_api_service.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/services/api/auth_api_service.dart), [`mobile_app/lib/services/api/super_admin_api_service.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/services/api/super_admin_api_service.dart), [`mobile_app/lib/services/api_service.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/services/api_service.dart)):**
+  - Penambahan method terisolasi dan strongly-typed untuk seluruh alur pemulihan akun manual.
+
+### C. Status Verifikasi Pengujian
+- **Pengujian Backend:** 14/14 test cases baru lulus (100% pass, 56 assertions):
+  - `tests/Feature/API/PasswordResetManualVerificationTest.php`
+- **Pengujian Regresi Keamanan:**
+  - `tests/Feature/API/PasswordResetSecurityTest.php` tetap lulus 100% tanpa regresi.
+- **Pengujian Frontend:** `flutter analyze` menghasilkan **0 errors / No issues found**.
+
+
 
