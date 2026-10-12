@@ -32,13 +32,38 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
+// System Health Check (used by Docker Compose healthcheck & uptime monitoring)
+Route::get('/health', function () {
+    $dbStatus = 'ok';
+    $dbError = null;
+
+    try {
+        \Illuminate\Support\Facades\DB::connection()->getPdo();
+    } catch (\Throwable $e) {
+        $dbStatus = 'error';
+        $dbError = config('app.debug') ? $e->getMessage() : 'Database connection failed';
+    }
+
+    $isHealthy = $dbStatus === 'ok';
+
+    return response()->json([
+        'status' => $isHealthy ? 'healthy' : 'unhealthy',
+        'timestamp' => now()->toIso8601String(),
+        'services' => [
+            'database' => $dbStatus,
+            'storage' => \Illuminate\Support\Facades\Storage::disk('public')->exists('') !== null ? 'ok' : 'error',
+        ],
+        'details' => $dbError ? ['database' => $dbError] : null,
+    ], $isHealthy ? 200 : 503);
+});
+
 // ─── Public Routes ───────────────────────────────────────────────────────────
 
-Route::post('/auth/register', [AuthController::class, 'register']);
-Route::post('/auth/login',    [AuthController::class, 'login']);
+Route::post('/auth/register', [AuthController::class, 'register'])->middleware('throttle:auth');
+Route::post('/auth/login',    [AuthController::class, 'login'])->middleware('throttle:auth');
 
-Route::post('/auth/forgot-password', [PasswordResetController::class, 'sendResetLinkEmailApi']);
-Route::post('/auth/reset-password',  [PasswordResetController::class, 'resetPasswordApi']);
+Route::post('/auth/forgot-password', [PasswordResetController::class, 'sendResetLinkEmailApi'])->middleware('throttle:auth');
+Route::post('/auth/reset-password',  [PasswordResetController::class, 'resetPasswordApi'])->middleware('throttle:auth');
 
 // Password Recovery via Super Admin Verification & 5-Minute Token
 Route::post('/password-reset-requests',         [PasswordResetRequestController::class, 'store'])->middleware('throttle:10,1');
@@ -54,17 +79,30 @@ Route::get('/catalog/discounts',          [ProcessedProductDiscountController::c
 Route::get('/news',                       [NewsController::class, 'publicIndex']);
 Route::get('/news/{slug}',                [NewsController::class, 'publicShow']);
 
-// Media / Storage file serving with CORS support for mobile & web apps
+// Media / Storage file serving with path traversal protection & CORS support
 Route::get('/storage/{path}', function (string $path) {
+    if (str_contains($path, '..') || str_contains($path, '\\') || str_contains($path, "\0")) {
+        abort(400, 'Invalid file path');
+    }
+
     $cleanPath = ltrim($path, '/');
-    if (!\Illuminate\Support\Facades\Storage::disk('public')->exists($cleanPath)) {
+    $disk = \Illuminate\Support\Facades\Storage::disk('public');
+
+    if (!$disk->exists($cleanPath)) {
         abort(404, 'File not found');
     }
 
-    $fullPath = \Illuminate\Support\Facades\Storage::disk('public')->path($cleanPath);
-    $mime = mime_content_type($fullPath) ?: 'application/octet-stream';
+    $fullPath = $disk->path($cleanPath);
+    $realFullPath = realpath($fullPath);
+    $root = realpath($disk->path(''));
 
-    return response()->file($fullPath, [
+    if (!$realFullPath || !$root || !str_starts_with($realFullPath, $root) || !is_file($realFullPath)) {
+        abort(404, 'File not found');
+    }
+
+    $mime = mime_content_type($realFullPath) ?: 'application/octet-stream';
+
+    return response()->file($realFullPath, [
         'Content-Type' => $mime,
         'Access-Control-Allow-Origin' => '*',
         'Access-Control-Allow-Methods' => 'GET, OPTIONS',

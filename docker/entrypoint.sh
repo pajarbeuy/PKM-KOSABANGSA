@@ -5,7 +5,7 @@
 
 set -e
 
-echo "🚀 Starting Pertanian Kentang Backend..."
+echo "🚀 Starting SumberTani Backend..."
 
 # Navigate to app directory
 cd /var/www/html

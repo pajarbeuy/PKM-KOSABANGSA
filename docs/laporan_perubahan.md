@@ -1633,5 +1633,43 @@ Pembaruan Versi 2.4.0 menghadirkan arsitektur pemulihan akun ganda (*Dual-Track 
   - `tests/Feature/API/PasswordResetSecurityTest.php` tetap lulus 100% tanpa regresi.
 - **Pengujian Frontend:** `flutter analyze` menghasilkan **0 errors / No issues found**.
 
+---
+
+## 24. [Version 2.4.1] - 2026-10-11: Penyempurnaan Workflow Pemulihan Akun, Data Integrity Kontak Petani & Keamanan Anti-Spam
+
+Pembaruan Versi 2.4.1 menuntaskan hasil audit komprehensif alur kerja pemulihan akun (*Dual-Track Password Recovery*), menambal celah integritas data kontak, memperkuat mekanisme anti-spam, dan meningkatkan kenyamanan admin dalam menghubungi petani secara langsung.
+
+### A. Rincian Masalah & Perbaikan yang Diterapkan
+
+1. **Integritas Data Kontak Petani (`contact_info`):**
+   - **Masalah:** Flutter mengumpulkan nomor WhatsApp/kontak petani dan mengirimkannya melalui API body, tetapi backend tidak pernah menyimpannya karena kolom `contact_info` belum ada di database dan `$fillable`, sehingga Super Admin selalu melihat kontak `"-"`.
+   - **Solusi:**
+     - Membuat migrasi database [`2026_10_11_000001_add_contact_info_to_password_reset_requests_table.php`](file:///d:/laragon/www/PKM/database/migrations/2026_10_11_000001_add_contact_info_to_password_reset_requests_table.php) dan memperbarui migrasi awal.
+     - Menambahkan `contact_info` ke `$fillable` di model [`PasswordResetRequest.php`](file:///d:/laragon/www/PKM/app/Models/PasswordResetRequest.php).
+     - Menambahkan validasi `contact_info` (string, max: 100) di [`PasswordResetRequestController.php`](file:///d:/laragon/www/PKM/app/Http/Controllers/Api/PasswordResetRequestController.php).
+     - Menyimpan `contact_info` di [`PasswordResetRequestService.php`](file:///d:/laragon/www/PKM/app/Services/PasswordResetRequestService.php) dan menambahkan dukungan pencarian keyword berdasarkan nomor kontak.
+
+2. **Penguatan Proteksi Anti-Spam (Mencegah Antrean Duplikat Permanen):**
+   - **Masalah:** Pengecekan anti-spam sebelumnya hanya membatasi duplikat dalam rentang waktu 5 menit. Jika petani mengajukan kembali setelah menit ke-6 sebelum permohonan pertama diproses, terjadi antrean pending ganda.
+   - **Solusi:** Anti-spam di [`PasswordResetRequestService.php`](file:///d:/laragon/www/PKM/app/Services/PasswordResetRequestService.php) kini memeriksa seluruh permohonan berstatus `pending` (case-insensitive) untuk nama yang sama tanpa batas kedaluwarsa 5 menit, sehingga tidak terjadi duplikasi antrean hingga admin memprosesnya.
+
+3. **Sanitasi Query Pencarian & Pencocokan Kelompok Tani (Escape SQL Wildcard):**
+   - **Masalah:** Parameter pencarian dan nama kelompok tani dengan karakter khusus wildcard `%` atau `_` tidak di-escape.
+   - **Solusi:** Menambahkan method `escapeLike()` di [`PasswordResetRequestService.php`](file:///d:/laragon/www/PKM/app/Services/PasswordResetRequestService.php) untuk mencegah salah pencocokan pada query SQL `LIKE`.
+
+4. **Koreksi Pesan Validasi Status Ditolak:**
+   - **Masalah:** Pesan error menyarankan "Ubah status" padahal tidak ada endpoint untuk membuka kembali permohonan yang ditolak.
+   - **Solusi:** Pesan diperbaiki menjadi: *"Permintaan ini telah ditolak. Petani perlu mengajukan permintaan baru jika diperlukan."*
+
+5. **Peningkatan UX Mobile (Salin Cepat Kontak & Sinkronisasi Countdown Timer):**
+   - **Fitur Salin Kontak Satu Sentuhan:** Menambahkan tombol salin (*copy icon*) di samping nomor WhatsApp/kontak pada kartu permohonan Super Admin ([`password_reset_management_screen.dart`](file:///d:/laragon/www/PKM/mobile_app/lib/screens/password_reset_management_screen.dart)).
+   - **Sinkronisasi Timer Server:** Modal token 5 menit kini menghitung mundur sisa detik berdasarkan `expires_at` dari server untuk mengantisipasi selisih waktu/latensi jaringan.
+
+### B. Status Verifikasi Pengujian
+- **Pengujian Backend:** 24/24 test cases lulus (100% pass, 71 assertions):
+  - `tests/Feature/API/PasswordResetManualVerificationTest.php` (mencakup verifikasi simpan `contact_info`, anti-spam persisten, pencarian nomor kontak, escape wildcard, dan pesan error tolak).
+- **Pengujian Frontend:** `flutter analyze` menghasilkan **0 errors / No issues found**.
+
+
 
 

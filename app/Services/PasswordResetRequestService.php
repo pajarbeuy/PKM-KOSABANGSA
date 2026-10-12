@@ -24,11 +24,11 @@ class PasswordResetRequestService
         if (empty($farmerGroupName) && isset($data['farmer_group_name'])) {
             $farmerGroupName = trim($data['farmer_group_name']);
         }
+        $contactInfo = isset($data['contact_info']) ? trim($data['contact_info']) : null;
 
-        // Anti-spam check: prevent identical pending requests submitted within 5 minutes
-        $recentPending = PasswordResetRequest::where('name', $name)
+        // Anti-spam check: prevent duplicate pending requests for the same user
+        $recentPending = PasswordResetRequest::whereRaw('LOWER(name) = ?', [strtolower($name)])
             ->where('status', 'pending')
-            ->where('created_at', '>=', now()->subMinutes(5))
             ->first();
 
         if ($recentPending) {
@@ -43,7 +43,8 @@ class PasswordResetRequestService
         // Identify matched farmer group if provided
         $farmerGroupId = null;
         if ($farmerGroupName) {
-            $group = FarmerGroup::where('name', 'like', "%{$farmerGroupName}%")->first();
+            $escapedFarmerGroup = $this->escapeLike($farmerGroupName);
+            $group = FarmerGroup::where('name', 'like', "%{$escapedFarmerGroup}%")->first();
             if ($group) {
                 $farmerGroupId = $group->id;
             }
@@ -63,6 +64,7 @@ class PasswordResetRequestService
             'name' => $name,
             'farmer_group_name' => $farmerGroupName,
             'farmer_group_id' => $farmerGroupId ?: $matchedUser?->farmer_group_id,
+            'contact_info' => $contactInfo,
             'status' => 'pending',
             'ip_address' => $ipAddress,
             'user_agent' => $userAgent ? Str::limit($userAgent, 500) : null,
@@ -90,13 +92,15 @@ class PasswordResetRequestService
 
         if (!empty($filters['search'])) {
             $search = trim($filters['search']);
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('farmer_group_name', 'like', "%{$search}%")
-                  ->orWhereHas('user', function ($uq) use ($search) {
-                      $uq->where('name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%")
-                        ->orWhere('phone', 'like', "%{$search}%");
+            $escapedSearch = $this->escapeLike($search);
+            $query->where(function ($q) use ($escapedSearch) {
+                $q->where('name', 'like', "%{$escapedSearch}%")
+                  ->orWhere('farmer_group_name', 'like', "%{$escapedSearch}%")
+                  ->orWhere('contact_info', 'like', "%{$escapedSearch}%")
+                  ->orWhereHas('user', function ($uq) use ($escapedSearch) {
+                      $uq->where('name', 'like', "%{$escapedSearch}%")
+                        ->orWhere('email', 'like', "%{$escapedSearch}%")
+                        ->orWhere('phone', 'like', "%{$escapedSearch}%");
                   });
             });
         }
@@ -129,7 +133,7 @@ class PasswordResetRequestService
 
             if ($request->status === 'rejected') {
                 throw ValidationException::withMessages([
-                    'status' => ['Permintaan ini telah ditolak. Ubah status atau buat permintaan baru jika diperlukan.'],
+                    'status' => ['Permintaan ini telah ditolak. Petani perlu mengajukan permintaan baru jika diperlukan.'],
                 ]);
             }
 
@@ -341,5 +345,18 @@ class PasswordResetRequestService
                 'message' => 'Password akun Anda berhasil diperbarui. Silakan login menggunakan password baru.',
             ];
         });
+    }
+
+    /**
+     * Escape special characters in LIKE patterns safely.
+     */
+    protected function escapeLike(string $value): string
+    {
+        // SQLite (used in test suite) does not treat backslash as an escape character in LIKE without explicit ESCAPE clause
+        if (DB::connection()->getDriverName() === 'sqlite') {
+            return $value;
+        }
+
+        return addcslashes($value, '%_\\');
     }
 }

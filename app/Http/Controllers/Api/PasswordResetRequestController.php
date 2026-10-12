@@ -27,9 +27,11 @@ class PasswordResetRequestController extends Controller
             $validated = $request->validate([
                 'name'         => 'required|string|max:255',
                 'farmer_group' => 'nullable|string|max:255',
+                'contact_info' => 'nullable|string|max:100',
             ], [
-                'name.required' => 'Nama pengguna wajib diisi sesuai akun Anda.',
-                'name.max'      => 'Nama pengguna tidak boleh lebih dari 255 karakter.',
+                'name.required'    => 'Nama pengguna wajib diisi sesuai akun Anda.',
+                'name.max'         => 'Nama pengguna tidak boleh lebih dari 255 karakter.',
+                'contact_info.max' => 'Nomor kontak/WhatsApp tidak boleh lebih dari 100 karakter.',
             ]);
 
             $result = $this->service->createRequest(

@@ -47,12 +47,13 @@ class PasswordResetManualVerificationTest extends TestCase
         ]);
     }
 
-    /** 1. Pengguna dapat mengirim permintaan reset dengan input valid */
+    /** 1. Pengguna dapat mengirim permintaan reset dengan input valid (termasuk contact_info) */
     public function test_user_can_submit_reset_request_with_valid_input(): void
     {
         $response = $this->postJson('/api/password-reset-requests', [
             'name' => 'Budi Santoso',
             'farmer_group' => 'Kelompok Tani Harapan Jaya',
+            'contact_info' => '081234567890',
         ]);
 
         $response->assertStatus(201)
@@ -66,6 +67,7 @@ class PasswordResetManualVerificationTest extends TestCase
         $this->assertDatabaseHas('password_reset_requests', [
             'name' => 'Budi Santoso',
             'farmer_group_name' => 'Kelompok Tani Harapan Jaya',
+            'contact_info' => '081234567890',
             'status' => 'pending',
             'user_id' => $this->farmer->id,
         ]);
@@ -489,7 +491,7 @@ class PasswordResetManualVerificationTest extends TestCase
         $this->assertArrayNotHasKey('email', $response->json('data'));
     }
 
-    /** 20. Re-submitting identical request within 5 minutes is gracefully handled without duplicates */
+    /** 20. Re-submitting identical request is gracefully handled without duplicates even after 5 minutes */
     public function test_anti_spam_prevents_duplicate_pending_requests(): void
     {
         $first = $this->postJson('/api/password-reset-requests', [
@@ -497,13 +499,18 @@ class PasswordResetManualVerificationTest extends TestCase
         ]);
         $first->assertStatus(201);
 
+        // Advance system time past 5 minutes (e.g. 10 minutes later)
+        Carbon::setTestNow(now()->addMinutes(10));
+
         $second = $this->postJson('/api/password-reset-requests', [
-            'name' => 'Budi Santoso',
+            'name' => 'budi santoso', // case insensitive
         ]);
         $second->assertStatus(201);
 
         // Only 1 pending request record should exist for Budi Santoso
         $this->assertEquals(1, PasswordResetRequest::where('name', 'Budi Santoso')->count());
+
+        Carbon::setTestNow();
     }
 
     /** 21. Super Admin detail endpoint retrieves full verification information */
@@ -532,5 +539,68 @@ class PasswordResetManualVerificationTest extends TestCase
                     ],
                 ],
             ]);
+    }
+
+    /** 22. Super Admin dapat mencari permintaan berdasarkan nomor kontak (contact_info) */
+    public function test_super_admin_can_search_requests_by_contact_info(): void
+    {
+        PasswordResetRequest::create([
+            'name' => 'Budi Santoso',
+            'contact_info' => '089988776655',
+            'status' => 'pending',
+        ]);
+
+        PasswordResetRequest::create([
+            'name' => 'Siti Aminah',
+            'contact_info' => '081122334455',
+            'status' => 'pending',
+        ]);
+
+        Sanctum::actingAs($this->superAdmin);
+
+        $response = $this->getJson('/api/super-admin/password-reset-requests?search=089988776655');
+
+        $response->assertStatus(200)
+            ->assertJsonCount(1, 'data')
+            ->assertJsonFragment(['contact_info' => '089988776655']);
+    }
+
+    /** 23. Wildcard SQL like % dan _ pada pencarian di-escape dengan aman */
+    public function test_wildcard_character_in_search_is_escaped(): void
+    {
+        PasswordResetRequest::create([
+            'name' => 'Budi 100% Organik',
+            'status' => 'pending',
+        ]);
+        PasswordResetRequest::create([
+            'name' => 'Budi Santoso Biasa',
+            'status' => 'pending',
+        ]);
+
+        Sanctum::actingAs($this->superAdmin);
+
+        // Search specifically for "100%"
+        $response = $this->getJson('/api/super-admin/password-reset-requests?search=' . urlencode('100%'));
+
+        $response->assertStatus(200)
+            ->assertJsonCount(1, 'data')
+            ->assertJsonFragment(['name' => 'Budi 100% Organik']);
+    }
+
+    /** 24. Pesan error saat menyetujui permintaan yang ditolak informatif dan tepat */
+    public function test_approving_rejected_request_returns_clear_error_message(): void
+    {
+        $req = PasswordResetRequest::create([
+            'name' => 'Budi Santoso',
+            'user_id' => $this->farmer->id,
+            'status' => 'rejected',
+        ]);
+
+        Sanctum::actingAs($this->superAdmin);
+
+        $response = $this->postJson("/api/super-admin/password-reset-requests/{$req->id}/approve");
+
+        $response->assertStatus(422)
+            ->assertJsonFragment(['status' => ['Permintaan ini telah ditolak. Petani perlu mengajukan permintaan baru jika diperlukan.']]);
     }
 }

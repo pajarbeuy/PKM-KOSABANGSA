@@ -1,8 +1,9 @@
 *.log
 .DS_Store
 .env
-.env.backup
-.env.production
+.env.*
+!.env.example
+!.env.*.example
 .phpactor.json
 .phpunit.result.cache
 /.codex
@@ -21,7 +22,15 @@
 /storage/*.key
 /storage/pail
 /vendor
+/database/*.sqlite
+/database/*.sqlite-journal
 _ide_helper.php
+_ide_helper_models.php
+.phpstorm.meta.php
 Homestead.json
 Homestead.yaml
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 Thumbs.db
+

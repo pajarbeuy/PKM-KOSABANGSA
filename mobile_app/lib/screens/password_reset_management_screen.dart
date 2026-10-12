@@ -600,13 +600,40 @@ class _PasswordResetManagementScreenState
                           TextStyle(fontSize: 11, color: Colors.grey.shade500),
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      contact,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: AppTheme.dark900,
-                      ),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            contact,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: AppTheme.dark900,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (contact != '-') ...[
+                          const SizedBox(width: 6),
+                          InkWell(
+                            onTap: () {
+                              Clipboard.setData(ClipboardData(text: contact));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Nomor kontak disalin!'),
+                                  duration: Duration(seconds: 2),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(4),
+                            child: const Padding(
+                              padding: EdgeInsets.all(2),
+                              child: Icon(Icons.copy_rounded, size: 14, color: AppTheme.green700),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ],
                 ),
@@ -755,7 +782,19 @@ class _TokenDisplayDialogState extends State<_TokenDisplayDialog> {
   @override
   void initState() {
     super.initState();
-    _remainingSeconds = widget.validitySeconds;
+    if (widget.expiresAt.isNotEmpty) {
+      final exp = DateTime.tryParse(widget.expiresAt);
+      if (exp != null) {
+        final diff = exp.toUtc().difference(DateTime.now().toUtc()).inSeconds;
+        _remainingSeconds = (diff > 0 && diff <= widget.validitySeconds)
+            ? diff
+            : widget.validitySeconds;
+      } else {
+        _remainingSeconds = widget.validitySeconds;
+      }
+    } else {
+      _remainingSeconds = widget.validitySeconds;
+    }
     _startCountdown();
   }
 

@@ -36,30 +36,30 @@
 
 ---
 
-## 🎯 Rencana Penambahan Test Matrix (Phase 9 — Fitur Baru PKM)
+## 🎯 Status Penambahan Test Matrix (Phase 9 & V2 — Fitur Baru PKM)
 
-Untuk fitur baru yang dikembangkan pada program PKM, berikut test matrix baru yang akan ditambahkan ke test suite:
+Seluruh test matrix baru telah diimplementasikan ke dalam test suite:
 
 ### 1. Processed Product Domain (`ProcessedProductApiTest`)
-- [ ] `test_farmer_can_create_processed_product` (201 Created)
-- [ ] `test_farmer_can_only_view_own_processed_products` (Multi-tenant isolation)
-- [ ] `test_farmer_cannot_update_or_delete_other_farmer_product` (403 Forbidden)
-- [ ] `test_super_admin_can_view_all_processed_products` (200 OK)
-- [ ] `test_product_stock_cannot_be_negative` (422 Unprocessable Entity)
-- [ ] `test_stock_zero_transitions_to_out_of_stock` (Auto state transition)
-- [ ] `test_restock_transitions_out_of_stock_to_active` (Auto state transition)
-- [ ] `test_restock_on_inactive_product_keeps_inactive_status` (Manual status preservation)
+- [x] `test_farmer_can_create_processed_product` (201 Created)
+- [x] `test_farmer_can_only_view_own_processed_products` (Multi-tenant isolation)
+- [x] `test_farmer_cannot_update_or_delete_other_farmer_product` (403 Forbidden)
+- [x] `test_super_admin_can_view_all_processed_products` (200 OK)
+- [x] `test_product_stock_cannot_be_negative` (422 Unprocessable Entity)
+- [x] `test_stock_zero_transitions_to_out_of_stock` (Auto state transition)
+- [x] `test_restock_transitions_out_of_stock_to_active` (Auto state transition)
+- [x] `test_restock_on_inactive_product_keeps_inactive_status` (Manual status preservation)
 
-### 2. Centralized Sales & Stock Decrement
-- [ ] `test_farmer_cannot_create_sales_directly` (403 Forbidden)
-- [ ] `test_super_admin_can_record_processed_product_sale` (201 Created)
-- [ ] `test_sale_decrements_farmer_product_stock_atomically` (Consistency invariant)
-- [ ] `test_sale_rejects_quantity_greater_than_stock` (422 Unprocessable Entity)
+### 2. Centralized Sales & Stock Decrement (`SuperAdminSalesTest`)
+- [x] `test_farmer_cannot_create_sales_directly` (403 Forbidden)
+- [x] `test_super_admin_can_record_processed_product_sale` (201 Created)
+- [x] `test_sale_decrements_farmer_product_stock_atomically` (Consistency invariant)
+- [x] `test_sale_rejects_quantity_greater_than_stock` (422 Unprocessable Entity)
 
-### 3. Super Admin Aggregate Profit/Loss
-- [ ] `test_super_admin_can_view_aggregate_farmer_profit_loss` (Semantic response format)
-- [ ] `test_aggregate_profit_loss_equals_sum_of_individual_farmers` (No double counting)
+### 3. Super Admin Aggregate Profit/Loss (`SuperAdminProfitLossAggregateTest`)
+- [x] `test_super_admin_can_view_aggregate_farmer_profit_loss` (Semantic response format)
+- [x] `test_aggregate_profit_loss_equals_sum_of_individual_farmers` (No double counting)
 
-### 4. Super Admin Operational Chatbot
-- [ ] `test_farmer_and_unauthenticated_cannot_access_chat` (401/403)
-- [ ] `test_super_admin_can_access_operational_chat` (200 OK)
+### 4. Super Admin Operational Chatbot (`ChatbotSuperAdminTest`)
+- [x] `test_farmer_and_unauthenticated_cannot_access_chat` (401/403)
+- [x] `test_super_admin_can_access_operational_chat` (200 OK)

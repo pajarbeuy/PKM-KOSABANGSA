@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('name')->index();
             $table->string('farmer_group_name')->nullable()->index();
             $table->foreignId('farmer_group_id')->nullable()->constrained('farmer_groups')->nullOnDelete();
+            $table->string('contact_info', 100)->nullable();
             $table->string('status')->default('pending')->index(); // pending, approved, rejected, completed
             $table->foreignId('admin_id')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('approved_at')->nullable();

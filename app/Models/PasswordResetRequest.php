@@ -17,6 +17,7 @@ class PasswordResetRequest extends Model
         'name',
         'farmer_group_name',
         'farmer_group_id',
+        'contact_info',
         'status',
         'admin_id',
         'approved_at',
