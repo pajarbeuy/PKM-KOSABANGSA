@@ -50,6 +50,7 @@
 21. [Version 2.2.0: Diskon Produk Olahan, CMS Berita Web, Revitalisasi Notifikasi, Komisi 3% & Skalabilitas](#21-version-220---2026-10-04-diskon-produk-olahan-cms-berita-web-revitalisasi-notifikasi-komisi-3--skalabilitas)
 22. [Version 2.3.0: Penguatan Asisten AI (TaniBot), Integrasi Data Pasar Resmi, & Penegasan Guardrails Bisnis](#22-version-230---2026-10-09-penguatan-asisten-ai-tanibot-integrasi-data-pasar-resmi--penegasan-guardrails-bisnis)
 23. [Version 2.4.0: Sistem Pemulihan Akun Verifikasi Lapangan & Persetujuan Super Admin (Dual-Track Password Recovery)](#23-version-240---2026-10-09-sistem-pemulihan-akun-verifikasi-lapangan--persetujuan-super-admin-dual-track-password-recovery)
+24. [Version 2.5.0: User Registration Approval System & Comprehensive User Guide](#24-version-250---2026-10-28-user-registration-approval-system--comprehensive-user-guide)
 
 ---
 
@@ -1633,5 +1634,55 @@ Pembaruan Versi 2.4.0 menghadirkan arsitektur pemulihan akun ganda (*Dual-Track 
   - `tests/Feature/API/PasswordResetSecurityTest.php` tetap lulus 100% tanpa regresi.
 - **Pengujian Frontend:** `flutter analyze` menghasilkan **0 errors / No issues found**.
 
+---
 
+## 24. Version 2.5.0 - 2026-10-28: User Registration Approval System & Comprehensive User Guide
 
+### A. Masalah yang Ditemukan
+- Kolom `approval` di User model tidak digunakan dalam logic aplikasi
+- Backend tidak memiliki endpoint approve/reject untuk verifikasi akun petani
+- Frontend super admin hanya punya 3 tab (Semua, Aktif, Non-aktif) tanpa tab "Pending"
+- Super admin tidak ada UI action button untuk menyetujui/menolak akun baru
+- Alur approval workflow tidak ter-track di dokumentasi
+
+### B. Solusi Backend
+- **File:** `app/Http/Controllers/SuperAdmin/SuperAdminController.php`
+  - Method `approveUser(User $user)`: Set `approval = 'approved'`
+  - Method `rejectUser(Request $request, User $user)`: Set `approval = 'rejected'` & `status = 'inactive'`
+- **Routes:** `POST /api/super-admin/users/{user}/approve|reject`
+- **Service:** `app/Services/SuperAdminService.php` - `approveUser()`, `rejectUser()`
+
+### C. Solusi Frontend Flutter
+- **Tab Baru:** "Pending" (filter: `approval != 'approved'`)
+- **TabController:** Length 4 (sebelumnya 3)
+- **Approval Badge:** `_buildApprovalBadge()` - PENDING (kuning), DISETUJUI (hijau), DITOLAK (merah)
+- **Action Buttons:** Setujui, Tolak (dengan confirmation dialog & reason input)
+- **API Methods:** `approveSuperAdminUser()`, `rejectSuperAdminUser()` di super_admin_api_service.dart
+
+### D. Dokumentasi Lengkap
+- **File:** `docs/PANDUAN_PENGGUNA_LENGKAP.md` (929 baris)
+  - Panduan registrasi & approval untuk petani
+  - Panduan verifikasi untuk super admin
+  - FAQ & troubleshooting
+  - Reference menu lengkap
+
+### E. Files Modified/Created
+- Modified: `app/Http/Controllers/SuperAdmin/SuperAdminController.php` (+33 lines)
+- Modified: `app/Services/SuperAdminService.php` (+26 lines)
+- Modified: `routes/api.php` (+3 routes)
+- Modified: `mobile_app/lib/screens/user_management_screen.dart` (+150 lines)
+- Modified: `mobile_app/lib/services/api_service.dart` (+3 lines)
+- Modified: `mobile_app/lib/services/api/super_admin_api_service.dart` (+35 lines)
+- Created: `docs/PANDUAN_PENGGUNA_LENGKAP.md` (929 lines)
+
+### F. Commits
+- **Branch:** `feature/user-registration-approval`
+- **Commit:** `feat: implement user registration approval system for super admin`
+- **Status:** ✅ Pushed & ready for PR
+
+### G. Status Kesimpulan
+✅ **Approval System COMPLETE & FUNCTIONAL**
+- Backend endpoint tersedia dan aman
+- Frontend UI lengkap dengan action buttons
+- Dokumentasi user guide tersedia
+- Alur bisnis terdefinisi jelas

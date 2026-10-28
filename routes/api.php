@@ -160,6 +160,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/users/{user}',            [SuperAdminController::class, 'destroyUser']);
         Route::post('/users/{user}/impersonate',  [SuperAdminController::class, 'impersonate']);
 
+        // User Registration Approval
+        Route::post('/users/{user}/approve',      [SuperAdminController::class, 'approveUser']);
+        Route::post('/users/{user}/reject',       [SuperAdminController::class, 'rejectUser']);
+
         // Landing Content
         Route::get('/landing',  [SuperAdminController::class, 'getLanding']);
         Route::post('/landing', [SuperAdminController::class, 'updateLanding']);
