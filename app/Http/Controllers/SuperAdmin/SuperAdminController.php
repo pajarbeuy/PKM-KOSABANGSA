@@ -170,4 +170,27 @@ class SuperAdminController extends Controller
 
         return $this->successResponse($data, 'Agregat laba rugi seluruh petani berhasil diambil.');
     }
+
+    // ─── User Registration Approval ────────────────────────────────────────────
+
+    public function approveUser(User $user)
+    {
+        if ($user->approval === 'approved') {
+            return $this->errorResponse('Akun sudah disetujui sebelumnya.', 422);
+        }
+
+        $updated = $this->superAdminService->approveUser($user);
+        return $this->successResponse($updated, 'Akun pengguna berhasil disetujui.');
+    }
+
+    public function rejectUser(Request $request, User $user)
+    {
+        if ($user->approval === 'approved') {
+            return $this->errorResponse('Tidak bisa menolak akun yang sudah disetujui.', 422);
+        }
+
+        $reason = $request->input('reason', 'Ditolak oleh Super Admin');
+        $updated = $this->superAdminService->rejectUser($user, $reason);
+        return $this->successResponse($updated, 'Akun pengguna berhasil ditolak.');
+    }
 }

@@ -471,5 +471,42 @@ class SuperAdminApiService {
       return {'success': false, 'message': e.toString()};
     }
   }
+
+  Future<void> approveSuperAdminUser(int id) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('${ApiConfig.baseUrl}/super-admin/users/$id/approve'),
+            headers: _client.getHeaders(),
+          )
+          .timeout(const Duration(seconds: 15));
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode != 200 || data['success'] != true) {
+        throw Exception(data['message'] ?? 'Gagal menyetujui akun');
+      }
+    } catch (e) {
+      throw Exception(e.toString());
+    }
+  }
+
+  Future<void> rejectSuperAdminUser(int id, String reason) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('${ApiConfig.baseUrl}/super-admin/users/$id/reject'),
+            headers: _client.getHeaders(),
+            body: jsonEncode({'reason': reason}),
+          )
+          .timeout(const Duration(seconds: 15));
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode != 200 || data['success'] != true) {
+        throw Exception(data['message'] ?? 'Gagal menolak akun');
+      }
+    } catch (e) {
+      throw Exception(e.toString());
+    }
+  }
 }
 

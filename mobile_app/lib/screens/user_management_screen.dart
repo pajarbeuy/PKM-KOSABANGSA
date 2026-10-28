@@ -30,7 +30,7 @@ class _UserManagementScreenState extends State<UserManagementScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _loadUsers();
   }
 
@@ -133,6 +133,93 @@ class _UserManagementScreenState extends State<UserManagementScreen>
     }
   }
 
+  Future<void> _approveUser(int id, String name) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Setujui Akun'),
+        content: Text('Setujui pendaftaran akun "$name"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              'Setujui',
+              style: TextStyle(color: Colors.green),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      setState(() => _isLoading = true);
+      try {
+        await _apiService.approveSuperAdminUser(id);
+        _showSuccess('Akun "$name" berhasil disetujui');
+        _loadUsers();
+      } catch (e) {
+        setState(() => _isLoading = false);
+        _showError('Gagal menyetujui akun: $e');
+      }
+    }
+  }
+
+  Future<void> _rejectUser(int id, String name) async {
+    final reason = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        final controller = TextEditingController();
+        return AlertDialog(
+          title: const Text('Tolak Akun'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Tolak pendaftaran akun "$name"?'),
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                decoration: const InputDecoration(
+                  hintText: 'Alasan penolakan (opsional)',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, null),
+              child: const Text('Batal'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, controller.text),
+              child: const Text(
+                'Tolak',
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (reason != null) {
+      setState(() => _isLoading = true);
+      try {
+        await _apiService.rejectSuperAdminUser(id, reason);
+        _showSuccess('Akun "$name" berhasil ditolak');
+        _loadUsers();
+      } catch (e) {
+        setState(() => _isLoading = false);
+        _showError('Gagal menolak akun: $e');
+      }
+    }
+  }
+
   void _showAddEditUserBottomSheet([Map<String, dynamic>? user]) {
     showModalBottomSheet(
       context: context,
@@ -166,7 +253,8 @@ class _UserManagementScreenState extends State<UserManagementScreen>
 
   List<dynamic> _getFilteredUsers(int index) {
     if (index == 0) return _users;
-    if (index == 1) return _users.where((u) => u['status'] == 'active').toList();
+    if (index == 1) return _users.where((u) => u['approval'] != 'approved').toList();
+    if (index == 2) return _users.where((u) => u['status'] == 'active').toList();
     return _users.where((u) => u['status'] == 'inactive').toList();
   }
 
@@ -180,20 +268,21 @@ class _UserManagementScreenState extends State<UserManagementScreen>
     Widget buildMainContent() {
       return Column(
         children: [
-          Material(
-            color: AppTheme.cardBg,
-            child: TabBar(
-              controller: _tabController,
-              labelColor: AppTheme.textPrimary,
-              unselectedLabelColor: AppTheme.textSecondary,
-              indicatorColor: AppTheme.green700,
-              tabs: const [
-                Tab(text: 'Semua'),
-                Tab(text: 'Aktif'),
-                Tab(text: 'Non-aktif'),
-              ],
-            ),
-          ),
+           Material(
+             color: AppTheme.cardBg,
+             child: TabBar(
+               controller: _tabController,
+               labelColor: AppTheme.textPrimary,
+               unselectedLabelColor: AppTheme.textSecondary,
+               indicatorColor: AppTheme.green700,
+               tabs: const [
+                 Tab(text: 'Semua'),
+                 Tab(text: 'Pending'),
+                 Tab(text: 'Aktif'),
+                 Tab(text: 'Non-aktif'),
+               ],
+             ),
+           ),
           Expanded(
             child: _isLoading
                 ? const Center(
@@ -396,16 +485,67 @@ class _UserManagementScreenState extends State<UserManagementScreen>
     );
   }
 
+  Widget _buildApprovalBadge(String approval) {
+    Color color;
+    String label;
+
+    if (approval == 'approved') {
+      color = Colors.green;
+      label = 'DISETUJUI';
+    } else if (approval == 'rejected') {
+      color = Colors.red;
+      label = 'DITOLAK';
+    } else {
+      color = Colors.amber;
+      label = 'PENDING';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
   Widget _buildActionButtons(Map<String, dynamic> u) {
     final isAdmin = u['role'] == 'super_admin';
     final id = u['id'] as int;
     final name = u['name'] ?? '';
+    final approval = u['approval'] ?? 'pending';
 
     return Wrap(
       spacing: 6,
       runSpacing: 6,
       alignment: WrapAlignment.end,
       children: [
+        if (!isAdmin && approval != 'approved')
+          TextButton.icon(
+            onPressed: () => _approveUser(id, name),
+            icon: const Icon(Icons.check_circle, size: 14, color: Colors.green),
+            label: const Text(
+              'Setujui',
+              style: TextStyle(color: Colors.green, fontSize: 12),
+            ),
+          ),
+        if (!isAdmin && approval != 'approved')
+          TextButton.icon(
+            onPressed: () => _rejectUser(id, name),
+            icon: const Icon(Icons.cancel, size: 14, color: Colors.orange),
+            label: const Text(
+              'Tolak',
+              style: TextStyle(color: Colors.orange, fontSize: 12),
+            ),
+          ),
         if (!isAdmin && u['status'] == 'active')
           TextButton.icon(
             onPressed: () => _impersonateUser(id, name),
@@ -722,9 +862,9 @@ class _UserManagementScreenState extends State<UserManagementScreen>
                               ),
                             ),
                           ),
-                          DataCell(_buildStatusBadge(u['status'])),
-                          DataCell(_buildStatusBadge(u['status'])),
-                          DataCell(
+                           DataCell(_buildStatusBadge(u['status'])),
+                           DataCell(_buildApprovalBadge(u['approval'] ?? 'pending')),
+                           DataCell(
                             _buildActionButtons(u as Map<String, dynamic>),
                           ),
                         ],

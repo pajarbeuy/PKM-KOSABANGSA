@@ -397,6 +397,12 @@ class ApiService {
   Future<Map<String, dynamic>> impersonateUser(int id) =>
       _superAdminService.impersonateUser(id);
 
+  Future<void> approveSuperAdminUser(int id) =>
+      _superAdminService.approveSuperAdminUser(id);
+
+  Future<void> rejectSuperAdminUser(int id, String reason) =>
+      _superAdminService.rejectSuperAdminUser(id, reason);
+
   Future<Map<String, dynamic>?> getLandingContent() =>
       _superAdminService.getLandingContent();
 

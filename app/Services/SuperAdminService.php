@@ -289,4 +289,27 @@ class SuperAdminService
             'farmers'                  => $farmerSummaries,
         ];
     }
+
+    // ─── User Registration Approval ────────────────────────────────────────────
+
+    /**
+     * Approve a pending user registration.
+     */
+    public function approveUser(User $user): User
+    {
+        $user->update(['approval' => 'approved']);
+        return $user->fresh(['farmerGroup']);
+    }
+
+    /**
+     * Reject a pending user registration.
+     */
+    public function rejectUser(User $user, string $reason = ''): User
+    {
+        $user->update([
+            'approval' => 'rejected',
+            'status' => 'inactive',
+        ]);
+        return $user->fresh(['farmerGroup']);
+    }
 }
