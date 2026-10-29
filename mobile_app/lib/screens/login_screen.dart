@@ -52,6 +52,64 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _loginWithGoogle(BuildContext context) async {
+    final authProvider = context.read<AuthProvider>();
+    final result = await authProvider.loginWithGoogle();
+
+    if (result['success'] == true) {
+      if (!context.mounted) return;
+
+      // Email Google belum terdaftar -> Arahkan ke form registrasi
+      if (result['needs_registration'] == true) {
+        final data = result['data'] as Map<String, dynamic>? ?? {};
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Email Google belum terdaftar. Silakan lengkapi form pendaftaran.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => RegisterScreen(
+              initialName: data['name'] as String?,
+              initialEmail: data['email'] as String?,
+              googleSub: data['google_sub'] as String?,
+            ),
+          ),
+        );
+        return;
+      }
+
+      // Email Google sudah terdaftar -> Langsung masuk
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Login dengan Google Berhasil!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      final role = authProvider.user?.role;
+      final targetScreen = role == 'super_admin'
+          ? const SuperAdminDashboardScreen()
+          : const HomeScreen();
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => targetScreen),
+      );
+    } else {
+      if (!context.mounted) return;
+      final errorMessage = authProvider.errorMessage;
+      if (errorMessage != null && errorMessage.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(
@@ -257,6 +315,62 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                               const SizedBox(height: 16),
+                              Row(
+                                children: [
+                                  Expanded(child: Divider(color: Colors.grey.shade300)),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                                    child: Text(
+                                      'atau',
+                                      style: TextStyle(
+                                        color: Colors.grey.shade600,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(child: Divider(color: Colors.grey.shade300)),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              SizedBox(
+                                width: double.infinity,
+                                height: 48,
+                                child: OutlinedButton(
+                                  style: OutlinedButton.styleFrom(
+                                    side: BorderSide(color: Colors.grey.shade300),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    backgroundColor: Colors.white,
+                                  ),
+                                  onPressed: authProvider.isLoading ? null : () => _loginWithGoogle(context),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Image.network(
+                                        'https://www.gstatic.com/images/branding/product/2x/googleg_48dp.png',
+                                        width: 20,
+                                        height: 20,
+                                        errorBuilder: (context, error, stackTrace) => const Icon(
+                                          Icons.g_mobiledata,
+                                          size: 26,
+                                          color: Colors.red,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      const Text(
+                                        'Masuk dengan Google',
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 20),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [

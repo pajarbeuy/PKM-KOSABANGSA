@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    'google' => [
+        // Google OAuth Web Client ID (required for token verification audience check)
+        'client_id'         => env('GOOGLE_CLIENT_ID'),
+
+        // Android OAuth Client ID (optional, if different from web client ID)
+        'android_client_id' => env('GOOGLE_ANDROID_CLIENT_ID'),
+    ],
+
 ];

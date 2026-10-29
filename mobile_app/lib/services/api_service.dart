@@ -74,6 +74,9 @@ class ApiService {
   Future<Map<String, dynamic>> login(String email, String password) =>
       _authService.login(email, password);
 
+  Future<Map<String, dynamic>> loginWithGoogle(String idToken) =>
+      _authService.loginWithGoogle(idToken);
+
   Future<Map<String, dynamic>> register({
     required String farmName,
     required String name,
@@ -82,6 +85,7 @@ class ApiService {
     required int farmerGroupId,
     required String password,
     required String passwordConfirmation,
+    String? googleSub,
   }) =>
       _authService.register(
         farmName: farmName,
@@ -91,6 +95,7 @@ class ApiService {
         farmerGroupId: farmerGroupId,
         password: password,
         passwordConfirmation: passwordConfirmation,
+        googleSub: googleSub,
       );
 
   Future<void> logout() => _authService.logout();

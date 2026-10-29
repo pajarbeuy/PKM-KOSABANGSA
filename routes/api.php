@@ -34,8 +34,9 @@ use Illuminate\Support\Facades\Route;
 
 // ─── Public Routes ───────────────────────────────────────────────────────────
 
-Route::post('/auth/register', [AuthController::class, 'register']);
-Route::post('/auth/login',    [AuthController::class, 'login']);
+Route::post('/auth/register', [AuthController::class, 'register'])->middleware('throttle:auth');
+Route::post('/auth/login',    [AuthController::class, 'login'])->middleware('throttle:auth');
+Route::post('/auth/google',   [AuthController::class, 'googleSignIn'])->middleware('throttle:auth');
 
 Route::post('/auth/forgot-password', [PasswordResetController::class, 'sendResetLinkEmailApi']);
 Route::post('/auth/reset-password',  [PasswordResetController::class, 'resetPasswordApi']);

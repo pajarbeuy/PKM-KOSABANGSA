@@ -6,7 +6,16 @@ import '../models/farmer_group.dart';
 import '../services/api_service.dart';
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+  final String? initialName;
+  final String? initialEmail;
+  final String? googleSub;
+
+  const RegisterScreen({
+    super.key,
+    this.initialName,
+    this.initialEmail,
+    this.googleSub,
+  });
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -23,6 +32,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _agreePolicy = false;
 
   List<FarmerGroup> _farmerGroups = [];
   int? _selectedFarmerGroupId;
@@ -31,6 +41,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialName != null && widget.initialName!.isNotEmpty) {
+      _nameController.text = widget.initialName!;
+    }
+    if (widget.initialEmail != null && widget.initialEmail!.isNotEmpty) {
+      _emailController.text = widget.initialEmail!;
+    }
     _loadFarmerGroups();
   }
 
@@ -73,6 +89,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
+    if (!_agreePolicy) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Anda harus menyetujui Kebijakan Akun Baru sebelum mendaftar.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
     final authProvider = context.read<AuthProvider>();
     final success = await authProvider.register(
       farmName: _farmNameController.text.trim(),
@@ -82,13 +108,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
       farmerGroupId: _selectedFarmerGroupId!,
       password: _passwordController.text,
       passwordConfirmation: _confirmPasswordController.text,
+      googleSub: widget.googleSub,
     );
 
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Registrasi berhasil! Silakan masuk.'),
+          content: Text('Pendaftaran berhasil! Akun Anda sedang menunggu persetujuan dari Super Admin sebelum dapat digunakan.'),
           backgroundColor: Colors.green,
+          duration: Duration(seconds: 4),
         ),
       );
       Navigator.pushReplacement(
@@ -279,8 +307,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
                             enabled: !authProvider.isLoading,
+                            readOnly: widget.initialEmail != null,
                             decoration: InputDecoration(
                               labelText: 'Email',
+                              helperText: widget.initialEmail != null ? 'Terhubung dengan akun Google' : null,
                               prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFF27AE60)),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
@@ -379,7 +409,50 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               return null;
                             },
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 16),
+
+                          // Kebijakan Akun Baru Checkbox
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Checkbox(
+                                value: _agreePolicy,
+                                activeColor: const Color(0xFF27AE60),
+                                onChanged: authProvider.isLoading
+                                    ? null
+                                    : (val) => setState(() => _agreePolicy = val ?? false),
+                              ),
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: authProvider.isLoading
+                                      ? null
+                                      : () => setState(() => _agreePolicy = !_agreePolicy),
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(top: 10.0),
+                                    child: RichText(
+                                      text: TextSpan(
+                                        text: 'Saya menyetujui ',
+                                        style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
+                                        children: const [
+                                          TextSpan(
+                                            text: 'Kebijakan Akun Baru',
+                                            style: TextStyle(
+                                              color: Color(0xFF27AE60),
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          TextSpan(
+                                            text: ' bahwa akun akan berstatus pending sampai disetujui oleh Super Admin.',
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
 
                           // Register Button
                           SizedBox(

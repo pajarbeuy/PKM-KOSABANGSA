@@ -5,6 +5,15 @@ class ApiConfig {
   static String? customServerIp;
   static const String envServerIp = String.fromEnvironment('SERVER_IP', defaultValue: '');
   static const String envPort = String.fromEnvironment('SERVER_PORT', defaultValue: '8000');
+  static String? customGoogleClientId;
+  static const String envGoogleClientId = String.fromEnvironment('GOOGLE_CLIENT_ID', defaultValue: '');
+
+  static String get googleClientId {
+    if (customGoogleClientId != null && customGoogleClientId!.isNotEmpty) {
+      return customGoogleClientId!;
+    }
+    return envGoogleClientId;
+  }
 
   static String get serverIp {
     if (customServerIp != null && customServerIp!.isNotEmpty) {

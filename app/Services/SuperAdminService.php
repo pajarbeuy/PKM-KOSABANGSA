@@ -74,6 +74,30 @@ class SuperAdminService
     }
 
     /**
+     * Approve a pending user.
+     */
+    public function approveUser(User $user): User
+    {
+        $user->update([
+            'approval' => 'approved',
+            'status'   => 'active',
+        ]);
+        return $user->fresh(['farmerGroup']);
+    }
+
+    /**
+     * Reject a user.
+     */
+    public function rejectUser(User $user): User
+    {
+        $user->update([
+            'approval' => 'rejected',
+            'status'   => 'inactive',
+        ]);
+        return $user->fresh(['farmerGroup']);
+    }
+
+    /**
      * Format user data for API response.
      */
     public function formatUser(User $user): array
@@ -94,6 +118,7 @@ class SuperAdminService
             ] : null,
             'role'            => $user->role,
             'status'          => $user->status,
+            'approval'        => $user->approval,
         ];
     }
 

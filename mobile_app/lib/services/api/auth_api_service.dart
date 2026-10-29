@@ -38,6 +38,52 @@ class AuthApiService {
     }
   }
 
+  Future<Map<String, dynamic>> loginWithGoogle(String idToken) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('${ApiConfig.baseUrl}/auth/google'),
+            headers: _client.getHeaders(includeAuth: false),
+            body: jsonEncode({'id_token': idToken}),
+          )
+          .timeout(const Duration(seconds: 30));
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && data['success'] == true) {
+        final resData = data['data'] as Map<String, dynamic>? ?? {};
+
+        if (resData['needs_registration'] == true) {
+          return {
+            'success': true,
+            'needs_registration': true,
+            'data': resData,
+            'message': data['message'] ?? 'Email Google belum terdaftar.',
+          };
+        }
+
+        final token = resData['token'] as String?;
+        if (token != null) {
+          _client.setAuthToken(token);
+        }
+        return {
+          'success': true,
+          'needs_registration': false,
+          'user': User.fromJson(resData['user'] ?? {}),
+          'token': token,
+        };
+      } else {
+        return {
+          'success': false,
+          'needs_registration': false,
+          'message': data['message'] ?? 'Login dengan Google gagal',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Error: ${e.toString()}'};
+    }
+  }
+
   String _translateValidationMessage(String raw) {
     if (raw.contains('validation.min.string') || raw.contains('min.string')) {
       return 'Password minimal 8 karakter';
@@ -65,21 +111,27 @@ class AuthApiService {
     required int farmerGroupId,
     required String password,
     required String passwordConfirmation,
+    String? googleSub,
   }) async {
     try {
+      final body = <String, dynamic>{
+        'farm_name': farmName,
+        'name': name,
+        'email': email,
+        'phone': phone,
+        'farmer_group_id': farmerGroupId,
+        'password': password,
+        'password_confirmation': passwordConfirmation,
+      };
+      if (googleSub != null && googleSub.isNotEmpty) {
+        body['google_sub'] = googleSub;
+      }
+
       final response = await http
           .post(
             Uri.parse('${ApiConfig.baseUrl}/auth/register'),
             headers: _client.getHeaders(includeAuth: false),
-            body: jsonEncode({
-              'farm_name': farmName,
-              'name': name,
-              'email': email,
-              'phone': phone,
-              'farmer_group_id': farmerGroupId,
-              'password': password,
-              'password_confirmation': passwordConfirmation,
-            }),
+            body: jsonEncode(body),
           )
           .timeout(const Duration(seconds: 30));
 

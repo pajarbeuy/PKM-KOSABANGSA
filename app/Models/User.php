@@ -18,6 +18,7 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, HasApiTokens;
 
+
     /**
      * Get the attributes that should be cast.
      *
@@ -54,5 +55,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(PasswordResetRequest::class, 'user_id');
     }
+
+    /**
+     * OAuth identities linked to this user (e.g. Google).
+     */
+    public function oauthIdentities()
+    {
+        return $this->hasMany(UserOauthIdentity::class, 'user_id');
+    }
 }
+
 
