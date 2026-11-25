@@ -59,12 +59,7 @@
 
 ### 2.1 Akses Aplikasi
 
-Buka browser dan kunjungi:
-```
-http://localhost:5000
-```
-
-Atau gunakan link publik jika tersedia (hubungi Super Admin).
+Buka aplikasi SumberTani
 
 ### 2.2 Login / Register
 

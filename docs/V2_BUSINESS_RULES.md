@@ -109,13 +109,13 @@ Sistem membedakan secara tegas antara harga untuk evaluasi ekonomi panen dan har
 
 ---
 
-## 6. Komisi Transaksi 10% (Platform Commission)
+## 6. Komisi Transaksi Platform (Platform Commission - 3%)
 
-* **BR-COM-001 (Basis Komisi Gross):**
-  Komisi platform sebesar **10%** dihitung dari total nilai transaksi kotor (*Gross Amount*) pesanan produk olahan:
-  $$\text{Commission Amount} = 10\% \times \text{Order Total Amount}$$
+* **BR-COM-001 (Basis Komisi Gross & Default Rate):**
+  Komisi platform secara default sebesar **3%** (`Commission::DEFAULT_RATE = 3.00`) dihitung dari total nilai transaksi kotor (*Gross Amount*) pesanan produk olahan:
+  $$\text{Commission Amount} = 3\% \times \text{Order Total Amount}$$
 * **BR-COM-002 (Pembagian Hasil):**
-  Dari total pembayaran pesanan, Petani menerima 90% dan platform mengalokasikan 10% sebagai komisi operasional/koperasi.
+  Dari total pembayaran pesanan, Petani menerima **97%** (`net_farmer_amount`) dan platform mengalokasikan **3%** (`commission_amount`) sebagai komisi operasional platform/koperasi.
 * **BR-COM-003 (Server-Side Computation):**
   Komisi wajib dihitung dan divalidasi di sisi server (Laravel Backend), tidak boleh dikirim atau dimanipulasi dari client.
 * **BR-COM-004 (Execution & Idempotency Guard):**

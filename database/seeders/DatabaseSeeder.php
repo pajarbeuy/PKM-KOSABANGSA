@@ -19,27 +19,31 @@ class DatabaseSeeder extends Seeder
         $this->call(FarmerGroupSeeder::class);
 
         // Create demo users
-        User::create([
-            'name' => 'Admin Demo',
-            'email' => 'admin@simhpsk.com',
-            'password' => Hash::make('admin123'),
-            'phone' => '081234567890',
-            'farm_name' => 'Farm Indonesia Jaya',
-            'role' => 'user',
-            'status' => 'active',
-            'approval' => 'approved',
-        ]);
+        User::firstOrCreate(
+            ['email' => 'admin@simhpsk.com'],
+            [
+                'name' => 'Admin Demo',
+                'password' => Hash::make('admin123'),
+                'phone' => '081234567890',
+                'farm_name' => 'Farm Indonesia Jaya',
+                'role' => 'user',
+                'status' => 'active',
+                'approval' => 'approved',
+            ]
+        );
 
-        User::create([
-            'name' => 'Super Admin Demo',
-            'email' => 'superadmin@simhpsk.com',
-            'password' => Hash::make('superadmin123'),
-            'phone' => '085138003594',
-            'farm_name' => 'SIMHPSK Central',
-            'role' => 'super_admin',
-            'status' => 'active',
-            'approval' => 'approved',
-        ]);
+        User::firstOrCreate(
+            ['email' => 'superadmin@simhpsk.com'],
+            [
+                'name' => 'Super Admin Demo',
+                'password' => Hash::make('superadmin123'),
+                'phone' => '085138003594',
+                'farm_name' => 'SIMHPSK Central',
+                'role' => 'super_admin',
+                'status' => 'active',
+                'approval' => 'approved',
+            ]
+        );
 
         // Create landing page content
         $landingContent = [
@@ -86,7 +90,7 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($menus as $menu) {
-            DashboardMenu::create($menu);
+            DashboardMenu::firstOrCreate(['url' => $menu['url']], $menu);
         }
 
         // Seed initial published news for the web landing page
@@ -121,5 +125,8 @@ class DatabaseSeeder extends Seeder
                 'created_by' => $authorId,
             ]);
         }
+
+        // Seed comprehensive dummy data for all modules
+        $this->call(DummyDataSeeder::class);
     }
 }

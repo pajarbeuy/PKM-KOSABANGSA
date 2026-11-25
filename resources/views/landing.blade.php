@@ -70,20 +70,9 @@
         .animation-delay-4000 {
             animation-delay: 4s;
         }
-
-        .potato-particle {
-            will-change: transform, opacity, left, top;
-            pointer-events: none;
-            z-index: 9999;
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-        }
     </style>
 </head>
 <body class="relative min-h-screen text-gray-800 font-sans selection:bg-secondary selection:text-white">
-
-    <div id="potato-explosion-container" class="pointer-events-none fixed inset-0 overflow-hidden z-50"></div>
 
     <!-- Dark Overlay Background Image -->
     <div class="fixed inset-0 z-[-2] bg-black/50"></div>
@@ -129,12 +118,12 @@
 
             <!-- Action Button & Mobile Toggle -->
             <div class="flex items-center gap-3">
-                <button onclick="handleAppRouting(event)" class="download-trigger text-sm font-bold text-white bg-primary hover:bg-primary-dark transition px-5 py-2.5 rounded-xl border-2 border-[#391F18] shadow-[3px_3px_0px_0px_#391F18] hover:shadow-[5px_5px_0px_0px_#391F18] hover:-translate-y-0.5 flex items-center gap-2">
-                    <span>Masuk Aplikasi</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M3 3a1 1 0 011 1v12a1 1 0 11-2 0V4a1 1 0 011-1zm7.707 3.293a1 1 0 010 1.414L9.414 9H17a1 1 0 110 2H9.414l1.293 1.293a1 1 0 01-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0z" clip-rule="evenodd" />
+                <a href="{{ route('download.apk') }}" class="download-trigger text-sm font-bold text-white bg-primary hover:bg-primary-dark transition px-5 py-2.5 rounded-xl border-2 border-[#391F18] shadow-[3px_3px_0px_0px_#391F18] hover:shadow-[5px_5px_0px_0px_#391F18] hover:-translate-y-0.5 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                     </svg>
-                </button>
+                    <span>Unduh APK</span>
+                </a>
 
                 <!-- Mobile Hamburger Toggle -->
                 <button id="mobile-menu-button" class="lg:hidden p-2 rounded-xl text-white hover:bg-white/10 transition border border-white/20" aria-label="Buka Menu">
@@ -192,13 +181,13 @@
                 </svg>
             </a>
 
-            <!-- CTA 2: Masuk Aplikasi -->
-            <button onclick="handleAppRouting(event)" class="download-trigger text-base font-bold text-white bg-primary hover:bg-primary-dark transition-all px-8 py-3.5 rounded-xl border-2 border-[#391F18] shadow-[5px_5px_0px_0px_#391F18] hover:shadow-[7px_7px_0px_0px_#391F18] hover:-translate-y-1 flex items-center justify-center gap-2.5 w-full sm:w-auto animate-heartbeat">
-                <span>Masuk Aplikasi</span>
+            <!-- CTA 2: Unduh Aplikasi Android (APK) -->
+            <a href="{{ route('download.apk') }}" class="download-trigger text-base font-bold text-white bg-primary hover:bg-primary-dark transition-all px-8 py-3.5 rounded-xl border-2 border-[#391F18] shadow-[5px_5px_0px_0px_#391F18] hover:shadow-[7px_7px_0px_0px_#391F18] hover:-translate-y-1 flex items-center justify-center gap-2.5 w-full sm:w-auto animate-heartbeat">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
                 </svg>
-            </button>
+                <span>Unduh Aplikasi Android (.apk)</span>
+            </a>
         </div>
 
         <!-- Features Checklist -->
@@ -840,12 +829,12 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
                     </svg>
                 </a>
-                <button onclick="handleAppRouting(event)" class="download-trigger text-base font-bold text-white bg-primary hover:bg-primary-dark transition px-8 py-3.5 rounded-xl border-2 border-[#391F18] shadow-[5px_5px_0px_0px_#391F18] hover:shadow-[7px_7px_0px_0px_#391F18] hover:-translate-y-1 flex items-center justify-center gap-2 w-full sm:w-auto animate-heartbeat">
-                    <span>Masuk Aplikasi</span>
+                <a href="{{ route('download.apk') }}" class="download-trigger text-base font-bold text-white bg-primary hover:bg-primary-dark transition px-8 py-3.5 rounded-xl border-2 border-[#391F18] shadow-[5px_5px_0px_0px_#391F18] hover:shadow-[7px_7px_0px_0px_#391F18] hover:-translate-y-1 flex items-center justify-center gap-2 w-full sm:w-auto animate-heartbeat">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
                     </svg>
-                </button>
+                    <span>Unduh Aplikasi Android (.apk)</span>
+                </a>
             </div>
             
             <div class="flex flex-wrap items-center justify-center gap-6 mt-8 text-sm font-medium text-[#e3cba8] relative z-10">
@@ -908,84 +897,6 @@
                     closeIcon.classList.add('hidden');
                 });
             });
-        }
-
-        // Deep Linking / App Routing
-        function handleAppRouting(event) {
-            triggerPotatoExplosion(event);
-
-            var appScheme = "sumbertani://open";
-            var downloadUrl = "/download/sumbertani.apk";
-
-            window.location.href = appScheme;
-
-            setTimeout(function() {
-                window.location.href = downloadUrl;
-            }, 5200);
-        }
-
-        function triggerPotatoExplosion(event) {
-            const container = document.getElementById('potato-explosion-container');
-            if (!container) return;
-
-            const explosionEmoji = '🥔';
-
-            const targetButton = event?.currentTarget || event?.target.closest('button');
-            const buttonRect = targetButton?.getBoundingClientRect();
-            const originX = buttonRect ? buttonRect.left + buttonRect.width / 2 : window.innerWidth / 2;
-            const originY = buttonRect ? buttonRect.top + buttonRect.height / 2 : window.innerHeight / 2;
-
-            const count = 8;
-
-            for (let i = 0; i < count; i++) {
-                const particle = document.createElement('div');
-                particle.className = 'potato-particle';
-                const size = Math.floor(Math.random() * 18) + 36;
-                particle.style.width = `${size}px`;
-                particle.style.height = `${size}px`;
-                particle.style.position = 'fixed';
-                particle.style.left = `${originX}px`;
-                particle.style.top = `${originY}px`;
-                particle.style.opacity = '0';
-                particle.style.fontSize = `${size}px`;
-                particle.style.display = 'flex';
-                particle.style.alignItems = 'center';
-                particle.style.justifyContent = 'center';
-                particle.style.transform = 'translate(-50%, -50%) scale(0.8) rotate(0deg)';
-                particle.style.transition = 'transform 0.6s ease-out, opacity 0.2s ease, left 2s ease-in, top 2s ease-in';
-                particle.textContent = explosionEmoji;
-                container.appendChild(particle);
-
-                const angle = Math.random() * Math.PI * 2;
-                const distance = 180 + Math.random() * 80;
-                const burstX = Math.cos(angle) * distance;
-                const burstY = Math.sin(angle) * distance * -1;
-                const rotate = Math.random() * 720;
-
-                requestAnimationFrame(() => {
-                    particle.style.opacity = '1';
-                    particle.style.transform = `translate(calc(-50% + ${burstX}px), calc(-50% + ${burstY}px)) scale(1.2) rotate(${rotate}deg)`;
-                });
-
-                const landingX = originX + burstX * 0.7;
-                const landingY = originY + burstY * 0.7;
-
-                setTimeout(() => {
-                    particle.style.transition = 'left 0.85s ease-out, top 0.85s ease-out, transform 0.85s ease-out';
-                    particle.style.left = `${landingX}px`;
-                    particle.style.top = `${landingY}px`;
-                    particle.style.transform = `translate(-50%, -50%) rotate(${rotate + 480}deg) scale(1.35)`;
-                }, 450 + i * 40);
-
-                setTimeout(() => {
-                    particle.style.transition = 'opacity 0.9s ease-out';
-                    particle.style.opacity = '0';
-                }, 1800 + i * 40);
-
-                setTimeout(() => {
-                    particle.remove();
-                }, 2400 + i * 40);
-            }
         }
 
         // Scroll Animations (IntersectionObserver)
