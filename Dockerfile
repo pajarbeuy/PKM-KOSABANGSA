@@ -8,34 +8,49 @@ FROM composer:2.7 AS composer_stage
 
 WORKDIR /app
 
+# Install GD extension & dependencies in Alpine for Composer platform-req check
+RUN apk add --no-cache \
+        freetype-dev \
+        libjpeg-turbo-dev \
+        libpng-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j$(nproc) gd \
+    && php -r "var_dump(extension_loaded('gd'));"
+
 # Copy dependency files only (better Docker cache)
 COPY composer.json composer.lock ./
 
 # Install production dependencies only (no dev)
+# --no-scripts: skip post-autoload-dump hooks (artisan belum ada di stage ini)
 RUN composer install \
     --no-dev \
     --no-interaction \
     --no-progress \
     --optimize-autoloader \
-    --prefer-dist
+    --prefer-dist \
+    --no-scripts
 
 # === STAGE 2: Production Image ===
 FROM php:8.3-fpm
+
+# Copy composer binary untuk dump-autoload di build stage
+COPY --from=composer_stage /usr/bin/composer /usr/bin/composer
 
 # Set environment to production
 ENV APP_ENV=production
 ENV APP_DEBUG=false
 
-# Install system dependencies
+# Install system dependencies (Debian Bookworm)
+# Hanya menyertakan library yang terbukti dibutuhkan oleh ekstensi aktif
 RUN apt-get update && apt-get install -y \
     git \
     curl \
     libpng-dev \
+    libjpeg62-turbo-dev \
+    libfreetype6-dev \
     libonig-dev \
     libxml2-dev \
     libzip-dev \
-    libgd-dev \
-    libpq-dev \
     zip \
     unzip \
     nginx \
@@ -44,12 +59,11 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions
+# (pdo_pgsql dan pdo_sqlite dihapus karena project menggunakan MySQL dan tidak ada dependensi sqlite/pgsql)
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install \
+    && docker-php-ext-install -j$(nproc) \
         pdo \
         pdo_mysql \
-        pdo_pgsql \
-        pdo_sqlite \
         mbstring \
         exif \
         pcntl \
@@ -57,7 +71,7 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
         gd \
         zip \
         opcache \
-        redis 2>/dev/null || true
+    && php -r "var_dump(extension_loaded('gd'));"
 
 # Install Redis extension via PECL
 RUN pecl install redis \
@@ -81,14 +95,21 @@ COPY docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy vendor from build stage
-COPY --from=composer_stage /app/vendor ./vendor
-
 # Copy application code
 COPY . .
 
+# Hapus cache framework lokal yang tidak boleh masuk ke production
+RUN rm -f bootstrap/cache/*.php
+
+# Copy vendor from build stage (ensures clean Linux vendor from composer_stage)
+COPY --from=composer_stage /app/vendor ./vendor
+
+# Regenerate autoload classmap dengan full app context (artisan & semua kelas tersedia)
+RUN composer dump-autoload --optimize --no-scripts --no-dev
+
 # Copy and set permissions
-RUN chown -R www-data:www-data /var/www/html \
+RUN mkdir -p /run/php \
+    && chown -R www-data:www-data /run/php /var/www/html \
     && chmod -R 755 /var/www/html/storage \
     && chmod -R 755 /var/www/html/bootstrap/cache \
     && chmod +x /var/www/html/docker/entrypoint.sh

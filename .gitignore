@@ -25,3 +25,10 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Docker build versioning (local only)
+.docker-build-version
+.docker-build-history
+
+# Local Python helper libs
+/docs/pylib/

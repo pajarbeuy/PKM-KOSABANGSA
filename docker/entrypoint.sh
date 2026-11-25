@@ -5,10 +5,13 @@
 
 set -e
 
-echo "🚀 Starting Pertanian Kentang Backend..."
+echo "🚀 Starting SumberTani AI Backend..."
 
 # Navigate to app directory
 cd /var/www/html
+
+# Bersihkan stale bootstrap cache jika ada
+rm -f bootstrap/cache/*.php
 
 # === 1. Environment Check ===
 if [ ! -f ".env" ]; then
@@ -48,6 +51,7 @@ php artisan migrate --force --no-interaction
 
 # === 5. Cache Configuration (Production Optimization) ===
 echo "⚡ Caching config, routes, and views..."
+php artisan package:discover --ansi
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
@@ -57,9 +61,10 @@ php artisan event:cache
 echo "🔗 Creating storage symlink..."
 php artisan storage:link --force 2>/dev/null || true
 
-# === 7. Set Permissions ===
+# === 7. Set Permissions & Runtime Directories ===
 echo "🔐 Setting permissions..."
-chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+mkdir -p /run/php
+chown -R www-data:www-data /run/php /var/www/html/storage /var/www/html/bootstrap/cache
 chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
 echo "✅ All setup complete! Starting Supervisor..."

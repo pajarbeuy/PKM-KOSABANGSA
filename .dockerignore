@@ -1,0 +1,54 @@
+# ============================================================
+# .dockerignore — SumberTani Backend Docker Build Context
+# Mencegah transfer file raksasa (mobile_app 2.4GB, vendor, git)
+# ============================================================
+
+# Version control & development
+.git
+.gitignore
+.gitattributes
+.editorconfig
+.idea
+.vscode
+
+# Frontend Flutter Mobile App (2.4 GB — dibangun terpisah di lokal)
+mobile_app/
+
+# Local dependencies & environments
+vendor/
+node_modules/
+.npmrc
+package-lock.json
+package.json
+vite.config.js
+
+# Sensitive environment files
+.env
+.env.*
+!.env.production
+!.env.production.example
+
+# Temporary & cache files
+bootstrap/cache/*.php
+!bootstrap/cache/.gitignore
+storage/*.key
+storage/logs/*
+!storage/logs/.gitignore
+storage/framework/cache/*
+!storage/framework/cache/.gitignore
+storage/framework/sessions/*
+!storage/framework/sessions/.gitignore
+storage/framework/views/*
+!storage/framework/views/.gitignore
+
+# Testing, documentation & non-production assets
+tests/
+phpunit.xml
+.phpunit.result.cache
+scratch/
+n8n/
+pertanian_kentang/
+docs/
+route_list.txt
+route_list_full.txt
+server.php
