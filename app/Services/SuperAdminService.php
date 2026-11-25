@@ -4,9 +4,11 @@ namespace App\Services;
 
 use App\Models\DashboardMenu;
 use App\Models\LandingContent;
+use App\Models\LoginLog;
 use App\Models\ProductionCost;
 use App\Models\Sale;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 
@@ -315,26 +317,118 @@ class SuperAdminService
         ];
     }
 
-    // ─── User Registration Approval ────────────────────────────────────────────
+    // ─── Poktan Login Logs ───────────────────────────────────────────────────────
 
     /**
-     * Approve a pending user registration.
+     * Get Poktan (role=user) login logs, daily counts, and location summary for a date range.
      */
-    public function approveUser(User $user): User
-    {
-        $user->update(['approval' => 'approved']);
-        return $user->fresh(['farmerGroup']);
-    }
+    public function getPoktanLoginLogs(
+        string $period = '30d',
+        ?string $startDate = null,
+        ?string $endDate = null,
+        int $limit = 50
+    ): array {
+        if ($startDate && $endDate) {
+            $start = Carbon::parse($startDate)->startOfDay();
+            $end   = Carbon::parse($endDate)->endOfDay();
+            $resolvedPeriod = 'custom';
+        } else {
+            $days = match ($period) {
+                '7d'  => 7,
+                '90d' => 90,
+                default => 30,
+            };
+            $resolvedPeriod = match ($period) {
+                '7d'  => '7d',
+                '90d' => '90d',
+                default => '30d',
+            };
+            $end   = now()->endOfDay();
+            $start = now()->subDays($days - 1)->startOfDay();
+        }
 
-    /**
-     * Reject a pending user registration.
-     */
-    public function rejectUser(User $user, string $reason = ''): User
-    {
-        $user->update([
-            'approval' => 'rejected',
-            'status' => 'inactive',
-        ]);
-        return $user->fresh(['farmerGroup']);
+        if ($start->gt($end)) {
+            [$start, $end] = [$end->copy()->startOfDay(), $start->copy()->endOfDay()];
+        }
+
+        $limit = max(1, min($limit, 100));
+
+        $baseQuery = LoginLog::query()
+            ->whereHas('user', fn ($q) => $q->where('role', 'user'))
+            ->whereBetween('logged_in_at', [$start, $end]);
+
+        $totalLogins = (clone $baseQuery)->count();
+        $uniqueUsers = (clone $baseQuery)->distinct('user_id')->count('user_id');
+
+        $rawDaily = (clone $baseQuery)
+            ->selectRaw('DATE(logged_in_at) as login_date, COUNT(*) as total')
+            ->groupBy('login_date')
+            ->pluck('total', 'login_date')
+            ->toArray();
+
+        $monthsShort = [
+            1 => 'Jan', 2 => 'Feb', 3 => 'Mar', 4 => 'Apr', 5 => 'Mei', 6 => 'Jun',
+            7 => 'Jul', 8 => 'Agt', 9 => 'Sep', 10 => 'Okt', 11 => 'Nov', 12 => 'Des',
+        ];
+
+        $dailyCounts = [];
+        $cursor = $start->copy()->startOfDay();
+        $endDay = $end->copy()->startOfDay();
+
+        while ($cursor->lte($endDay)) {
+            $dateKey = $cursor->toDateString();
+            $dailyCounts[] = [
+                'date'  => $dateKey,
+                'label' => $cursor->day . ' ' . $monthsShort[$cursor->month],
+                'count' => (int) ($rawDaily[$dateKey] ?? 0),
+            ];
+            $cursor->addDay();
+        }
+
+        $locationSummary = (clone $baseQuery)
+            ->selectRaw("COALESCE(NULLIF(location, ''), 'Tidak Diketahui') as location_name, COUNT(*) as total")
+            ->groupBy('location_name')
+            ->orderByDesc('total')
+            ->limit(8)
+            ->get()
+            ->map(fn ($row) => [
+                'location' => $row->location_name,
+                'count'    => (int) $row->total,
+            ])
+            ->values()
+            ->toArray();
+
+        $logs = (clone $baseQuery)
+            ->with(['user:id,name,email,farm_name,farmer_group_id', 'farmerGroup:id,name,village'])
+            ->orderByDesc('logged_in_at')
+            ->limit($limit)
+            ->get()
+            ->map(fn (LoginLog $log) => [
+                'id'                     => $log->id,
+                'user_id'                => $log->user_id,
+                'user_name'              => $log->user?->name ?? 'User Dihapus',
+                'user_email'             => $log->user?->email ?? '-',
+                'farm_name'              => $log->user?->farm_name ?? '-',
+                'farmer_group_name'      => $log->farmerGroup?->name ?? '-',
+                'farmer_group_village'   => $log->farmerGroup?->village,
+                'login_method'           => $log->login_method,
+                'ip_address'             => $log->ip_address,
+                'location'               => $log->location ?: 'Tidak Diketahui',
+                'logged_in_at'           => $log->logged_in_at?->toIso8601String(),
+                'logged_in_at_formatted' => $log->logged_in_at?->format('d M Y, H:i'),
+            ])
+            ->values()
+            ->toArray();
+
+        return [
+            'period'           => $resolvedPeriod,
+            'start_date'       => $start->toDateString(),
+            'end_date'         => $end->toDateString(),
+            'total_logins'     => $totalLogins,
+            'unique_users'     => $uniqueUsers,
+            'daily_counts'     => $dailyCounts,
+            'location_summary' => $locationSummary,
+            'logs'             => $logs,
+        ];
     }
 }

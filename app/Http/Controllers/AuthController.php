@@ -73,6 +73,7 @@ class AuthController extends Controller
             $validated = $request->validate([
                 'email'    => 'required|email',
                 'password' => 'required|string',
+                'location' => 'nullable|string|max:255',
             ]);
 
             $user = $this->authService->attemptLogin($validated['email'], $validated['password']);
@@ -81,11 +82,20 @@ class AuthController extends Controller
                 return $this->errorResponse('Email atau password salah.', 401);
             }
 
+            if ($user->approval === 'pending') {
+                return $this->errorResponse('Akun Anda sedang menunggu persetujuan Admin.', 403);
+            }
+
+            if ($user->approval === 'rejected') {
+                return $this->errorResponse('Pendaftaran akun Anda ditolak. Hubungi Admin untuk informasi lebih lanjut.', 403);
+            }
+
             if ($user->status === 'inactive') {
                 return $this->errorResponse('Akun Anda tidak aktif.', 403);
             }
 
             $token = $this->authService->createToken($user);
+            $this->authService->recordLogin($user, $request, 'password', $validated['location'] ?? null);
 
             return $this->successResponse([
                 'token'      => $token,
@@ -129,6 +139,7 @@ class AuthController extends Controller
         try {
             $validated = $request->validate([
                 'id_token' => 'required|string|min:10',
+                'location' => 'nullable|string|max:255',
             ]);
 
             // 1. Verify the token with Google’s servers
@@ -149,6 +160,7 @@ class AuthController extends Controller
 
             $user  = $result['user'];
             $token = $result['token'];
+            $this->authService->recordLogin($user, $request, 'google', $validated['location'] ?? null);
 
             return $this->successResponse([
                 'needs_registration' => false,

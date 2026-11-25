@@ -193,4 +193,25 @@ class SuperAdminController extends Controller
         $updated = $this->superAdminService->rejectUser($user, $reason);
         return $this->successResponse($updated, 'Akun pengguna berhasil ditolak.');
     }
+
+    // ─── Poktan Login Logs ────────────────────────────────────────────────────────
+
+    public function loginLogs(Request $request)
+    {
+        $validated = $request->validate([
+            'period'     => 'nullable|in:7d,30d,90d',
+            'start_date' => 'nullable|date',
+            'end_date'   => 'nullable|date',
+            'limit'      => 'nullable|integer|min:1|max:100',
+        ]);
+
+        $data = $this->superAdminService->getPoktanLoginLogs(
+            $validated['period'] ?? '30d',
+            $validated['start_date'] ?? null,
+            $validated['end_date'] ?? null,
+            (int) ($validated['limit'] ?? 50)
+        );
+
+        return $this->successResponse($data, 'Log aktivitas login user poktan berhasil diambil.');
+    }
 }

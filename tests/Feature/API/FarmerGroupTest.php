@@ -170,8 +170,8 @@ class FarmerGroupTest extends TestCase
             'status' => 'active',
         ]);
 
-        $poktan1 = FarmerGroup::find(1);
-        $poktan2 = FarmerGroup::find(2);
+        $poktan1 = FarmerGroup::where('code', 'POKTAN-01')->first() ?? FarmerGroup::first();
+        $poktan2 = FarmerGroup::where('code', 'POKTAN-02')->first() ?? FarmerGroup::skip(1)->first();
 
         $farmer = User::factory()->create([
             'role'            => 'user',

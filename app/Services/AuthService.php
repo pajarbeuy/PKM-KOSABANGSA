@@ -2,10 +2,14 @@
 
 namespace App\Services;
 
+use App\Models\LoginLog;
 use App\Models\User;
 use App\Models\UserOauthIdentity;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
 class AuthService
@@ -49,6 +53,84 @@ class AuthService
     public function createToken(User $user, string $name = 'api-token'): string
     {
         return $user->createToken($name)->plainTextToken;
+    }
+
+    /**
+     * Record a user login event with resolved location and timestamp.
+     */
+    public function recordLogin(
+        User $user,
+        Request $request,
+        string $method = 'password',
+        ?string $clientLocation = null
+    ): LoginLog {
+        $ip = $request->ip();
+        $location = $this->resolveLoginLocation($user, $request, $ip, $clientLocation);
+
+        return LoginLog::create([
+            'user_id'         => $user->id,
+            'farmer_group_id' => $user->farmer_group_id,
+            'login_method'    => $method,
+            'ip_address'      => $ip,
+            'location'        => $location,
+            'user_agent'      => Str::limit((string) $request->userAgent(), 500, ''),
+            'logged_in_at'    => now(),
+        ]);
+    }
+
+    /**
+     * Resolve human-readable location from client input, Cloudflare headers, or IP geolocation.
+     */
+    private function resolveLoginLocation(
+        User $user,
+        Request $request,
+        ?string $ip,
+        ?string $clientLocation
+    ): string {
+        if ($clientLocation !== null && trim($clientLocation) !== '') {
+            return Str::limit(trim($clientLocation), 255, '');
+        }
+
+        if ($ip && filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) !== false) {
+            $geo = Cache::remember("geo_ip_{$ip}", 86400, function () use ($ip) {
+                try {
+                    $response = Http::timeout(2)->get("http://ip-api.com/json/{$ip}?fields=status,city,regionName,country");
+                    if ($response->successful()) {
+                        $json = $response->json();
+                        if (($json['status'] ?? '') === 'success') {
+                            $parts = array_filter([
+                                $json['city'] ?? null,
+                                $json['regionName'] ?? null,
+                                $json['country'] ?? null,
+                            ]);
+                            if (!empty($parts)) {
+                                return implode(', ', array_unique($parts));
+                            }
+                        }
+                    }
+                } catch (\Throwable) {
+                    // Ignore network errors so login never fails
+                }
+
+                return null;
+            });
+
+            if (is_string($geo) && $geo !== '') {
+                return Str::limit($geo, 255, '');
+            }
+        }
+
+        $cfCountry = $request->header('CF-IPCountry');
+        if ($cfCountry && strtoupper($cfCountry) !== 'XX') {
+            return 'Negara: ' . strtoupper($cfCountry);
+        }
+
+        $user->loadMissing('farmerGroup');
+        if ($user->farmerGroup?->village) {
+            return 'Desa ' . $user->farmerGroup->village;
+        }
+
+        return 'Lokal / Jaringan Internal';
     }
 
     /**
@@ -142,16 +224,16 @@ class AuthService
                 throw new \RuntimeException('Akun Super Admin tidak dapat masuk melalui Google Sign-In.');
             }
 
-            if ($user->status === 'inactive') {
-                throw new \RuntimeException('Akun Anda tidak aktif. Hubungi admin untuk informasi lebih lanjut.');
-            }
-
             if ($user->approval === 'pending') {
                 throw new \RuntimeException('Akun Anda sedang menunggu persetujuan dari Super Admin.');
             }
 
             if ($user->approval === 'rejected') {
                 throw new \RuntimeException('Pendaftaran akun Anda ditolak oleh Super Admin.');
+            }
+
+            if ($user->status === 'inactive') {
+                throw new \RuntimeException('Akun Anda tidak aktif. Hubungi admin untuk informasi lebih lanjut.');
             }
 
             // 5. Issue Sanctum token

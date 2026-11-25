@@ -152,7 +152,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // ─── Super Admin ─────────────────────────────────────────────────────────────
 
     Route::middleware('role:super_admin')->prefix('super-admin')->group(function () {
-        Route::get('/dashboard', [SuperAdminController::class, 'dashboard']);
+        Route::get('/dashboard',  [SuperAdminController::class, 'dashboard']);
+        Route::get('/login-logs', [SuperAdminController::class, 'loginLogs']);
 
         // User Management
         Route::get('/users',                      [SuperAdminController::class, 'indexUsers']);
