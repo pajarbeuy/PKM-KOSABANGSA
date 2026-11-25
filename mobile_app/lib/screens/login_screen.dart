@@ -25,6 +25,56 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  void _showAuthError(BuildContext context, String errorMessage) {
+    if (errorMessage.toLowerCase().contains('menunggu persetujuan')) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          icon: const Icon(Icons.hourglass_top_rounded, color: Colors.orange, size: 48),
+          title: const Text('Menunggu Persetujuan', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
+          content: Text(
+            errorMessage,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 14, color: Colors.black87),
+          ),
+          actionsAlignment: MainAxisAlignment.center,
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx),
+              style: FilledButton.styleFrom(backgroundColor: const Color(0xFF166534)),
+              child: const Text('Mengerti'),
+            ),
+          ],
+        ),
+      );
+    } else if (errorMessage.toLowerCase().contains('ditolak')) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          icon: const Icon(Icons.cancel_outlined, color: Colors.red, size: 48),
+          title: const Text('Pendaftaran Ditolak', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
+          content: Text(
+            errorMessage,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 14, color: Colors.black87),
+          ),
+          actionsAlignment: MainAxisAlignment.center,
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx),
+              style: FilledButton.styleFrom(backgroundColor: Colors.red),
+              child: const Text('Tutup'),
+            ),
+          ],
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
+      );
+    }
+  }
+
   Future<void> _login(BuildContext context) async {
     final authProvider = context.read<AuthProvider>();
     final success = await authProvider.login(
@@ -46,9 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
     } else {
       if (!context.mounted) return;
       final errorMessage = authProvider.errorMessage ?? 'Login gagal';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
-      );
+      _showAuthError(context, errorMessage);
     }
   }
 
@@ -100,12 +148,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!context.mounted) return;
       final errorMessage = authProvider.errorMessage;
       if (errorMessage != null && errorMessage.isNotEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _showAuthError(context, errorMessage);
       }
     }
   }

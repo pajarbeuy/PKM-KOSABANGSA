@@ -153,6 +153,7 @@ class ProcessedProductApiService {
     String? description,
     String? status,
     XFile? photoFile,
+    String? photoUrl,
   }) async {
     try {
       if (photoFile != null) {
@@ -181,7 +182,13 @@ class ProcessedProductApiService {
         if (response.statusCode == 201) {
           return {'success': true, 'data': data['data'], 'message': data['message']};
         }
-        return {'success': false, 'message': data['message'] ?? 'Gagal menambahkan produk'};
+        String errorMsg = data['message'] ?? 'Gagal menambahkan produk';
+        if (data['errors'] != null && data['errors'] is Map) {
+          final errMap = data['errors'] as Map;
+          final firstErrors = errMap.values.expand((e) => (e is List) ? e : [e.toString()]).join(', ');
+          if (firstErrors.isNotEmpty) errorMsg = '$errorMsg ($firstErrors)';
+        }
+        return {'success': false, 'message': errorMsg};
       }
 
       final payload = <String, dynamic>{
@@ -192,6 +199,7 @@ class ProcessedProductApiService {
       };
       if (description != null && description.isNotEmpty) payload['description'] = description;
       if (status != null && status.isNotEmpty) payload['status'] = status;
+      if (photoUrl != null && photoUrl.isNotEmpty) payload['photo_url'] = photoUrl;
 
       final response = await http
           .post(
@@ -221,6 +229,7 @@ class ProcessedProductApiService {
     String? description,
     String? status,
     XFile? photoFile,
+    String? photoUrl,
   }) async {
     try {
       if (photoFile != null) {
@@ -262,6 +271,7 @@ class ProcessedProductApiService {
       if (unit != null) payload['unit'] = unit;
       if (description != null) payload['description'] = description;
       if (status != null) payload['status'] = status;
+      if (photoUrl != null && photoUrl.isNotEmpty) payload['photo_url'] = photoUrl;
 
       final response = await http
           .put(
@@ -275,7 +285,13 @@ class ProcessedProductApiService {
       if (response.statusCode == 200) {
         return {'success': true, 'data': data['data'], 'message': data['message']};
       }
-      return {'success': false, 'message': data['message'] ?? 'Gagal memperbarui produk'};
+      String errorMsg = data['message'] ?? 'Gagal memperbarui produk';
+      if (data['errors'] != null && data['errors'] is Map) {
+        final errMap = data['errors'] as Map;
+        final firstErrors = errMap.values.expand((e) => (e is List) ? e : [e.toString()]).join(', ');
+        if (firstErrors.isNotEmpty) errorMsg = '$errorMsg ($firstErrors)';
+      }
+      return {'success': false, 'message': errorMsg};
     } catch (e) {
       return {'success': false, 'message': e.toString()};
     }

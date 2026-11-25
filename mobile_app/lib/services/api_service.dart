@@ -382,6 +382,19 @@ class ApiService {
   Future<Map<String, dynamic>?> getSuperAdminDashboard() =>
       _superAdminService.getSuperAdminDashboard();
 
+  Future<Map<String, dynamic>?> getPoktanLoginLogs({
+    String period = '30d',
+    String? startDate,
+    String? endDate,
+    int limit = 50,
+  }) =>
+      _superAdminService.getPoktanLoginLogs(
+        period: period,
+        startDate: startDate,
+        endDate: endDate,
+        limit: limit,
+      );
+
   Future<List<dynamic>> getSuperAdminUsers() =>
       _superAdminService.getSuperAdminUsers();
 
@@ -572,6 +585,7 @@ class ApiService {
     String? description,
     String? status,
     XFile? photoFile,
+    String? photoUrl,
   }) =>
       _processedProductService.createProcessedProduct(
         name: name,
@@ -581,6 +595,7 @@ class ApiService {
         description: description,
         status: status,
         photoFile: photoFile,
+        photoUrl: photoUrl,
       );
 
   Future<Map<String, dynamic>> updateProcessedProduct(
@@ -592,6 +607,7 @@ class ApiService {
     String? description,
     String? status,
     XFile? photoFile,
+    String? photoUrl,
   }) =>
       _processedProductService.updateProcessedProduct(
         id,
@@ -602,6 +618,7 @@ class ApiService {
         description: description,
         status: status,
         photoFile: photoFile,
+        photoUrl: photoUrl,
       );
 
   Future<bool> deleteProcessedProduct(int id) =>

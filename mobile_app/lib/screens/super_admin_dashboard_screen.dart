@@ -23,6 +23,7 @@ import 'news_management_screen.dart';
 import 'password_reset_management_screen.dart';
 import '../widgets/charts/monthly_product_bar_chart.dart';
 import '../widgets/charts/cumulative_revenue_line_chart.dart';
+import '../widgets/charts/poktan_login_log_chart.dart';
 
 class SuperAdminDashboardScreen extends StatefulWidget {
   final int initialTabIndex;
@@ -45,6 +46,17 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
   List<MonthlyProductBarPoint> _monthlyProductSales = [];
   List<CumulativeRevenuePoint> _cumulativeFarmerRevenue = [];
 
+  String _loginLogPeriod = '30d';
+  bool _isLoginLogLoading = true;
+  String? _loginLogError;
+  int _totalPoktanLogins = 0;
+  int _uniquePoktanUsers = 0;
+  String _loginStartDate = '';
+  String _loginEndDate = '';
+  List<LoginDailyPoint> _loginDailyCounts = [];
+  List<LoginLocationSummary> _loginLocationSummary = [];
+  List<PoktanLoginLogEntry> _poktanLoginLogs = [];
+
   @override
   void initState() {
     super.initState();
@@ -54,6 +66,7 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
 
   Future<void> _loadStats() async {
     setState(() => _isLoading = true);
+    _loadLoginLogs(period: _loginLogPeriod);
     try {
       final stats = await _apiService.getSuperAdminDashboard();
       if (stats != null) {
@@ -85,6 +98,52 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Gagal mengambil statistik: $e'), backgroundColor: Colors.red),
       );
+    }
+  }
+
+  Future<void> _loadLoginLogs({String? period}) async {
+    final targetPeriod = period ?? _loginLogPeriod;
+    setState(() {
+      _loginLogPeriod = targetPeriod;
+      _isLoginLogLoading = true;
+      _loginLogError = null;
+    });
+    try {
+      final res = await _apiService.getPoktanLoginLogs(period: targetPeriod);
+      if (!mounted) return;
+      if (res != null) {
+        setState(() {
+          _totalPoktanLogins = (res['total_logins'] as num?)?.toInt() ?? 0;
+          _uniquePoktanUsers = (res['unique_users'] as num?)?.toInt() ?? 0;
+          _loginStartDate = res['start_date'] as String? ?? '';
+          _loginEndDate = res['end_date'] as String? ?? '';
+          _loginDailyCounts = (res['daily_counts'] as List? ?? [])
+              .whereType<Map<String, dynamic>>()
+              .map((e) => LoginDailyPoint.fromJson(e))
+              .toList();
+          _loginLocationSummary = (res['location_summary'] as List? ?? [])
+              .whereType<Map<String, dynamic>>()
+              .map((e) => LoginLocationSummary.fromJson(e))
+              .toList();
+          _poktanLoginLogs = (res['logs'] as List? ?? [])
+              .whereType<Map<String, dynamic>>()
+              .map((e) => PoktanLoginLogEntry.fromJson(e))
+              .toList();
+          _isLoginLogLoading = false;
+        });
+      } else {
+        setState(() {
+          _isLoginLogLoading = false;
+          _loginLogError = 'Data log login tidak tersedia.';
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoginLogLoading = false;
+          _loginLogError = 'Gagal memuat log login: $e';
+        });
+      }
     }
   }
 
@@ -313,6 +372,30 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
                             ],
                           );
                         },
+                      ),
+                      const SizedBox(height: 28),
+                      // ─── Poktan Login Activity Chart & Logs ───────────────────
+                      Text(
+                        'Log Login User Poktan',
+                        style: TextStyle(
+                          fontSize: isDesktop ? 18 : 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.dark900,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      PoktanLoginLogChart(
+                        dailyCounts: _loginDailyCounts,
+                        locationSummary: _loginLocationSummary,
+                        logs: _poktanLoginLogs,
+                        totalLogins: _totalPoktanLogins,
+                        uniqueUsers: _uniquePoktanUsers,
+                        selectedPeriod: _loginLogPeriod,
+                        startDate: _loginStartDate,
+                        endDate: _loginEndDate,
+                        isLoading: _isLoginLogLoading,
+                        errorMessage: _loginLogError,
+                        onPeriodChanged: (p) => _loadLoginLogs(period: p),
                       ),
                       const SizedBox(height: 28),
                       Text(

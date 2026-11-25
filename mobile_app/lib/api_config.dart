@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'api_config_platform.dart';
 
 class ApiConfig {
@@ -6,7 +7,10 @@ class ApiConfig {
   static const String envServerIp = String.fromEnvironment('SERVER_IP', defaultValue: '');
   static const String envPort = String.fromEnvironment('SERVER_PORT', defaultValue: '8000');
   static String? customGoogleClientId;
-  static const String envGoogleClientId = String.fromEnvironment('GOOGLE_CLIENT_ID', defaultValue: '');
+  static const String envGoogleClientId = String.fromEnvironment(
+    'GOOGLE_CLIENT_ID',
+    defaultValue: '913573270503-vpd62vl8a38p8jmug5i50fbjc6h515o1.apps.googleusercontent.com',
+  );
 
   static String get googleClientId {
     if (customGoogleClientId != null && customGoogleClientId!.isNotEmpty) {
@@ -27,7 +31,14 @@ class ApiConfig {
 
   static String port = envPort;
 
-  static String get baseUrl => 'https://crusher-vaguely-tyke.ngrok-free.dev/api';
+  static const String envBaseUrl = String.fromEnvironment('BASE_URL', defaultValue: '');
+
+  static String get baseUrl {
+    if (envBaseUrl.isNotEmpty) {
+      return envBaseUrl;
+    }
+    return 'https://sumbersarihub.web.id/api';
+  }
 
   // Endpoint helpers
   static String get loginEndpoint => '$baseUrl/auth/login';
@@ -69,6 +80,13 @@ class ApiConfig {
     // For any other absolute URL that had its path normalized
     if (path != uri.path) {
       return uri.replace(path: path).toString();
+    }
+
+    // On Flutter Web, external images from third-party domains (like Google, Imgur, etc.)
+    // are blocked by browser CORS when rendered via CanvasKit/HTML canvas.
+    // Wrap with a CORS image cache proxy so they render seamlessly on web.
+    if (kIsWeb && uri.hasScheme && !uri.host.contains('sumbersarihub.web.id') && uri.host != 'localhost' && uri.host != '127.0.0.1') {
+      return 'https://images.weserv.nl/?url=${Uri.encodeComponent(trimmed)}&default=${Uri.encodeComponent(trimmed)}';
     }
 
     return trimmed;

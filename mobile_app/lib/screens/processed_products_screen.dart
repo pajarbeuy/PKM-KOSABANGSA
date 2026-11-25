@@ -69,11 +69,19 @@ class _ProcessedProductsScreenState extends State<ProcessedProductsScreen> {
     final stockController = TextEditingController(text: product?.stock.toString() ?? '0');
     final descController = TextEditingController(text: product?.description ?? '');
     String status = product?.status ?? 'active';
-    String unit = product?.unit ?? 'pcs';
+    const validUnits = ['pcs', 'kg', 'gram', 'pack', 'botol', 'bungkus', 'liter', 'karung', 'lusin'];
+    String unit = (validUnits.contains(product?.unit)) ? product!.unit : 'pcs';
 
     XFile? selectedPhotoFile;
     Uint8List? selectedPhotoBytes;
     final ImagePicker picker = ImagePicker();
+
+    // Auto-detect existing external URL or custom photo URL
+    final existingPhoto = product?.photoUrl ?? '';
+    final isExistingUrl = existingPhoto.startsWith('http://') || existingPhoto.startsWith('https://');
+    final isCustomExternalUrl = isExistingUrl && !existingPhoto.contains('/storage/');
+    final photoUrlController = TextEditingController(text: isCustomExternalUrl ? existingPhoto : '');
+    bool usePhotoUrl = isCustomExternalUrl; // Auto switch to URL mode if it has an external URL
 
     final formKey = GlobalKey<FormState>();
     bool isSaving = false;
@@ -128,140 +136,246 @@ class _ProcessedProductsScreenState extends State<ProcessedProductsScreen> {
                     ),
                     const SizedBox(height: 20),
 
-                    // Foto Produk
-                    InkWell(
-                      onTap: () async {
-                        final picked = await picker.pickImage(
-                          source: ImageSource.gallery,
-                          maxWidth: 1200,
-                          maxHeight: 1200,
-                          imageQuality: 85,
-                        );
-                        if (picked != null) {
-                          final bytes = await picked.readAsBytes();
-                          setModalState(() {
-                            selectedPhotoFile = picked;
-                            selectedPhotoBytes = bytes;
-                          });
-                        }
-                      },
-                      borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        width: double.infinity,
-                        height: 140,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[50],
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.grey[300]!, width: 1.5),
-                        ),
-                        child: selectedPhotoBytes != null
-                            ? ClipRRect(
-                                borderRadius: BorderRadius.circular(14),
-                                child: Stack(
-                                  fit: StackFit.expand,
-                                  children: [
-                                    Image.memory(selectedPhotoBytes!, fit: BoxFit.cover),
-                                    Positioned(
-                                      top: 8,
-                                      right: 8,
-                                      child: GestureDetector(
-                                        onTap: () => setModalState(() {
-                                          selectedPhotoFile = null;
-                                          selectedPhotoBytes = null;
-                                        }),
-                                        child: Container(
-                                          padding: const EdgeInsets.all(6),
-                                          decoration: const BoxDecoration(
-                                            color: Colors.black54,
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: const Icon(Icons.close, color: Colors.white, size: 18),
-                                        ),
-                                      ),
-                                    ),
-                                    Positioned(
-                                      bottom: 8,
-                                      left: 8,
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: Colors.black54,
-                                          borderRadius: BorderRadius.circular(20),
-                                        ),
-                                        child: const Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(Icons.check_circle, color: Colors.greenAccent, size: 14),
-                                            SizedBox(width: 4),
-                                            Text('Foto Dipilih', style: TextStyle(color: Colors.white, fontSize: 11)),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                    // ── Foto Produk ──────────────────────────────────────
+                    // Toggle: Upload File / URL
+                    Row(
+                      children: [
+                        const Text('Foto Produk', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                        const Spacer(),
+                        GestureDetector(
+                          onTap: () => setModalState(() {
+                            usePhotoUrl = !usePhotoUrl;
+                            // Reset state mode lain ketika ganti mode
+                            if (usePhotoUrl) {
+                              selectedPhotoFile = null;
+                              selectedPhotoBytes = null;
+                            } else {
+                              photoUrlController.clear();
+                            }
+                          }),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppTheme.green700.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: AppTheme.green700.withValues(alpha: 0.3)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(usePhotoUrl ? Icons.upload_file : Icons.link, size: 14, color: AppTheme.green700),
+                                const SizedBox(width: 4),
+                                Text(
+                                  usePhotoUrl ? 'Ganti ke Upload' : 'Ganti ke URL',
+                                  style: const TextStyle(fontSize: 11, color: AppTheme.green700, fontWeight: FontWeight.w600),
                                 ),
-                              )
-                            : (product?.photoUrl != null && product!.photoUrl!.isNotEmpty)
-                                ? ClipRRect(
-                                    borderRadius: BorderRadius.circular(14),
-                                    child: Stack(
-                                      fit: StackFit.expand,
-                                      children: [
-                                        Image.network(
-                                          ApiConfig.resolveUrl(product.photoUrl!),
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (context, error, stackTrace) => const Center(
-                                            child: Icon(Icons.broken_image, size: 40, color: Colors.grey),
-                                          ),
-                                        ),
-                                        Positioned(
-                                          bottom: 8,
-                                          right: 8,
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                            decoration: BoxDecoration(
-                                              color: Colors.black54,
-                                              borderRadius: BorderRadius.circular(20),
-                                            ),
-                                            child: const Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Icon(Icons.photo_camera_outlined, color: Colors.white, size: 14),
-                                                SizedBox(width: 4),
-                                                Text('Ganti Foto', style: TextStyle(color: Colors.white, fontSize: 11)),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  )
-                                : Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+
+                    if (!usePhotoUrl) ...[
+                      // ── Mode Upload File ──
+                      InkWell(
+                        onTap: () async {
+                          final picked = await picker.pickImage(
+                            source: ImageSource.gallery,
+                            maxWidth: 1200,
+                            maxHeight: 1200,
+                            imageQuality: 85,
+                          );
+                          if (picked != null) {
+                            final bytes = await picked.readAsBytes();
+                            setModalState(() {
+                              selectedPhotoFile = picked;
+                              selectedPhotoBytes = bytes;
+                            });
+                          }
+                        },
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          width: double.infinity,
+                          height: 140,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.grey[300]!, width: 1.5),
+                          ),
+                          child: selectedPhotoBytes != null
+                              ? ClipRRect(
+                                  borderRadius: BorderRadius.circular(14),
+                                  child: Stack(
+                                    fit: StackFit.expand,
                                     children: [
-                                      Container(
-                                        width: 44,
-                                        height: 44,
-                                        decoration: BoxDecoration(
-                                          color: AppTheme.green700.withValues(alpha: 0.1),
-                                          shape: BoxShape.circle,
+                                      Image.memory(selectedPhotoBytes!, fit: BoxFit.cover),
+                                      Positioned(
+                                        top: 8,
+                                        right: 8,
+                                        child: GestureDetector(
+                                          onTap: () => setModalState(() {
+                                            selectedPhotoFile = null;
+                                            selectedPhotoBytes = null;
+                                          }),
+                                          child: Container(
+                                            padding: const EdgeInsets.all(6),
+                                            decoration: const BoxDecoration(
+                                              color: Colors.black54,
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: const Icon(Icons.close, color: Colors.white, size: 18),
+                                          ),
                                         ),
-                                        child: const Icon(Icons.add_a_photo_outlined, color: AppTheme.green700, size: 22),
                                       ),
-                                      const SizedBox(height: 8),
-                                      const Text(
-                                        'Pilih Foto Produk',
-                                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppTheme.green700),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        'Klik untuk ambil dari galeri (Maks. 4MB)',
-                                        style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                                      Positioned(
+                                        bottom: 8,
+                                        left: 8,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: Colors.black54,
+                                            borderRadius: BorderRadius.circular(20),
+                                          ),
+                                          child: const Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(Icons.check_circle, color: Colors.greenAccent, size: 14),
+                                              SizedBox(width: 4),
+                                              Text('Foto Dipilih', style: TextStyle(color: Colors.white, fontSize: 11)),
+                                            ],
+                                          ),
+                                        ),
                                       ),
                                     ],
                                   ),
+                                )
+                              : (product?.photoUrl != null && product!.photoUrl!.isNotEmpty)
+                                  ? ClipRRect(
+                                      borderRadius: BorderRadius.circular(14),
+                                      child: Stack(
+                                        fit: StackFit.expand,
+                                        children: [
+                                          Image.network(
+                                            ApiConfig.resolveUrl(product.photoUrl!),
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) => const Center(
+                                              child: Icon(Icons.broken_image, size: 40, color: Colors.grey),
+                                            ),
+                                          ),
+                                          Positioned(
+                                            bottom: 8,
+                                            right: 8,
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                              decoration: BoxDecoration(
+                                                color: Colors.black54,
+                                                borderRadius: BorderRadius.circular(20),
+                                              ),
+                                              child: const Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(Icons.photo_camera_outlined, color: Colors.white, size: 14),
+                                                  SizedBox(width: 4),
+                                                  Text('Ganti Foto', style: TextStyle(color: Colors.white, fontSize: 11)),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    )
+                                  : Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Container(
+                                          width: 44,
+                                          height: 44,
+                                          decoration: BoxDecoration(
+                                            color: AppTheme.green700.withValues(alpha: 0.1),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: const Icon(Icons.add_a_photo_outlined, color: AppTheme.green700, size: 22),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        const Text(
+                                          'Pilih Foto dari Galeri',
+                                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppTheme.green700),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          'Klik untuk ambil dari galeri (Maks. 4MB)',
+                                          style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                                        ),
+                                      ],
+                                    ),
+                        ),
                       ),
-                    ),
+                    ] else ...[
+                      // ── Mode Input URL ──
+                      TextFormField(
+                        controller: photoUrlController,
+                        keyboardType: TextInputType.url,
+                        decoration: InputDecoration(
+                          labelText: 'URL Foto',
+                          hintText: 'https://example.com/foto-produk.jpg',
+                          prefixIcon: const Icon(Icons.link, color: AppTheme.green700),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                          suffixIcon: photoUrlController.text.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear, size: 18),
+                                  onPressed: () => setModalState(() => photoUrlController.clear()),
+                                )
+                              : null,
+                        ),
+                        onChanged: (_) => setModalState(() {}),
+                        validator: (v) {
+                          if (v != null && v.isNotEmpty) {
+                            final uri = Uri.tryParse(v);
+                            if (uri == null || !uri.hasScheme || (!uri.scheme.startsWith('http'))) {
+                              return 'URL tidak valid (harus diawali https:// atau http://)';
+                            }
+                          }
+                          return null;
+                        },
+                      ),
+                      // Preview URL
+                      if (photoUrlController.text.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.network(
+                            photoUrlController.text,
+                            height: 120,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, _, _) => Container(
+                              height: 120,
+                              color: Colors.grey[100],
+                              child: const Center(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.broken_image, color: Colors.grey, size: 32),
+                                    SizedBox(height: 4),
+                                    Text('Gagal memuat preview', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            loadingBuilder: (_, child, progress) => progress == null
+                                ? child
+                                : Container(
+                                    height: 120,
+                                    color: Colors.grey[100],
+                                    child: const Center(child: CircularProgressIndicator()),
+                                  ),
+                          ),
+                        ),
+                      ],
+                    ],
                     const SizedBox(height: 16),
 
                     // Nama Produk
@@ -330,8 +444,15 @@ class _ProcessedProductsScreenState extends State<ProcessedProductsScreen> {
                               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
                             ),
                             items: const [
-                              DropdownMenuItem(value: 'pcs', child: Text('pcs')),
-                              DropdownMenuItem(value: 'kg', child: Text('kg')),
+                              DropdownMenuItem(value: 'pcs',     child: Text('pcs')),
+                              DropdownMenuItem(value: 'kg',      child: Text('kg')),
+                              DropdownMenuItem(value: 'gram',    child: Text('gram')),
+                              DropdownMenuItem(value: 'pack',    child: Text('pack')),
+                              DropdownMenuItem(value: 'botol',   child: Text('botol')),
+                              DropdownMenuItem(value: 'bungkus', child: Text('bungkus')),
+                              DropdownMenuItem(value: 'liter',   child: Text('liter')),
+                              DropdownMenuItem(value: 'karung',  child: Text('karung')),
+                              DropdownMenuItem(value: 'lusin',   child: Text('lusin')),
                             ],
                             onChanged: (val) {
                               if (val != null) setModalState(() => unit = val);
@@ -403,6 +524,7 @@ class _ProcessedProductsScreenState extends State<ProcessedProductsScreen> {
                                     final navigator = Navigator.of(ctx);
 
                                     Map<String, dynamic> result;
+                                    final resolvedPhotoUrl = usePhotoUrl ? photoUrlController.text.trim() : null;
                                     if (isEditing) {
                                       result = await _apiService.updateProcessedProduct(
                                         product.id,
@@ -413,6 +535,7 @@ class _ProcessedProductsScreenState extends State<ProcessedProductsScreen> {
                                         description: descController.text.trim(),
                                         status: status,
                                         photoFile: selectedPhotoFile,
+                                        photoUrl: resolvedPhotoUrl,
                                       );
                                     } else {
                                       result = await _apiService.createProcessedProduct(
@@ -423,6 +546,7 @@ class _ProcessedProductsScreenState extends State<ProcessedProductsScreen> {
                                         description: descController.text.trim(),
                                         status: status,
                                         photoFile: selectedPhotoFile,
+                                        photoUrl: resolvedPhotoUrl,
                                       );
                                     }
 

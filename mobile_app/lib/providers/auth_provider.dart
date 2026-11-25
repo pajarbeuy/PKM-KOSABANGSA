@@ -14,6 +14,7 @@ class AuthProvider extends ChangeNotifier {
     final clientId = ApiConfig.googleClientId;
     return GoogleSignIn(
       clientId: kIsWeb && clientId.isNotEmpty ? clientId : null,
+      serverClientId: clientId.isNotEmpty ? clientId : null,
       scopes: ['email', 'profile'],
     );
   }

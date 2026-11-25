@@ -24,7 +24,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
       ],
       child: MaterialApp(
-        title: 'SumberTani Mobile',
+        title: 'Sumbersarihub',
         debugShowCheckedModeBanner: false,
         locale: const Locale('id', 'ID'),
         supportedLocales: const [Locale('id', 'ID')],

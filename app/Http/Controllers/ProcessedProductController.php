@@ -50,16 +50,24 @@ class ProcessedProductController extends Controller
             'name'        => 'required|string|max:255',
             'price'       => 'required|numeric|min:0',
             'stock'       => 'nullable|integer|min:0',
-            'unit'        => 'nullable|string|in:pcs,kg',
+            'unit'        => 'nullable|string|in:pcs,kg,gram,pack,botol,bungkus,liter,karung,lusin',
             'description' => 'nullable|string|max:2000',
             'photo'       => 'nullable|image|max:4096',
+            'photo_url'   => 'nullable|url|max:2048',
             'status'      => 'nullable|in:active,out_of_stock,inactive',
         ], [
             'name.required'  => 'Nama produk olahan harus diisi.',
             'price.required' => 'Harga produk olahan harus diisi.',
             'price.min'      => 'Harga tidak boleh bernilai negatif.',
             'stock.min'      => 'Stok tidak boleh bernilai negatif.',
+            'photo_url.url'  => 'URL foto tidak valid.',
         ]);
+
+        // Jika user memasukkan URL foto, simpan langsung ke kolom photo
+        if (!$request->hasFile('photo') && !empty($validated['photo_url'])) {
+            $validated['photo'] = $validated['photo_url'];
+        }
+        unset($validated['photo_url']);
 
         $product = $this->processedProductService->createForOwner(
             $request->user()->id,
@@ -103,16 +111,24 @@ class ProcessedProductController extends Controller
             'name'        => 'sometimes|required|string|max:255',
             'price'       => 'sometimes|required|numeric|min:0',
             'stock'       => 'sometimes|required|integer|min:0',
-            'unit'        => 'nullable|string|in:pcs,kg',
+            'unit'        => 'nullable|string|in:pcs,kg,gram,pack,botol,bungkus,liter,karung,lusin',
             'description' => 'nullable|string|max:2000',
             'photo'       => 'nullable|image|max:4096',
+            'photo_url'   => 'nullable|url|max:2048',
             'status'      => 'sometimes|required|in:active,out_of_stock,inactive',
         ], [
             'name.required'  => 'Nama produk olahan harus diisi.',
             'price.required' => 'Harga produk olahan harus diisi.',
             'price.min'      => 'Harga tidak boleh bernilai negatif.',
             'stock.min'      => 'Stok tidak boleh bernilai negatif.',
+            'photo_url.url'  => 'URL foto tidak valid.',
         ]);
+
+        // Jika user memasukkan URL foto, simpan langsung ke kolom photo
+        if (!$request->hasFile('photo') && !empty($validated['photo_url'])) {
+            $validated['photo'] = $validated['photo_url'];
+        }
+        unset($validated['photo_url']);
 
         $product = $this->processedProductService->updateForOwner(
             $processedProduct,

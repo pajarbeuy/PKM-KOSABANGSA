@@ -23,6 +23,34 @@ class SuperAdminApiService {
     throw Exception(data['message'] ?? 'Gagal mengambil data dashboard super admin');
   }
 
+  Future<Map<String, dynamic>?> getPoktanLoginLogs({
+    String period = '30d',
+    String? startDate,
+    String? endDate,
+    int limit = 50,
+  }) async {
+    final queryParams = <String, String>{
+      'period': period,
+      'limit': limit.toString(),
+    };
+    if (startDate != null && startDate.isNotEmpty) queryParams['start_date'] = startDate;
+    if (endDate != null && endDate.isNotEmpty) queryParams['end_date'] = endDate;
+
+    final uri = Uri.parse('${ApiConfig.baseUrl}/super-admin/login-logs')
+        .replace(queryParameters: queryParams);
+
+    final response = await http
+        .get(uri, headers: _client.getHeaders())
+        .timeout(const Duration(seconds: 15));
+
+    final data = _client.decodeApiResponse(response);
+    if (data['success'] == true) {
+      return data['data'] as Map<String, dynamic>;
+    }
+
+    throw Exception(data['message'] ?? 'Gagal mengambil data log login poktan');
+  }
+
   Future<List<dynamic>> getSuperAdminUsers() async {
     try {
       final response = await http
